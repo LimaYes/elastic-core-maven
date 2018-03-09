@@ -1,0 +1,23 @@
+array_int   1000;
+array_uint  10;
+array_float 100;
+
+function test {
+	if(1==1)
+       if(1==1)
+           if(1==1) {
+               i[1]=i[1] +1; }
+           else
+               if(2==2)
+                   i[2]=3;
+}
+
+function main {
+    verify();
+}
+
+function verify {
+	test();
+	verify_bty (m[0] <= 100);
+	verify_pow (u[0],u[1],u[2],u[3]);
+}

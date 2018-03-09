@@ -1,0 +1,15 @@
+array_uint   1000;
+submit_sz 32;
+submit_idx 0;
+
+function main {
+    u[1]=u[1]*132;
+    u[2]=u[1]*54;
+    s[0]=u[1]+u[2];
+}
+
+
+function verify {
+    verify_bty (p[0]%1000==0);
+    verify_pow (u[0],u[1],u[2],u[3]);
+}

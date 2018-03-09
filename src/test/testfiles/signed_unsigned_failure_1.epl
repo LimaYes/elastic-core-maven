@@ -1,0 +1,19 @@
+array_uint   1000;
+submit_sz 32;
+submit_idx 0;
+
+function main {
+    u[1]=u[1]*132;
+    u[2]=u[1]*54;
+}
+
+// The following one works in
+function verify {
+    u[5]=0;
+    m[1]=-2;
+    u[1]=m[1];
+    if(u[1]>m[1])
+        u[5]=1;
+    verify_bty (s[0]+u[5]%1000==0);
+    verify_pow (u[0],u[1],u[2],u[3]);
+}
