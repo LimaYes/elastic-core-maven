@@ -201,7 +201,9 @@ public class TestVm {
             c_code += "ulong ul[" + t.state.ast_vm_ulongs + "];\n";
             c_code += "uint m[12];\n";
             c_code += "uint s[" + t.state.ast_submit_sz + "];\n";
-
+            c_code += "int bounty_found = 0;\n";
+            c_code += "int pow_found = 0;\n";
+            c_code += "int verify_pow = 1;\n\n";
             c_code += result;
 
             if (dumpCode) {
