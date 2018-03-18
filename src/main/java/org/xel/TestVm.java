@@ -146,65 +146,7 @@ public class TestVm {
         boolean dumpCode = getBooleanProperty("nxt.dump_code");
         boolean exec = getBooleanProperty("nxt.execute_code");
         try {
-            TokenManager t = new TokenManager();
-            t.build_token_list(content);
-
-            if (dumpTokens) {
-                Logger.logMessage("Dumping the token list now");
-                System.out.flush();
-                System.err.flush();
-                System.out.println("--BEGIN TOKENS");
-
-                t.dump_token_list();
-                System.out.println("--END TOKENS");
-
-            }
-
-            ASTBuilder.parse_token_list(t.state);
-
-            if (dumpAst) {
-                Logger.logMessage("Dumping AST");
-
-                System.out.flush();
-                System.err.flush();
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                System.out.println("--BEGIN AST");
-                ASTBuilder.dump_vm_ast(t.state);
-                System.out.println("--END AST");
-            }
-
-            int wcet = WCETCalculator.calc_wcet(t.state);
-            int verify_wcet = WCETCalculator.get_verify_wcet(t.state);
-
-            Logger.logMessage("WCET: " + wcet);
-            System.out.println("Verify-WCET: " + verify_wcet);
-            System.out.flush();
-            System.err.flush();
-
-            CodeConverter.convert_verify(t.state);
-
-            String result = "";
-            for (int i = 0; i < t.state.stack_code.size(); ++i) {
-                result += t.state.stack_code.get(i);
-            }
-
-            String c_code = "";
-            c_code += "int i[" + t.state.ast_vm_ints + "];\n";
-            c_code += "uint u[" + t.state.ast_vm_uints + "];\n";
-            c_code += "double d[" + t.state.ast_vm_doubles + "];\n";
-            c_code += "float f[" + t.state.ast_vm_floats + "];\n";
-            c_code += "long l[" + t.state.ast_vm_longs + "];\n";
-            c_code += "ulong ul[" + t.state.ast_vm_ulongs + "];\n";
-            c_code += "uint m[12];\n";
-            c_code += "uint s[" + t.state.ast_submit_sz + "];\n";
-            c_code += "int bounty_found = 0;\n";
-            c_code += "int pow_found = 0;\n";
-            c_code += "int verify_pow = 1;\n\n";
-            c_code += result;
+            String c_code = CodeGetter.convert(content);
 
             if (dumpCode) {
                 Logger.logMessage("Dumping generated source code");
@@ -217,11 +159,8 @@ public class TestVm {
 
                 int validator_offset_index = 0;
                 Logger.logMessage("We will now execute the code");
-
                 CoverMain.executeSource(c_code, System.in, System.out);
-
             }
-
         }
         catch (Exception e) {
             Logger.logErrorMessage("The following syntax error has been found");

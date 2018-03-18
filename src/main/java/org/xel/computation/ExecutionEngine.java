@@ -20,8 +20,8 @@ public class ExecutionEngine {
 
 
     public static byte[] getMaximumTargetForTesting() {
-        byte[] target = new byte[32];
-        for(int i=0; i<32; ++i) target[i] = (byte)0xff;
+        byte[] target = new byte[16];
+        for(int i=0; i<16; ++i) target[i] = (byte)0xff;
         return target;
     }
 
@@ -99,29 +99,7 @@ public class ExecutionEngine {
     }
 
     public String convertToC(String code) throws Exceptions.SyntaxErrorException {
-        TokenManager t = new TokenManager();
-        t.build_token_list(code);
-        ASTBuilder.parse_token_list(t.state);
-        CodeConverter.convert_verify(t.state);
-
-        String result = "";
-        for (int i = 0; i < t.state.stack_code.size(); ++i) {
-            result += t.state.stack_code.get(i);
-        }
-
-        String c_code = "";
-        c_code += "int i[" + t.state.ast_vm_ints + "];\n";
-        c_code += "uint u[" + t.state.ast_vm_uints + "];\n";
-        c_code += "double d[" + t.state.ast_vm_doubles + "];\n";
-        c_code += "float f[" + t.state.ast_vm_floats + "];\n";
-        c_code += "long l[" + t.state.ast_vm_longs + "];\n";
-        c_code += "ulong ul[" + t.state.ast_vm_ulongs + "];\n";
-        c_code += "int bounty_found = 0;\n";
-        c_code += "int pow_found = 0;\n";
-        // c_code += "uint s[" + t.state.ast_submit_sz + "];\n"; !! This one gets filled elsewhere
-        c_code += result;
-
-        return c_code;
+        return CodeGetter.convert(code);
     }
 
     public ComputationResult compute(final byte[] target, final byte[] publicKey, final long blockId, final byte[] multiplicator, final long workId, final int storage_idx) throws Exception {
@@ -176,15 +154,16 @@ public class ExecutionEngine {
             for(int x : storage){
                 System.out.println(x);
             }
+            System.out.println(other_line);
+
         }
 
         ComputationResult r = CoverMain.executeSource(c, System.in, new PrintStream(new NullOutputStream()), storage);
 
         if(debugInts) {
-            System.out.println(other_line);
             System.out.println("Result is POW: " + r.isPow);
             System.out.println("Result is BTY: " + r.isBounty);
-            System.out.println("Pow Hash: " + bytesToHex(r.powHash));
+            //System.out.println("Pow Hash: " + bytesToHex(r.powHash));
             System.out.println("Pow Trgt: " + bytesToHex(r.targetWas));
             System.out.println(title_line);
         }
