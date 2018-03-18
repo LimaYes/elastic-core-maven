@@ -17,6 +17,14 @@ public class ExecutionEngine {
 
     private static final Properties defaultProperties = new Properties();
     private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
+
+
+    public static byte[] getMaximumTargetForTesting() {
+        byte[] target = new byte[32];
+        for(int i=0; i<32; ++i) target[i] = (byte)0xff;
+        return target;
+    }
+
     public static String bytesToHex(byte[] bytes) {
         char[] hexChars = new char[bytes.length * 2];
         for ( int j = 0; j < bytes.length; j++ ) {
@@ -42,6 +50,11 @@ public class ExecutionEngine {
         }
         Logger.logMessage(name + " not defined, assuming false");
         return false;
+    }
+
+    public static String getStringProperty(String name) {
+        String value = defaultProperties.getProperty(name);
+        return value;
     }
 
 
@@ -103,7 +116,8 @@ public class ExecutionEngine {
         c_code += "float f[" + t.state.ast_vm_floats + "];\n";
         c_code += "long l[" + t.state.ast_vm_longs + "];\n";
         c_code += "ulong ul[" + t.state.ast_vm_ulongs + "];\n";
-        c_code += "uint m[12];\n";
+        c_code += "int bounty_found = 0;\n";
+        c_code += "int pow_found = 0;\n";
         // c_code += "uint s[" + t.state.ast_submit_sz + "];\n"; !! This one gets filled elsewhere
         c_code += result;
 
@@ -111,8 +125,17 @@ public class ExecutionEngine {
     }
 
     public ComputationResult compute(final byte[] target, final byte[] publicKey, final long blockId, final byte[] multiplicator, final long workId, final int storage_idx) throws Exception {
-        String epl = getEplCode(workId);
+        String epl;
+        if(workId == -1)
+            epl = getEplCode(getStringProperty("nxt.test_file"));
+        else
+            epl = getEplCode(workId);
+
+
         String c = convertToC(epl);
+
+        System.err.println(c);
+
         ComputationResult comp = CoverMain.getComputationResult();
         int[] pInts = PersonalizedInts.personalizedIntStream(publicKey, blockId, multiplicator, workId);
 

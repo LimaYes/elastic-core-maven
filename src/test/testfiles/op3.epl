@@ -14,6 +14,8 @@ function test {
 }
 
 function verify {
+    u[9] = m[3];
+    u[8] = m[2];
 	test();
 	verify_bty (m[0] <= 100);
 	verify_pow (u[0],u[1],u[2],u[3]);
