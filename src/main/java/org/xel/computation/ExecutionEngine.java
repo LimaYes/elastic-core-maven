@@ -147,7 +147,7 @@ public class ExecutionEngine {
             System.out.println("Public Key:");
             System.out.println(bytesToHex(publicKey));
             System.out.println("Multiplicator:");
-            System.out.println(bytesToHex(publicKey));
+            System.out.println(bytesToHex(multiplicator));
             System.out.println("Block: " + blockId);
             System.out.println(other_line);
             System.out.println("Storage Ints (#" + storage.length + "):");
