@@ -14,7 +14,7 @@ function test {
 }
 
 function verify {
-    //u[9] = m[3];
+    u[9] = m[3];
     //u[8] = m[2];
 	test();
 	verify_bty (u[0] <= 100);
