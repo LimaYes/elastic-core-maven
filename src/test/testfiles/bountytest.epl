@@ -7,13 +7,6 @@ function shit {
     u[99]=8;
 }
 
-
-function main {
-    u[1]=u[1]*132;
-    u[2]=u[1]*54;
-    verify();
-}
-
 function verify {
     u[5]=0;
     u[1]=2;
@@ -21,4 +14,10 @@ function verify {
     shit();
     verify_bty (s[0]%1000==0);
     verify_pow (u[0],u[1],u[2],u[3]);
+}
+
+function main {
+    u[1]=u[1]*132;
+    u[2]=u[1]*54;
+    verify();
 }

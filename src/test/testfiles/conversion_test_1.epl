@@ -6,12 +6,13 @@ function test1 {
     u[1]=u[2];
 }
 
-function main {
-    u[1]=4+2*3+1;
-    verify();
-}
-
 function verify {
+    u[1]=4+2*3+1;
     verify_bty (u[2]%1000==0);
     verify_pow (u[0],u[1],u[2],u[3]);
+}
+
+function main {
+
+    verify();
 }

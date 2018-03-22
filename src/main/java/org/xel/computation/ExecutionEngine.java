@@ -83,17 +83,13 @@ public class ExecutionEngine {
         Work w = Work.getWork(jobId);
         if(w==null) throw new FileNotFoundException("No job with id " + jobId);
         int sz = w.getStorage_size();
-        int[] storage = new int[sz];
+        if(sz==0) return new int[0];
         int[] combined_storage = w.getCombined_storage();
-
-
-        return storage;
+        return combined_storage;
     }
 
-    public int[] getDummyStorage(long jobId) throws FileNotFoundException {
-        Work w = Work.getWork(jobId);
-        if(w==null) throw new FileNotFoundException("No job with id " + jobId);
-        int[] storage = new int[w.getStorage_size()];
+    public int[] getDummyStorage(int size) throws FileNotFoundException {
+        int[] storage = new int[size];
         return storage;
 
     }
@@ -103,6 +99,9 @@ public class ExecutionEngine {
     }
 
     public ComputationResult compute(final byte[] target, final byte[] publicKey, final long blockId, final byte[] multiplicator, final long workId, final int storage_idx) throws Exception {
+
+        ComputationResult comp = CoverMain.getComputationResult();
+
         String epl;
         if(workId == -1)
             epl = getEplCode(getStringProperty("nxt.test_file"));
@@ -112,17 +111,16 @@ public class ExecutionEngine {
 
         String c = convertToC(epl);
 
-        ComputationResult comp = CoverMain.getComputationResult();
+        System.err.println(c);
+
         int[] pInts = PersonalizedInts.personalizedIntStream(publicKey, blockId, multiplicator, workId);
 
         boolean debugInts = getBooleanProperty("nxt.debug_job_execution");
 
 
         int[] storage = null;
-        if(storage_idx == -1)
-            storage = new int[0];
-        else if(storage_idx == -2)
-            storage = getDummyStorage(workId);
+        if(workId == -1)
+            storage = getDummyStorage(comp.storage_size);
         else
             storage = getStorage(workId, storage_idx);
 
@@ -150,13 +148,14 @@ public class ExecutionEngine {
             System.out.println(other_line);
             System.out.println("Storage Ints (#" + storage.length + "):");
             for(int x : storage){
+                if(x==0) continue;
                 System.out.println(x);
             }
             System.out.println(other_line);
 
         }
 
-        ComputationResult r = CoverMain.executeSource(c, System.in, new PrintStream(new NullOutputStream()), storage);
+        ComputationResult r = CoverMain.executeSourceWithoutExceptionHandler(c, System.in, new PrintStream(new NullOutputStream()), storage);
 
         if(debugInts) {
             System.out.println("Result is POW: " + r.isPow);
