@@ -112,8 +112,6 @@ public class ExecutionEngine {
 
         String c = convertToC(epl);
 
-        System.err.println(c);
-
         ComputationResult comp = CoverMain.getComputationResult();
         int[] pInts = PersonalizedInts.personalizedIntStream(publicKey, blockId, multiplicator, workId);
 
@@ -163,7 +161,7 @@ public class ExecutionEngine {
         if(debugInts) {
             System.out.println("Result is POW: " + r.isPow);
             System.out.println("Result is BTY: " + r.isBounty);
-            //System.out.println("Pow Hash: " + bytesToHex(r.powHash));
+            System.out.println("Pow Hash: " + bytesToHex(r.powHash));
             System.out.println("Pow Trgt: " + bytesToHex(r.targetWas));
             System.out.println(title_line);
         }
