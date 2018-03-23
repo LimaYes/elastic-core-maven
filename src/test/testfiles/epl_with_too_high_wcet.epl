@@ -1,4 +1,6 @@
 array_uint   1000;
+array_float  4;
+
 submit_sz 32;
 submit_idx 0;
 
@@ -6,12 +8,14 @@ function main {
     u[1]=u[1]*132;
     u[2]=u[1]*54;
     repeat (u[100], 900000000, 900000000) {
-        s[0]=u[1]+u[2];
+        u[0]=u[1]+u[2];
+        f[1]=sin(f[1]+0.14);
     }
+    verify();
 }
 
 
 function verify {
-    verify_bty (s[0]%1000==0);
+    verify_bty (s[4]%1000==0);
     verify_pow (u[0],u[1],u[2],u[3]);
 }

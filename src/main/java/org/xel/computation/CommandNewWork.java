@@ -32,7 +32,6 @@ import static org.xel.computation.ComputationConstants.MAX_UNCOMPRESSED_WORK_SIZ
 public class CommandNewWork extends IComputationAttachment {
 
     private short deadline;
-    private String verify_function = null;
 
     public long getXelPerPow() {
         return xelPerPow;
@@ -73,7 +72,6 @@ public class CommandNewWork extends IComputationAttachment {
     private byte[] sourceCodeCompressed;
 
     private int storage_size = -1;
-    private int verification_idx = -1;
 
     public CommandNewWork(int cap_number_pow, short deadline, long xelPerPow, long xelPerBounty, int
             bountiesPerIteration, int numberOfIterations, byte[] sourceCode){
@@ -247,18 +245,26 @@ public class CommandNewWork extends IComputationAttachment {
             return false;
 
         // Now, we have to validate whether the source code makes sense at all and meets the required WCET criteria
-        // for the main as well as for the verify part. We can do this all within the sandboxed epl-language package
-
-        /*
+        // for the main as well as for the verify part. We can do it with a dummy compute call
+        // The reason is, that the compute call will fail if syntax errors are present or if WCET boundaries are violated
 
         try{
 
-            this.verify_function = Executor.checkCodeAndReturnVerify(new String(this.sourceCode));
+            ExecutionEngine e = new ExecutionEngine();
+            byte[] target =  e.getMaximumTargetForTesting();
+            target[0] = 0x49; // make it a bit more difficult
+            byte[] publicKey = new byte[]{(byte)0xF1, (byte)0x6D, (byte)0x48, (byte)0x25, (byte)0x0C, (byte)0xE2, (byte)0xA2, (byte)0xA4, (byte)0xFD, (byte)0x4D, (byte)0x9B, (byte)0x08, (byte)0x57, (byte)0x7B, (byte)0x2D, (byte)0x3F, (byte)0x92, (byte)0xC6, (byte)0x4D, (byte)0x09, (byte)0x3C, (byte)0xD9, (byte)0x68, (byte)0xE6, (byte)0xC7, (byte)0x32, (byte)0x5E, (byte)0x40, (byte)0x30, (byte)0xB7, (byte)0xF2, (byte)0x06 };
+            long blockId = 123456789;
+            long workId = -1;
+            byte[] multi = publicKey; // leave it empty ffs
+            int storage_id = -1;
+            ComputationResult r = e.compute(target, publicKey, blockId, multi, workId, storage_id);
+            storage_size = r.storage_size;
             validated = true;
         }catch(Exception e){
             e.printStackTrace(); // todo: remove for production
             return false;
-        }*/ // FIXME TODO
+        }
 
         return true;
     }
@@ -268,7 +274,7 @@ public class CommandNewWork extends IComputationAttachment {
         if ((this.sourceCode == null) || (this.sourceCode.length == 0)) return;
 
         if(!validated){
-            if(!validate(transaction) || this.verify_function == null)
+            if(!validate(transaction))
                 return;
         }
         // Here, apply the actual package
@@ -277,39 +283,24 @@ public class CommandNewWork extends IComputationAttachment {
     }
 
     public int getStorageSize() {
-        return 0; /*
-        if(storage_size==-1) {
-            try {
-                Pair<Integer, Integer> i = Executor.checkCodeAndReturnStorageSizeAndVERIIDX(new String(this.sourceCode));
-                this.storage_size = i.getFirst();
-                this.verification_idx = i.getSecond();
-                return storage_size;
-            } catch (Exception e) {
+        if(storage_size==-1){
+            try{
+                ExecutionEngine e = new ExecutionEngine();
+                byte[] target =  e.getMaximumTargetForTesting();
+                target[0] = 0x49; // make it a bit more difficult
+                byte[] publicKey = new byte[]{(byte)0xF1, (byte)0x6D, (byte)0x48, (byte)0x25, (byte)0x0C, (byte)0xE2, (byte)0xA2, (byte)0xA4, (byte)0xFD, (byte)0x4D, (byte)0x9B, (byte)0x08, (byte)0x57, (byte)0x7B, (byte)0x2D, (byte)0x3F, (byte)0x92, (byte)0xC6, (byte)0x4D, (byte)0x09, (byte)0x3C, (byte)0xD9, (byte)0x68, (byte)0xE6, (byte)0xC7, (byte)0x32, (byte)0x5E, (byte)0x40, (byte)0x30, (byte)0xB7, (byte)0xF2, (byte)0x06 };
+                long blockId = 123456789;
+                long workId = -1;
+                byte[] multi = publicKey; // leave it empty ffs
+                int storage_id = -1;
+                ComputationResult r = e.compute(target, publicKey, blockId, multi, workId, storage_id);
+                validated = true;
+                storage_size = r.storage_size;
+            }catch(Exception e){
+                e.printStackTrace(); // todo: remove for production
                 return -1;
             }
-        }else{
-            return storage_size;
-        }*/
-    }
-
-    public String getVerifyFunction() {
-        return this.verify_function;
-    }
-
-    public int getVerificationIdx() {
-        return 0;
-        /*
-        if(verification_idx==-1) {
-            try {
-                Pair<Integer, Integer> i = Executor.checkCodeAndReturnStorageSizeAndVERIIDX(new String(this.sourceCode));
-                this.storage_size = i.getFirst();
-                this.verification_idx = i.getSecond();
-                return verification_idx;
-            } catch (Exception e) {
-                return -1;
-            }
-        }else{
-            return verification_idx;
-        }*/
+        }
+        return storage_size;
     }
 }

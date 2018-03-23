@@ -174,7 +174,7 @@ public class CommandPowBty extends IComputationAttachment {
         return verificator;
     }
 
-    private boolean validatePow(byte[] pubkey, long blockid, long workId, String vcode, int[] target){
+    private boolean validatePow(byte[] pubkey, long blockid, long workId, int[] target){
         /*byte[] hash_array = this.getPowHash();
         byte[] multiplier_array = this.getMultiplier();
         int[] verificator_array = Convert.byte2int(this.getVerificator());
@@ -190,7 +190,7 @@ public class CommandPowBty extends IComputationAttachment {
                  storage_array, verificator_array, validation_offset, true, target, hash_array, state);
         return result.pow;*/ return true;
     }
-    private boolean validateBty(byte[] pubkey, long blockid, long workId, String vcode, int[] target){
+    private boolean validateBty(byte[] pubkey, long blockid, long workId, int[] target){
         /*byte[] hash_array = this.getPowHash();
         byte[] multiplier_array = this.getMultiplier();
         int[] verificator_array = Convert.byte2int(this.getVerificator());
@@ -298,12 +298,12 @@ public class CommandPowBty extends IComputationAttachment {
 
         // Validate code-level
         if (this.is_proof_of_work && !validatePow(transaction.getSenderPublicKey(), w.getBlock_id(),
-                work_id, w.getVerifyFunction(), target)) {
+                work_id, target)) {
             Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: proof of work checks in code execution failed.");
             return false;
         }
         if (!this.is_proof_of_work && !validateBty(transaction.getSenderPublicKey(), w.getBlock_id(),
-                work_id, w.getVerifyFunction(), target)) {
+                work_id, target)) {
             Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: bounty checks in code execution failed.");
             return false;
         }

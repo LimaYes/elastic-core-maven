@@ -65,21 +65,13 @@ public class ExecutionEngine {
     }
 
 
-    /**Writes to nowhere*/
-    private class NullOutputStream extends OutputStream {
-        @Override
-        public void write(int b) throws IOException {
-        }
-    }
-
-
-    public String getEplCode(String filename) throws FileNotFoundException {
+    public static String getEplCode(String filename) throws FileNotFoundException {
         String content = null;
         content = new Scanner(new File(filename)).useDelimiter("\\Z").next();
         return content;
     }
 
-    public String getEplCode(long jobId) throws FileNotFoundException {
+    public static String getEplCode(long jobId) throws FileNotFoundException {
         Work w = Work.getWork(jobId);
         if(w==null) throw new FileNotFoundException("No job with id " + jobId);
         String res = w.getSource_code();
@@ -101,17 +93,18 @@ public class ExecutionEngine {
 
     }
 
+
     public ComputationResult compute(final byte[] target, final byte[] publicKey, final long blockId, final byte[] multiplicator, final long workId, final int storage_idx) throws Exception {
-
-
         String epl;
-        if(workId == -1)
+        if (workId == -1)
             epl = getEplCode(getStringProperty("nxt.test_file"));
         else
             epl = getEplCode(workId);
 
+        return compute(target, publicKey, blockId, multiplicator, workId, epl, storage_idx);
+    }
 
-
+    public ComputationResult compute(final byte[] target, final byte[] publicKey, final long blockId, final byte[] multiplicator, final long workId, String epl, final int storage_idx) throws Exception {
         int[] storage = null;
         if(workId == -1)
             storage = getDummyStorage();
@@ -126,7 +119,7 @@ public class ExecutionEngine {
 
         ComputationResult r = new ComputationResult();
 
-        String cmd = String.format("./xel_miner --test-target %s --test-publickey %s --test-multiplicator %s --test-block \"%d\" --test-work \"%d\" --test-vm code.epl", bytesToHex(target), bytesToHex(publicKey), bytesToHex(multiplicator), blockId, workId);
+        String cmd = String.format("./xel_miner --test-target %s --test-publickey %s --test-multiplicator %s --test-block %d --test-work %d --verify-only --test-vm code.epl", bytesToHex(target), bytesToHex(publicKey), bytesToHex(multiplicator), blockId, workId);
         System.out.println(cmd);
         Process process=Runtime.getRuntime().exec(cmd,
                 null, new File("./work/"));
@@ -135,24 +128,31 @@ public class ExecutionEngine {
         String line;
         process.waitFor();
 
-        if(process.exitValue()!=0) throw new IOException("EPL code exited with error code.");
 
         while ( (line = reader.readLine()) != null) {
-            if(line.contains("ERROR")) throw new IOException("EPL code produced error: " + line);
+            line = line.replaceAll("\\[\\d+m", "").trim();
+
+            if(line.contains("ERROR") || line.contains("Error")) throw new IOException("EPL code produced error: " + line);
             if(line.contains("DEBUG: POW Found:")){
                 Boolean res = Boolean.parseBoolean(line.substring(line.lastIndexOf(":")+2));
                 r.isPow = res;
             }
             if(line.contains("DEBUG: Bounty Found:")){
                 Boolean res = Boolean.parseBoolean(line.substring(line.lastIndexOf(":")+2));
-                r.isPow = res;
+                r.isBty = res;
+            }
+            if(line.contains("DEBUG: storage size:")){
+                Integer res = Integer.parseInt(line.substring(line.lastIndexOf(":")+2));
+                r.storage_size = res;
             }
             if(line.contains("DEBUG: POW Hash:")){
-                System.err.println(line.substring(line.lastIndexOf(":")+2));
-                byte[] res = hexStringToByteArray(line.substring(line.lastIndexOf(":")));
+                byte[] res = hexStringToByteArray(line.substring(line.lastIndexOf(":")+2,line.lastIndexOf(":")+2+32));
                 r.powHash = res;
             }
         }
+
+        if(process.exitValue()!=0) throw new IOException("EPL code exited with error code.");
+
 
         if(getBooleanProperty("nxt.dump_pow_info")) {
             System.out.println("Result is POW: " + r.isPow);

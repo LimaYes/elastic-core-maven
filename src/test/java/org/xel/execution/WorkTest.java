@@ -69,7 +69,7 @@ public class WorkTest extends AbstractForgingTest {
 
         redeemPubkeyhash();
 
-        String code = readFile("test/testfiles/btc.epl", Charset.forName("UTF-8"));
+        String code = readFile("src/test/testfiles/op2.epl", Charset.forName("UTF-8"));
         String doublecheckcode = new String(code.getBytes());
         System.out.println("[!!]\tcode length: " + code.length());
         CommandNewWork work = new CommandNewWork(100, (short)15,1000001,1000001,10,10, code.getBytes());
@@ -109,7 +109,7 @@ public class WorkTest extends AbstractForgingTest {
     public void newWorkTestWithNaturalTimeout() throws NxtException, IOException {
 
         redeemPubkeyhash();
-        String code = readFile("test/testfiles/btc.epl", Charset.forName("UTF-8"));
+        String code = readFile("src/test/testfiles/btc.epl", Charset.forName("UTF-8"));
         System.out.println("[!!]\tcode length: " + code.length());
         CommandNewWork work = new CommandNewWork(100, (short)15,1000001,1000001,10,10, code.getBytes());
         MessageEncoder.push(work, AbstractForgingTest.testForgingSecretPhrase);
@@ -129,8 +129,10 @@ public class WorkTest extends AbstractForgingTest {
         Assert.assertEquals(0, Work.getActiveCount());
 
         Assert.assertEquals(22,Nxt.getBlockchain().getLastLocallyProcessedHeight());
-
     }
+
+    /*
+
 
     @Test
     public void newWorkTestWithEnoughPOWs() throws NxtException, IOException {
@@ -204,7 +206,7 @@ public class WorkTest extends AbstractForgingTest {
             int[] m = new int[8];
             int[] testarray = new int[w.getStorage_size()];
             testarray[0] = 6000;
-            CommandPowBty pow = new CommandPowBty(id, 0 /* bty no prev */, false, Convert.int2byte(m), new byte[32],
+            CommandPowBty pow = new CommandPowBty(id, 0 , false, Convert.int2byte(m), new byte[32],
             Convert
                     .int2byte(testarray), 0);
             lastId = MessageEncoder.push(pow, AbstractForgingTest.testForgingSecretPhrase);
@@ -224,7 +226,7 @@ public class WorkTest extends AbstractForgingTest {
             m[0]=1;
             int[] testarray = new int[w.getStorage_size()];
             testarray[0] = 6000;
-            CommandPowBty pow = new CommandPowBty(id, 0 /* btx */, false, Convert.int2byte(m), new byte[32],  Convert
+            CommandPowBty pow = new CommandPowBty(id, 0 , false, Convert.int2byte(m), new byte[32],  Convert
             .int2byte(testarray), 0);
             MessageEncoder.push(pow, AbstractForgingTest.testForgingSecretPhrase);
             AbstractBlockchainTest.forgeNumberOfBlocks(5, AbstractForgingTest.testForgingSecretPhrase);
@@ -237,7 +239,7 @@ public class WorkTest extends AbstractForgingTest {
             m[0]=194;
             int[] testarray = new int[w.getStorage_size()];
             testarray[0] = 3000;
-            CommandPowBty pow = new CommandPowBty(id, 0 /* bty */, false, Convert.int2byte(m), new byte[32], Convert
+            CommandPowBty pow = new CommandPowBty(id, 0 , false, Convert.int2byte(m), new byte[32], Convert
             .int2byte(testarray), 0);
             MessageEncoder.push(pow, AbstractForgingTest.testForgingSecretPhrase);
             AbstractBlockchainTest.forgeNumberOfBlocks(5, AbstractForgingTest.testForgingSecretPhrase);
@@ -253,7 +255,7 @@ public class WorkTest extends AbstractForgingTest {
             m[0]=19435;
             int[] testarray = new int[w.getStorage_size()];
             testarray[0] = 26000;
-            CommandPowBty pow = new CommandPowBty(id, 0 /* bty */, false, Convert.int2byte(m), new byte[32], Convert
+            CommandPowBty pow = new CommandPowBty(id, 0 , false, Convert.int2byte(m), new byte[32], Convert
             .int2byte(testarray), 0);
             MessageEncoder.push(pow, AbstractForgingTest.testForgingSecretPhrase);
         }
@@ -262,7 +264,7 @@ public class WorkTest extends AbstractForgingTest {
             m[0]=17;
             int[] testarray = new int[w.getStorage_size()];
             testarray[0] = 46000;
-            CommandPowBty pow = new CommandPowBty(id, 0 /*bty */, false, Convert.int2byte(m), new byte[32], Convert
+            CommandPowBty pow = new CommandPowBty(id, 0 , false, Convert.int2byte(m), new byte[32], Convert
             .int2byte(testarray), 0);
             MessageEncoder.push(pow, AbstractForgingTest.testForgingSecretPhrase);
         }
@@ -273,7 +275,7 @@ public class WorkTest extends AbstractForgingTest {
             m[0]=44;
             int[] testarray = new int[w.getStorage_size()];
             testarray[0] = 76003;
-            CommandPowBty pow = new CommandPowBty(id, 0 /*bty */, false, Convert.int2byte(m), new byte[32], Convert.int2byte(testarray), 0);
+            CommandPowBty pow = new CommandPowBty(id, 0 , false, Convert.int2byte(m), new byte[32], Convert.int2byte(testarray), 0);
             MessageEncoder.push(pow, AbstractForgingTest.testForgingSecretPhrase);
         }
 
@@ -286,5 +288,5 @@ public class WorkTest extends AbstractForgingTest {
 
 
 
-    }
+    } */
 }
