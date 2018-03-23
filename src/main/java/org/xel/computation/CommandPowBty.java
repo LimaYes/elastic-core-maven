@@ -174,7 +174,7 @@ public class CommandPowBty extends IComputationAttachment {
         return verificator;
     }
 
-    private boolean validatePow(byte[] pubkey, long blockid, long workId, String vcode, int[] target, Primitives.STATE state){
+    private boolean validatePow(byte[] pubkey, long blockid, long workId, String vcode, int[] target){
         /*byte[] hash_array = this.getPowHash();
         byte[] multiplier_array = this.getMultiplier();
         int[] verificator_array = Convert.byte2int(this.getVerificator());
@@ -190,7 +190,7 @@ public class CommandPowBty extends IComputationAttachment {
                  storage_array, verificator_array, validation_offset, true, target, hash_array, state);
         return result.pow;*/ return true;
     }
-    private boolean validateBty(byte[] pubkey, long blockid, long workId, String vcode, int[] target, Primitives.STATE state){
+    private boolean validateBty(byte[] pubkey, long blockid, long workId, String vcode, int[] target){
         /*byte[] hash_array = this.getPowHash();
         byte[] multiplier_array = this.getMultiplier();
         int[] verificator_array = Convert.byte2int(this.getVerificator());
@@ -293,24 +293,17 @@ public class CommandPowBty extends IComputationAttachment {
         // safeguard
         if(target.length!=4) target = new int[]{0,0,0,0};
 
-        // TODO, RECREATE FALSE STATE WHICH CONTAINS INT NUMBERS !!!!!!!!!!!!!!!!!!!!!!!!!
-        Primitives.STATE state = new Primitives.STATE();
-        state.ast_vm_longs = 0;
-        state.ast_vm_doubles = 0;
-        state.ast_vm_floats = 0;
-        state.ast_vm_uints = 5;
-        state.ast_vm_ints = 5;
-        state.ast_vm_ulongs = 0;
+// TODO FIXME HERE STH IS MISSING
 
 
         // Validate code-level
         if (this.is_proof_of_work && !validatePow(transaction.getSenderPublicKey(), w.getBlock_id(),
-                work_id, w.getVerifyFunction(), target, state)) {
+                work_id, w.getVerifyFunction(), target)) {
             Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: proof of work checks in code execution failed.");
             return false;
         }
         if (!this.is_proof_of_work && !validateBty(transaction.getSenderPublicKey(), w.getBlock_id(),
-                work_id, w.getVerifyFunction(), target, state)) {
+                work_id, w.getVerifyFunction(), target)) {
             Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: bounty checks in code execution failed.");
             return false;
         }

@@ -268,7 +268,6 @@ public final class API {
             apiHandler.addServlet(APITestServlet.class, "/test-proxy");
 
             apiHandler.addServlet(DbShellServlet.class, "/dbshell");
-            apiHandler.addServlet(DebugRunServlet.class, "/debug_run");
 
 
             if (apiServerCORS) {

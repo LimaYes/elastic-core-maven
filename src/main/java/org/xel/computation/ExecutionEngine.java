@@ -1,7 +1,5 @@
 package org.xel.computation;
 
-import com.realitysink.cover.ComputationResult;
-import com.realitysink.cover.CoverMain;
 import org.xel.*;
 import org.xel.util.Logger;
 
@@ -9,7 +7,6 @@ import java.io.*;
 import java.util.Properties;
 import java.util.Scanner;
 
-import static com.realitysink.cover.CoverMain.executeSource;
 import static org.xel.Nxt.NXT_DEFAULT_TESTVM_PROPERTIES;
 import static org.xel.Nxt.loadProperties;
 
@@ -23,6 +20,16 @@ public class ExecutionEngine {
         byte[] target = new byte[16];
         for(int i=0; i<16; ++i) target[i] = (byte)0xff;
         return target;
+    }
+
+    public static byte[] hexStringToByteArray(String s) {
+        int len = s.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+                    + Character.digit(s.charAt(i+1), 16));
+        }
+        return data;
     }
 
     public static String bytesToHex(byte[] bytes) {
@@ -88,19 +95,14 @@ public class ExecutionEngine {
         return combined_storage;
     }
 
-    public int[] getDummyStorage(int size) throws FileNotFoundException {
-        int[] storage = new int[size];
+    public int[] getDummyStorage() throws FileNotFoundException {
+        int[] storage = new int[1000];
         return storage;
 
     }
 
-    public String convertToC(String code) throws Exceptions.SyntaxErrorException {
-        return CodeGetter.convert(code);
-    }
-
     public ComputationResult compute(final byte[] target, final byte[] publicKey, final long blockId, final byte[] multiplicator, final long workId, final int storage_idx) throws Exception {
 
-        ComputationResult comp = CoverMain.getComputationResult();
 
         String epl;
         if(workId == -1)
@@ -109,60 +111,53 @@ public class ExecutionEngine {
             epl = getEplCode(workId);
 
 
-        String c = convertToC(epl);
-
-        System.err.println(c);
-
-        int[] pInts = PersonalizedInts.personalizedIntStream(publicKey, blockId, multiplicator, workId);
-
-        boolean debugInts = getBooleanProperty("nxt.debug_job_execution");
-
 
         int[] storage = null;
         if(workId == -1)
-            storage = getDummyStorage(comp.storage_size);
+            storage = getDummyStorage();
         else
             storage = getStorage(workId, storage_idx);
 
-        comp.storage = storage;
-        comp.personalized_ints = pInts;
-        comp.targetWas = target;
+        FileWriter fileWriter = new FileWriter("work/code.epl");
+        PrintWriter printWriter = new PrintWriter(fileWriter);
+        printWriter.print(epl);
+        printWriter.close();
 
-        String title = null;
-        String title_line = null;
-        String other_line = null;
 
-        if(debugInts){
-            title = "Dumping personalized-ints for job " + workId;
-            title_line = new String(new char[title.length()]).replace("\0", "=");
-            other_line = new String(new char[title.length()]).replace("\0", "-");
+        ComputationResult r = new ComputationResult();
 
-            System.out.println(title_line);
-            System.out.println("Dumping personalized-ints for job " + workId);
-            System.out.println(title_line);
-            System.out.println("Public Key:");
-            System.out.println(bytesToHex(publicKey));
-            System.out.println("Multiplicator:");
-            System.out.println(bytesToHex(multiplicator));
-            System.out.println("Block: " + blockId);
-            System.out.println(other_line);
-            System.out.println("Storage Ints (#" + storage.length + "):");
-            for(int x : storage){
-                if(x==0) continue;
-                System.out.println(x);
+        String cmd = String.format("./xel_miner --test-target %s --test-publickey %s --test-multiplicator %s --test-block \"%d\" --test-work \"%d\" --test-vm code.epl", bytesToHex(target), bytesToHex(publicKey), bytesToHex(multiplicator), blockId, workId);
+        System.out.println(cmd);
+        Process process=Runtime.getRuntime().exec(cmd,
+                null, new File("./work/"));
+        BufferedReader reader =
+                new BufferedReader(new InputStreamReader(process.getInputStream()));
+        String line;
+        process.waitFor();
+
+        if(process.exitValue()!=0) throw new IOException("EPL code exited with error code.");
+
+        while ( (line = reader.readLine()) != null) {
+            if(line.contains("ERROR")) throw new IOException("EPL code produced error: " + line);
+            if(line.contains("DEBUG: POW Found:")){
+                Boolean res = Boolean.parseBoolean(line.substring(line.lastIndexOf(":")+2));
+                r.isPow = res;
             }
-            System.out.println(other_line);
-
+            if(line.contains("DEBUG: Bounty Found:")){
+                Boolean res = Boolean.parseBoolean(line.substring(line.lastIndexOf(":")+2));
+                r.isPow = res;
+            }
+            if(line.contains("DEBUG: POW Hash:")){
+                System.err.println(line.substring(line.lastIndexOf(":")+2));
+                byte[] res = hexStringToByteArray(line.substring(line.lastIndexOf(":")));
+                r.powHash = res;
+            }
         }
 
-        ComputationResult r = CoverMain.executeSourceWithoutExceptionHandler(c, System.in, new PrintStream(new NullOutputStream()), storage);
-
-        if(debugInts) {
+        if(getBooleanProperty("nxt.dump_pow_info")) {
             System.out.println("Result is POW: " + r.isPow);
-            System.out.println("Result is BTY: " + r.isBounty);
+            System.out.println("Result is BTY: " + r.isBty);
             System.out.println("Pow Hash: " + bytesToHex(r.powHash));
-            System.out.println("Pow Trgt: " + bytesToHex(r.targetWas));
-            System.out.println(title_line);
         }
 
         return r;

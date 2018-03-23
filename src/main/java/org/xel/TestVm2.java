@@ -1,8 +1,6 @@
 package org.xel;
 
-
-import com.realitysink.cover.ComputationResult;
-import org.xel.computation.ComputationConstants;
+import org.xel.computation.ComputationResult;
 import org.xel.computation.ExecutionEngine;
 
 public class TestVm2 {
@@ -21,7 +19,6 @@ public class TestVm2 {
 
         try {
             ComputationResult r = e.compute(target, publicKey, blockId, multi, workId, storage_id);
-            System.out.println("Result is: POW=" + r.isPow + ", BTY=" + r.isBounty);
         } catch (Exception e1) {
             e1.printStackTrace();
         }

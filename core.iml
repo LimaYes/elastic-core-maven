@@ -135,13 +135,13 @@
     <orderEntry type="library" name="Maven: com.h2database:h2:1.4.196" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: junit:junit:4.10" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.hamcrest:hamcrest-core:1.1" level="project" />
-    <orderEntry type="module" module-name="java-c-interpreter" />
+    <orderEntry type="library" name="Maven: org.xel:java-c-interpreter:1.0" level="project" />
     <orderEntry type="library" name="Maven: com.oracle.truffle:truffle-api:0.15" level="project" />
     <orderEntry type="library" name="Maven: com.oracle.truffle:truffle-debug:0.15" level="project" />
     <orderEntry type="library" name="Maven: jline:jline:2.11" level="project" />
     <orderEntry type="library" name="Maven: org.graalvm:graal-sdk:0.30" level="project" />
     <orderEntry type="library" name="Maven: org.eclipse.equinox:common:3.6.200-v20130402-1505" level="project" />
     <orderEntry type="library" name="Maven: org.eclipse.cdt:cdt-core:6.0.0" level="project" />
-    <orderEntry type="module" module-name="epl-to-c" />
+    <orderEntry type="library" name="Maven: org.xel:epl-to-c:1.0" level="project" />
   </component>
 </module>
