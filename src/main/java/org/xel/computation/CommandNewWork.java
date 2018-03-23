@@ -11,8 +11,6 @@ import java.util.zip.GZIPOutputStream;
 
 import static org.xel.computation.ComputationConstants.MAX_UNCOMPRESSED_WORK_SIZE;
 
-// TODO: Check the entire file for unhandled exceptions
-
 /******************************************************************************
  * Copyright © 2017 The XEL Core Developers.                                  *
  *                                                                            *
@@ -262,7 +260,6 @@ public class CommandNewWork extends IComputationAttachment {
             storage_size = r.storage_size;
             validated = true;
         }catch(Exception e){
-            e.printStackTrace(); // todo: remove for production
             return false;
         }
 
@@ -297,7 +294,6 @@ public class CommandNewWork extends IComputationAttachment {
                 validated = true;
                 storage_size = r.storage_size;
             }catch(Exception e){
-                e.printStackTrace(); // todo: remove for production
                 return -1;
             }
         }

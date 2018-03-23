@@ -131,6 +131,44 @@ public class WorkTest extends AbstractForgingTest {
         Assert.assertEquals(22,Nxt.getBlockchain().getLastLocallyProcessedHeight());
     }
 
+    @Test
+    public void newWorkTestWithEnoughPOWs() throws NxtException, IOException {
+
+        redeemPubkeyhash();
+        String code = readFile("src/test/testfiles/btc.epl", Charset.forName("UTF-8"));
+        CommandNewWork work = new CommandNewWork(10, (short)100,1000001,1000001,10,10, code.getBytes());
+        MessageEncoder.push(work, AbstractForgingTest.testForgingSecretPhrase);
+
+        // Mine a bit so the work gets confirmed
+        AbstractBlockchainTest.forgeNumberOfBlocks(1, AbstractForgingTest.testForgingSecretPhrase);
+
+        long id = 0;
+        try(DbIterator<Work> wxx = Work.getActiveWork()){
+            Work w = wxx.next();
+            id = w.getId();
+        }
+
+
+        // Test work db table
+        Assert.assertEquals(1, Work.getCount());
+        Assert.assertEquals(1, Work.getActiveCount());
+        byte[] m = new byte[32];
+        byte[] testarray = new byte[32*4];
+        for(int i=0;i<25; ++i) {
+            m[0]=(byte)(m[0]+1);
+            CommandPowBty pow = new CommandPowBty(id, true, m, new byte[16], testarray, 0);
+            MessageEncoder.push(pow, AbstractForgingTest.testForgingSecretPhrase);
+            // Mine a bit so the work times out
+            AbstractBlockchainTest.forgeNumberOfBlocks(1, AbstractForgingTest.testForgingSecretPhrase);
+        }
+        AbstractBlockchainTest.forgeNumberOfBlocks(6, AbstractForgingTest.testForgingSecretPhrase);
+
+        // After getting enough Pow work must be closed
+        // Test work db table
+        Assert.assertEquals(1, Work.getCount());
+        Assert.assertEquals(0, Work.getActiveCount());
+    }
+
     /*
 
 

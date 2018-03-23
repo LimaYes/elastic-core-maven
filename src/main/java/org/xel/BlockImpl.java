@@ -27,6 +27,9 @@ import org.h2.schema.Constant;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -578,6 +581,17 @@ final class BlockImpl implements Block {
         cumulativeDifficulty = previousBlock.cumulativeDifficulty.add(Convert.two64.divide(BigInteger.valueOf(baseTarget)));
     }
 
+    byte[] integersToBytes(int[] values) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(baos);
+        for(int i=0; i < values.length; ++i)
+        {
+            dos.writeInt(values[i]);
+        }
+
+        return baos.toByteArray();
+    }
+
     public void calculatePowTarget(int powCounter) {
         int powcnt = 0;
         double nTargetTimespan = 0;
@@ -635,7 +649,7 @@ final class BlockImpl implements Block {
             double tmp = darkTarget;
             darkTarget = (darkTarget / nTargetTimespan)*nActualTimespan;
 
-            // Overflow safety, TODO: check if these overflows can be handled this way on signed long
+            // Overflow safety, TODO: long-term evaluate if these overflows can be handled this way on signed long
             if((nActualTimespan>nTargetTimespan && darkTarget<tmp) || (darkTarget > Long.MAX_VALUE / 100)){
                 darkTarget = Long.MAX_VALUE / 100;
             }
@@ -647,9 +661,25 @@ final class BlockImpl implements Block {
             targetLastMass = powTarget;
         }
 
-        Logger.logInfoMessage("Block " + this.getHeight() + " POW retarget; powLastMass=" + powLastMass + ", powMass=" +
-                        powMass + ", targetLastMass=" + targetLastMass + ", targetMass=" + targetMass + ", a=" + nActualTimespan + ", t=" +  nTargetTimespan + "\t-> TARGET = " + powTarget);
+        BigInteger myTarget = ComputationConstants.MAXIMAL_WORK_TARGET;
+        myTarget = myTarget.divide(BigInteger.valueOf(Long.MAX_VALUE/100)); // Note, our target in compact form is in range 1..LONG_MAX/100
+        myTarget = myTarget.multiply(BigInteger.valueOf(powTarget));
+        if(myTarget.compareTo(ComputationConstants.MAXIMAL_WORK_TARGET) == 1)
+            myTarget = ComputationConstants.MAXIMAL_WORK_TARGET;
+        if(myTarget.compareTo(BigInteger.ONE) == 2)
+            myTarget = BigInteger.ONE;
+        int[] target = Convert.bigintToInts(myTarget,4);
+        // safeguard
+        if(target.length!=4) target = new int[]{0,0,0,0};
+        byte[] tgt = new byte[0];
+        try {
+            tgt = integersToBytes(target);
+        } catch (IOException e) {
 
+        }
+
+        Logger.logInfoMessage("Block " + this.getHeight() + " POW retarget; powLastMass=" + powLastMass + ", powMass=" +
+                        powMass + ", targetLastMass=" + targetLastMass + ", targetMass=" + targetMass + ", a=" + nActualTimespan + ", t=" +  nTargetTimespan + "\t-> TARGET = " + Convert.toHexString(tgt));
 
 
     }

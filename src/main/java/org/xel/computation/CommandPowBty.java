@@ -13,7 +13,6 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 
-// TODO: Check the entire file for unhandled exceptions
 
 /******************************************************************************
  * Copyright © 2017 The XEL Core Developers.                                  *
@@ -37,21 +36,20 @@ public class CommandPowBty extends IComputationAttachment {
     private boolean is_proof_of_work;
     private byte[] multiplier;
     private byte[] hash;
-    private byte[] verificator;
+    private byte[] submitted_storage;
     private boolean validated = false;
     private boolean isValid = false;
     private int storage_bucket;
 
-    public CommandPowBty(long work_id, long previous_powbty, boolean is_proof_of_work, byte[] multiplier, byte[] hash,
-                         byte[]
-            verificator, int storage_bucket) {
+    public CommandPowBty(long work_id, boolean is_proof_of_work, byte[] multiplier, byte[] hash,
+                         byte[] submitted_storage, int storage_bucket) {
         super();
         this.work_id = work_id;
         this.is_proof_of_work = is_proof_of_work;
         this.multiplier = multiplier;
         this.hash = hash;
         this.storage_bucket = storage_bucket;
-        this.verificator = verificator;
+        this.submitted_storage = submitted_storage;
     }
 
     CommandPowBty(ByteBuffer buffer) {
@@ -78,13 +76,10 @@ public class CommandPowBty extends IComputationAttachment {
             buffer.get(multiplier);
 
 
-            // Then, read the pow_hash, must be empty for POW and MD5LEN for BTY
+            // Then, read the pow_hash, must be MD5LEN
             readsize = buffer.getShort();
-            if (!this.is_proof_of_work && readsize != ComputationConstants.MD5LEN) {
-                throw new NxtException.NotValidException("Wrong Parameters: pow_hash must be MD5LEN size");
-            }
-            if (this.is_proof_of_work && readsize != 0) {
-                throw new NxtException.NotValidException("Wrong Parameters: pow_hash must be empty");
+            if (readsize != ComputationConstants.MD5LEN) {
+                throw new NxtException.NotValidException("Wrong Parameters: pow_hash must be MD5LEN size, but was just " + readsize);
             }
             hash = new byte[readsize];
             buffer.get(hash);
@@ -92,22 +87,21 @@ public class CommandPowBty extends IComputationAttachment {
 
            this.storage_bucket = buffer.getInt();
 
-            // And finally, read the verificator
+            // And finally, read the submitted_storage
             readsize = buffer.getShort();
             if (readsize > ComputationConstants.VERIFICATOR_INTS * 4) {
-                throw new NxtException.NotValidException("Wrong Parameters: verificator/data length is too large");
+                throw new NxtException.NotValidException("Wrong Parameters: submitted_storage/data length is too large");
             }
 
-            verificator = new byte[readsize];
-            buffer.get(verificator);
+            submitted_storage = new byte[readsize];
+            buffer.get(submitted_storage);
             System.out.println("POWBTY - About to decode " + this.storage_bucket);
         } catch (Exception e) {
-            e.printStackTrace(); // todo: remove for production
             // pass through any error
             this.work_id = 0;
             this.is_proof_of_work = false;
             this.multiplier = new byte[0];
-            this.verificator = new byte[0];
+            this.submitted_storage = new byte[0];
             this.hash = new byte[0];
             this.storage_bucket = 0;
         }
@@ -129,7 +123,7 @@ public class CommandPowBty extends IComputationAttachment {
 
     @Override
     int getMySize() {
-        return 8 + 1 + 2 + 2 + 2 + this.multiplier.length + this.verificator.length  + this.hash.length  + 4 /*storage bucket in t */;
+        return 8 + 1 + 2 + 2 + 2 + this.multiplier.length + this.submitted_storage.length  + this.hash.length  + 4 /*storage bucket in t */;
     }
 
     @Override
@@ -152,8 +146,8 @@ public class CommandPowBty extends IComputationAttachment {
         buffer.putShort((short)this.hash.length);
         buffer.put(this.hash);
         buffer.putInt(this.storage_bucket);
-        buffer.putShort((short)this.verificator.length);
-        buffer.put(this.verificator);
+        buffer.putShort((short)this.submitted_storage.length);
+        buffer.put(this.submitted_storage);
 
     }
 
@@ -161,55 +155,56 @@ public class CommandPowBty extends IComputationAttachment {
         return multiplier;
     }
 
-    /*
-    public byte[] getStorage() {
-        return storage;
-    }*/
-
     public int getStorage_bucket() {
         return storage_bucket;
     }
 
-    public byte[] getVerificator() {
-        return verificator;
+    public byte[] getSubmitted_storage() {
+        return submitted_storage;
     }
 
-    private boolean validatePow(byte[] pubkey, long blockid, long workId, int[] target){
-        /*byte[] hash_array = this.getPowHash();
+    private boolean validatePow(byte[] pubkey, long blockid, long workId, byte[] target){
+        byte[] hash_array = this.getPowHash();
         byte[] multiplier_array = this.getMultiplier();
-        int[] verificator_array = Convert.byte2int(this.getVerificator());
 
         Work w = Work.getWorkById(workId);
-        int[] storage_array = null;
-        if(this.storage_bucket != -1){
-            storage_array = Work.getStorage(w, this.storage_bucket);
-        }
-        int validation_offset = w.getVerification_idx();
+        ExecutionEngine e = new ExecutionEngine();
 
-        Executor.CODE_RESULT result = Executor.executeCode(pubkey, blockid, workId, vcode, multiplier_array,
-                 storage_array, verificator_array, validation_offset, true, target, hash_array, state);
-        return result.pow;*/ return true;
+        try {
+            ComputationResult r = e.compute(target, pubkey, blockid, multiplier_array, workId, storage_bucket);
+            return r.isPow;
+        } catch (Exception e1) {
+            return false;
+        }
     }
-    private boolean validateBty(byte[] pubkey, long blockid, long workId, int[] target){
-        /*byte[] hash_array = this.getPowHash();
+    private boolean validateBty(byte[] pubkey, long blockid, long workId, byte[] target){
+        byte[] hash_array = this.getPowHash();
         byte[] multiplier_array = this.getMultiplier();
-        int[] verificator_array = Convert.byte2int(this.getVerificator());
 
         Work w = Work.getWorkById(workId);
-        int[] storage_array = null;
-        if(this.storage_bucket != -1){
-            storage_array = Work.getStorage(w, this.storage_bucket);
-        }
-        int validation_offset = w.getVerification_idx();
+        ExecutionEngine e = new ExecutionEngine();
 
-        Executor.CODE_RESULT result = Executor.executeCode(pubkey, blockid, workId, vcode, multiplier_array,
-                storage_array, verificator_array, validation_offset, false, target, hash_array, state);
-        return result.bty;*/ return true;
+        try {
+            ComputationResult r = e.compute(target, pubkey, blockid, multiplier_array, workId, storage_bucket);
+            return r.isBty;
+        } catch (Exception e1) {
+            return false;
+        }
+    }
+
+    byte[] integersToBytes(int[] values) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(baos);
+        for(int i=0; i < values.length; ++i)
+        {
+            dos.writeInt(values[i]);
+        }
+
+        return baos.toByteArray();
     }
 
     @Override
     boolean validate(Transaction transaction) {
-
 
         // This construction avoids multiple code-evaluations which are not really required
         if(validated) return isValid;
@@ -220,21 +215,12 @@ public class CommandPowBty extends IComputationAttachment {
         if (w == null) return false;
         if (w.isClosed() == true) return false;
 
-        // todo, check if double spending prevention has to rely on verificator hash as well? But if yes ... what do we do with same hashes (hash len = 0 is always the same)
-
-        // TODO: Check the following
-        // Now check for duplicate entry (I guess verificator hash is enough, isn't it?)
-        /*byte[] myHash = this.getVerificatorHash();
-        if(PowAndBounty.hasVerificatorHash(w.getId(), myHash))
-            return false;
-        */
-
+        // TODO WARNING: Badly programmed jobs that allow the same output (POW/BTY) for a different multiplicator can suffer big time here! Be careful coding!
         byte[] myMultiplier = this.getMultiplier();
         if(PowAndBounty.hasMultiplier(w.getId(), myMultiplier)) {
             Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: multiplier already in database.");
             return false;
         }
-
 
         // checking multiplicator length requirements
         if (multiplier.length != ComputationConstants.MULTIPLIER_LENGTH) {
@@ -242,18 +228,11 @@ public class CommandPowBty extends IComputationAttachment {
             return false;
         }
 
-
         // checking pow_hash length requirements once again
-        if (!this.is_proof_of_work && hash.length != ComputationConstants.MD5LEN) {
+        if (hash.length != ComputationConstants.MD5LEN) {
             Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: pow_hash length is incorrect");
             return false;
         }
-        if (this.is_proof_of_work && hash.length != 0) {
-            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: pow_hash provided for a proof of work submission.");
-            return false;
-        }
-
-        // todo: check if > or >= ... depending on whether bucket id 0 exists or not!
 
         // !! if storage size is larger than 0 this indicates the presence of a storage. Therefore, storage bucket must be in a valid range
         if((w.getStorage_size()>0) && (this.storage_bucket >= w.getBounty_limit_per_iteration() || this.storage_bucket < 0)) {
@@ -268,8 +247,8 @@ public class CommandPowBty extends IComputationAttachment {
         }
 
 
-        if (verificator.length/4 != w.getStorage_size()) {
-            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: the verificator / data length does not match the configured storage size (" + String.valueOf(verificator.length/4) + " != " + String.valueOf(w.getStorage_size()) + ").");
+        if (submitted_storage.length/4 != w.getStorage_size()) {
+            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: the submitted_storage does not match the works original storage size (" + String.valueOf(submitted_storage.length/4) + " != " + String.valueOf(w.getStorage_size()) + ").");
             return false;
         }
 
@@ -278,8 +257,6 @@ public class CommandPowBty extends IComputationAttachment {
             lastBlocksTarget = 1;
             Logger.logErrorMessage("Fatal error came up: previous block target seems to be 0! Block ID of parent " +
                     "block: " + transaction.getBlock().getStringId());
-        }else{
-
         }
 
         BigInteger myTarget = ComputationConstants.MAXIMAL_WORK_TARGET;
@@ -292,33 +269,25 @@ public class CommandPowBty extends IComputationAttachment {
         int[] target = Convert.bigintToInts(myTarget,4);
         // safeguard
         if(target.length!=4) target = new int[]{0,0,0,0};
-
-// TODO FIXME HERE STH IS MISSING
-
+        byte[] tgt;
+        try {
+            tgt = integersToBytes(target);
+        } catch (IOException e) {
+            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " due to unhandled exception. You are probably hard-forked on this job, don't worry about it ... it won't affect other jobs.");
+            return false;
+        }
 
         // Validate code-level
         if (this.is_proof_of_work && !validatePow(transaction.getSenderPublicKey(), w.getBlock_id(),
-                work_id, target)) {
+                work_id, tgt)) {
             Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: proof of work checks in code execution failed.");
             return false;
         }
         if (!this.is_proof_of_work && !validateBty(transaction.getSenderPublicKey(), w.getBlock_id(),
-                work_id, target)) {
+                work_id, tgt)) {
             Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: bounty checks in code execution failed.");
             return false;
         }
-
-        // At this point we have already called the "Exposed to Rhino function" which made sure t hat the POW hash is in the temporary static value. See if it matches
-        // in case of a bounty submission
-      /*  if(this.is_proof_of_work==false){
-            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: the pow hash could not be calculated in the last code execution run.");
-            return false; // this should not happen at all!
-        }
-        if(this.is_proof_of_work==false){
-            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: supplied pow hash does not match the real one (" + Convert.toHexString(this.hash) + " != " + Convert.toHexString(ExposedToRhino.lastCalculatedPowHash) + ").");
-            return false; // return false if the POW Hash does not match
-        }
-*/
 
         if(this.is_proof_of_work) {
             transaction.itWasAPow();
@@ -341,12 +310,12 @@ public class CommandPowBty extends IComputationAttachment {
         PowAndBounty.addPowBty(transaction, this);
     }
 
-    public byte[] getVerificatorHash() {
+    public byte[] getSubmittedStorageHash() {
         final MessageDigest dig = Crypto.sha256();
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         final DataOutputStream dos = new DataOutputStream(baos);
         try {
-            dos.write(this.verificator);
+            dos.write(this.submitted_storage);
             dos.close();
         } catch (final IOException ignored) {
 
@@ -367,7 +336,7 @@ public class CommandPowBty extends IComputationAttachment {
         try {
             dos.writeLong(this.work_id);
             dos.writeBoolean(this.is_proof_of_work); // distinguish between pow and bounty
-            dos.write(getVerificatorHash());
+            dos.write(getSubmittedStorageHash());
             dos.close();
         } catch (final IOException ignored) {
 

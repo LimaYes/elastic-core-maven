@@ -1,6 +1,5 @@
 package org.xel;
 
-import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -267,10 +266,10 @@ public final class PowAndBounty{
         this.dbKey = PowAndBounty.powAndBountyDbKeyFactory.newKey(this.id);
         this.is_pow = attachment.isIs_proof_of_work();
         this.hash = attachment.getHash();
-        this.verificator_hash = attachment.getVerificatorHash();
+        this.verificator_hash = attachment.getSubmittedStorageHash();
         this.multiplier = attachment.getMultiplier();
         this.pow_hash = attachment.getPowHash();
-        this.validator = attachment.getVerificator();
+        this.validator = attachment.getSubmitted_storage();
         this.too_late = false;
         this.storage_bucket = attachment.getStorage_bucket();
         this.timestampReceived = transaction.getTimestamp();

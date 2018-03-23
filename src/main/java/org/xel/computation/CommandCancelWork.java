@@ -11,8 +11,6 @@ import java.util.zip.GZIPOutputStream;
 
 import static org.xel.computation.ComputationConstants.MAX_UNCOMPRESSED_WORK_SIZE;
 
-// TODO: Check the entire file for unhandled exceptions
-
 /******************************************************************************
  * Copyright © 2017 The XEL Core Developers.                                  *
  *                                                                            *

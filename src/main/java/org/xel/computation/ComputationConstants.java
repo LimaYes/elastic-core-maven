@@ -52,7 +52,7 @@ public class ComputationConstants {
     public static final int WE_WANT_X_POW_PER_MINUTE = 10;
     public static final int POW_RETARGET_DEPTH = 14;
     public static final BigInteger MINIMAL_WORK_TARGET = BigInteger.ONE;
-    public static final BigInteger MAXIMAL_WORK_TARGET = new BigInteger("00000FFFFFFFFFFFFFFFFFFFFFFFFFFF", 16);
+    public static final BigInteger MAXIMAL_WORK_TARGET = new BigInteger("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", 16); // TODO: Readjust that
     public static final BigInteger TESTVM_WORK_TARGET = new BigInteger("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", 16);
 
 }
