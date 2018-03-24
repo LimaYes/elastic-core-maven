@@ -1195,7 +1195,7 @@ class NxtDbVersion extends DbVersion {
                 apply("CREATE TABLE IF NOT EXISTS work (db_id IDENTITY, cap_number_pow INT NOT NULL, " +
                         "closing_timestamp " +
                         "INT " +
-                        "NOT NULL, id BIGINT NOT NULL, block_id BIGINT NOT NULL, sender_account_id BIGINT NOT NULL, xel_per_pow BIGINT NOT NULL, iterations SMALLINT NOT NULL, iterations_left SMALLINT NOT NULL, blocks_remaining SMALLINT NOT NULL, closed BOOLEAN NOT NULL DEFAULT FALSE, cancelled BOOLEAN NOT NULL DEFAULT FALSE, timedout BOOLEAN NOT NULL DEFAULT FALSE, xel_per_bounty BIGINT NOT NULL, received_bounties INT NOT NULL, received_pows INT NOT NULL, bounty_limit_per_iteration INT NOT NULL, originating_height INT NOT NULL, combined_storage VARBINARY NOT NULL, storage_size INT NOT NULL, source_code CLOB NOT NULL, height INT NOT NULL, latest BOOLEAN NOT NULL DEFAULT TRUE)");
+                        "NOT NULL, id BIGINT NOT NULL, block_id BIGINT NOT NULL, sender_account_id BIGINT NOT NULL, xel_per_pow BIGINT NOT NULL, iterations SMALLINT NOT NULL, iterations_left SMALLINT NOT NULL, blocks_remaining SMALLINT NOT NULL, closed BOOLEAN NOT NULL DEFAULT FALSE, cancelled BOOLEAN NOT NULL DEFAULT FALSE, timedout BOOLEAN NOT NULL DEFAULT FALSE, xel_per_bounty BIGINT NOT NULL, received_bounties INT NOT NULL, received_pows INT NOT NULL, bounty_limit_per_iteration INT NOT NULL, originating_height INT NOT NULL, storage_size INT NOT NULL, source_code CLOB NOT NULL, height INT NOT NULL, latest BOOLEAN NOT NULL DEFAULT TRUE)");
             case 491:
                 apply("CREATE INDEX IF NOT EXISTS workA ON work (id)");
             case 492:
@@ -1206,7 +1206,7 @@ class NxtDbVersion extends DbVersion {
                 apply(
                         "CREATE TABLE IF NOT EXISTS pow_and_bounty (db_id IDENTITY, id BIGINT NOT NULL,too_late " +
                                 "BOOLEAN NOT NULL DEFAULT FALSE, work_id BIGINT NOT NULL, hash BINARY(32), multiplier" +
-                                " VARBINARY, storage_bucket INT, validator VARBINARY, account_id BIGINT NOT NULL, " +
+                                " VARBINARY, storage_bucket INT, submitted_storage VARBINARY, account_id BIGINT NOT NULL, " +
                                 "is_pow BOOLEAN NOT NULL DEFAULT TRUE, verificator_hash BINARY(32), pow_hash BINARY" +
                                 "(32), timestamp " +
                                 "INT NOT NULL, " +

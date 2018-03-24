@@ -89,7 +89,7 @@ public class CommandPowBty extends IComputationAttachment {
 
             // And finally, read the submitted_storage
             readsize = buffer.getShort();
-            if (readsize > ComputationConstants.VERIFICATOR_INTS * 4) {
+            if (readsize > ComputationConstants.MAX_STORAGE_SIZE * 4) {
                 throw new NxtException.NotValidException("Wrong Parameters: submitted_storage/data length is too large");
             }
 

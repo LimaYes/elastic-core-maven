@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Arrays;
 
 import org.xel.computation.CommandPowBty;
 
@@ -13,7 +12,6 @@ import org.xel.db.DbIterator;
 import org.xel.db.DbKey;
 import org.xel.db.DbUtils;
 import org.xel.db.VersionedEntityDbTable;
-import org.xel.util.Convert;
 import org.xel.util.Listener;
 import org.xel.util.Listeners;
 import org.xel.util.Logger;
@@ -114,27 +112,7 @@ public final class PowAndBounty{
 
             // In all cases (even after close case) make sure the combined storage is updated properly!
             if(w.getReceived_bounties()%w.getBounty_limit_per_iteration()==0){
-
-                int cntr = 0;
-                String xxxx = Arrays.toString(w.getCombined_storage());
-                byte[] fullstorage = new byte[w.getBounty_limit_per_iteration()*w.getStorage_size()*4];
-                try(DbIterator<PowAndBounty> it = getLastBountiesRelevantForStorageGeneration(w.getId())){
-                    while(it.hasNext()){
-                        PowAndBounty n = it.next();
-                        byte[] storage = n.validator;
-                        for(int i=0;i<storage.length;++i){
-                            fullstorage[cntr*w.getStorage_size()*4+i] = storage[i];
-                        }
-                        cntr++;
-                    }
-                    w.setCombined_storage(Convert.byte2int(fullstorage));
-                    w.JustSave();
-                }
-
-
-
-                Logger.logDebugMessage("Consolidating storage for job " + w.getId() + " after " + w.getReceived_bounties() + " bounties. [processing cntr = " + cntr + "]");
-                Logger.logDebugMessage("Full Storage: before: " + xxxx + ", after: " + Arrays.toString(Convert.byte2int(fullstorage)));
+                Logger.logDebugMessage("Consolidating storage for job " + w.getId() + " after " + w.getReceived_bounties() + " bounties behind the scenes; in fact, nothing has to be done due to the new method :-)");
             }
 
 
@@ -161,11 +139,10 @@ public final class PowAndBounty{
                 .and(new DbClause.BooleanClause("latest", true)), 0, -1, "");
     }
 
-    public static DbIterator<PowAndBounty> getLastBountiesRelevantForStorageGeneration(final long wid){
-        // "Should" return the last X bounties (from the last repetition only)
+    public static DbIterator<PowAndBounty> getLastBountiesRelevantForStorageGeneration(final long wid, int fullrounds, int skip, long index){
         return PowAndBounty.powAndBountyTable.getManyBy(new DbClause.LongClause("work_id", wid)
-                        .and(new DbClause.BooleanClause("is_pow", false)).and(new DbClause.BooleanClause("latest", true)), 0,
-                Work.getWork(wid).getBounty_limit_per_iteration()-1, " ORDER BY height DESC");
+                        .and(new DbClause.BooleanClause("is_pow", false)).and(new DbClause.BooleanClause("latest", true)), skip+(int)index,
+                skip+(int)index, " ORDER BY height DESC");
     }
 
 
@@ -231,7 +208,7 @@ public final class PowAndBounty{
     private final byte[] multiplier;
     private final byte[] pow_hash;
     private final int storage_bucket;
-    private final byte[] validator;
+    private final byte[] submitted_storage;
 
     private int timestampReceived = 0;
 
@@ -254,9 +231,13 @@ public final class PowAndBounty{
         this.verificator_hash = rs.getBytes("hash");
         this.multiplier = rs.getBytes("multiplier");
         this.pow_hash = rs.getBytes("pow_hash");
-        this.validator = rs.getBytes("validator");
+        this.submitted_storage = rs.getBytes("submitted_storage");
         this.storage_bucket = rs.getInt("storage_bucket");
         this.timestampReceived = rs.getInt("timestamp");
+    }
+
+    public byte[] getSubmitted_storage() {
+        return submitted_storage;
     }
 
     private PowAndBounty(final Transaction transaction, final CommandPowBty attachment) {
@@ -269,7 +250,7 @@ public final class PowAndBounty{
         this.verificator_hash = attachment.getSubmittedStorageHash();
         this.multiplier = attachment.getMultiplier();
         this.pow_hash = attachment.getPowHash();
-        this.validator = attachment.getSubmitted_storage();
+        this.submitted_storage = attachment.getSubmitted_storage();
         this.too_late = false;
         this.storage_bucket = attachment.getStorage_bucket();
         this.timestampReceived = transaction.getTimestamp();
@@ -281,9 +262,9 @@ public final class PowAndBounty{
 
 
     private void save(final Connection con) throws SQLException {
-        try (PreparedStatement pstmt = con.prepareStatement( /* removed storage between multiplier and validator in
+        try (PreparedStatement pstmt = con.prepareStatement( /* removed storage between multiplier and submitted_storage in
         next line */
-                "MERGE INTO pow_and_bounty (id, too_late, work_id, hash, multiplier, storage_bucket, validator, " +
+                "MERGE INTO pow_and_bounty (id, too_late, work_id, hash, multiplier, storage_bucket, submitted_storage, " +
                         "account_id, is_pow, verificator_hash, pow_hash, timestamp, "
                         + " height, latest) " + "KEY (id, height) " + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?," +
                         " TRUE)")) {
@@ -294,7 +275,7 @@ public final class PowAndBounty{
             DbUtils.setBytes(pstmt, ++i, this.hash);
             DbUtils.setBytes(pstmt, ++i, this.multiplier);
             pstmt.setInt(++i, this.storage_bucket);
-            DbUtils.setBytes(pstmt, ++i, this.validator);
+            DbUtils.setBytes(pstmt, ++i, this.submitted_storage);
             pstmt.setLong(++i, this.accountId);
             pstmt.setBoolean(++i, this.is_pow);
             DbUtils.setBytes(pstmt, ++i, this.verificator_hash);

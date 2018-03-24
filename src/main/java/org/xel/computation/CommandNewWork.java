@@ -222,7 +222,8 @@ public class CommandNewWork extends IComputationAttachment {
     @Override
     boolean validate(Transaction transaction) {
 
-        if ((this.sourceCode == null) || (this.sourceCode.length == 0)) return false;
+
+        if (((this.sourceCode == null) || (this.sourceCode.length == 0)) && (this.sourceCodeCompressed == null) || (this.sourceCodeCompressed.length == 0)) return false;
 
         if(!Commons.checkRange(ComputationConstants.DEADLINE_MIN, ComputationConstants.DEADLINE_MAX, this.deadline))
             return false;
@@ -258,8 +259,16 @@ public class CommandNewWork extends IComputationAttachment {
             int storage_id = -1;
             ComputationResult r = e.compute(target, publicKey, blockId, multi, workId, storage_id);
             storage_size = r.storage_size;
+
+            // HERE, DOUBLE CHECK FOR STORAGE SIZE IN CASE IT SLIPPED THROUGH -  IT CAN BE CRITICAL
+            if(storage_size>ComputationConstants.MAX_STORAGE_SIZE){
+                Logger.logInfoMessage("work package dropped: id=" + Long.toUnsignedString(transaction.getId()) + " (reason: requested storage size is way too high)");
+                return false;
+            }
+
             validated = true;
         }catch(Exception e){
+            Logger.logInfoMessage("work package dropped: id=" + Long.toUnsignedString(transaction.getId()) + " (reason: " + e.getMessage() + ")");
             return false;
         }
 
@@ -275,7 +284,7 @@ public class CommandNewWork extends IComputationAttachment {
                 return;
         }
         // Here, apply the actual package
-        Logger.logInfoMessage("new work package submitted: id=" + Long.toUnsignedString(transaction.getId()));
+        Logger.logInfoMessage("new work package submitted: id=" + Long.toUnsignedString(transaction.getId()) + " (configures storage size: " + getStorageSize() + ")");
         Work.addWork(transaction, this);
     }
 

@@ -13,9 +13,10 @@ function main {
 
 
 function verify {
-    repeat (u[100], 4000000, 4000000) {
+    repeat (u[100], 1200000000, 1200000000) {
             u[0]=u[1]+u[2];
             f[1]=sin(f[1]+0.14);
+
         }
 
     verify_bty (s[4]%1000==0);

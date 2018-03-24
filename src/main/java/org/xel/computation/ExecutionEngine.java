@@ -83,7 +83,7 @@ public class ExecutionEngine {
         if(w==null) throw new FileNotFoundException("No job with id " + jobId);
         int sz = w.getStorage_size();
         if(sz==0) return new int[0];
-        int[] combined_storage = w.getCombined_storage();
+        int[] combined_storage = w.getStorage(storage_idx);
         return combined_storage;
     }
 
@@ -116,14 +116,29 @@ public class ExecutionEngine {
         printWriter.print(epl);
         printWriter.close();
 
-
         ComputationResult r = new ComputationResult();
 
-        String cmd = String.format("./xel_miner --test-target %s --test-publickey %s --test-multiplicator %s --test-block %d --test-work %d --verify-only --test-wcet-main %d --test-wcet-verify %d --test-vm code.epl", bytesToHex(target), bytesToHex(publicKey), bytesToHex(multiplicator), blockId, workId, ComputationConstants.MAX_MAIN_WCET, ComputationConstants.MAX_VERIFY_WCET);
+
+
+        String cmd = String.format("./xel_miner --test-target %s --test-publickey %s --test-multiplicator %s --test-block %d --test-work %d --verify-only --test-wcet-main %d --test-wcet-verify %d --deadswitch %d --test-stdin --test-limit-storage %d --test-vm code.epl", bytesToHex(target), bytesToHex(publicKey), bytesToHex(multiplicator), blockId, workId, ComputationConstants.MAX_MAIN_WCET, ComputationConstants.MAX_VERIFY_WCET, ComputationConstants.MAX_EXECUTION_TIME_IN_S, ComputationConstants.MAX_STORAGE_SIZE);
         Process process=Runtime.getRuntime().exec(cmd,
                 null, new File("./work/"));
         BufferedReader reader =
                 new BufferedReader(new InputStreamReader(process.getInputStream()));
+        OutputStream stdin = process.getOutputStream(); // <- Eh?
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(stdin));
+
+        if(storage.length>0) {
+            String longstoryshort = "";
+            // now shoot out storage via STDIN
+            for (int i = 0; i < storage.length; ++i) {
+                longstoryshort += Integer.toUnsignedString(storage[i]) + "\n";
+            }
+            longstoryshort += "\n";
+            writer.write(longstoryshort);
+            writer.flush();
+        }
+
         String line;
         process.waitFor();
 
@@ -131,7 +146,13 @@ public class ExecutionEngine {
         while ( (line = reader.readLine()) != null) {
             line = line.replaceAll("\\[\\d+m", "").trim();
 
-            if(line.contains("ERROR") || line.contains("Error")) throw new IOException("EPL code produced error: " + line);
+            if(line.contains("ERROR") || line.contains("Error")) {
+                if(getBooleanProperty("nxt.dump_pow_info")) {
+                    System.err.println(cmd);
+                    System.err.println(fullOutp);
+                }
+                throw new IOException("EPL code produced error: " + line);
+            }
             if(line.contains("DEBUG: POW Found:")){
                 Boolean res = Boolean.parseBoolean(line.substring(line.lastIndexOf(":")+2));
                 r.isPow = res;
@@ -152,8 +173,10 @@ public class ExecutionEngine {
         }
 
         if(process.exitValue()!=0) {
-            System.err.println(cmd);
-            System.err.println(fullOutp);
+            if(getBooleanProperty("nxt.dump_pow_info")) {
+                System.err.println(cmd);
+                System.err.println(fullOutp);
+            }
             throw new IOException("EPL code exited with error code.");
         }
 

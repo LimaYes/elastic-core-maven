@@ -95,7 +95,6 @@ public final class Work {
     private int received_pows;
     private short blocksRemaining;
     private int closing_timestamp;
-    private int[] combined_storage;
     private int storage_size;
     private String source_code;
 
@@ -135,10 +134,6 @@ public final class Work {
         this.closing_timestamp = closing_timestamp;
     }
 
-    public void setCombined_storage(int[] combined_storage) {
-        this.combined_storage = combined_storage;
-    }
-
     private Work(final ResultSet rs, final DbKey dbKey) throws SQLException {
 
         this.id = rs.getLong("id");
@@ -159,7 +154,6 @@ public final class Work {
         this.sender_account_id = rs.getLong("sender_account_id");
         this.originating_height = rs.getInt("originating_height");
         this.closing_timestamp = rs.getInt("closing_timestamp");
-        this.combined_storage = Convert.byte2int(rs.getBytes("combined_storage"));
         this.storage_size = rs.getInt("storage_size");
         this.source_code = rs.getString("source_code");
     }
@@ -177,7 +171,6 @@ public final class Work {
         this.received_bounties = 0;
         this.received_pows = 0;
         this.bounty_limit_per_iteration = attachment.getBountiesPerIteration();
-        this.combined_storage = new int[ComputationConstants.BOUNTY_STORAGE_INTS*this.bounty_limit_per_iteration];
         this.sender_account_id = transaction.getSenderId();
         this.cancelled = false;
         this.timedout = false;
@@ -357,16 +350,12 @@ public final class Work {
         return closing_timestamp;
     }
 
-    public int[] getCombined_storage() {
-        return combined_storage;
-    }
-
     private void save(final Connection con) throws SQLException {
         try (PreparedStatement pstmt = con.prepareStatement(
                 "MERGE INTO work (id, cap_number_pow, closing_timestamp, block_id, sender_account_id, xel_per_pow, " +
-                        "iterations, iterations_left, blocks_remaining, closed, cancelled, timedout, xel_per_bounty, received_bounties, received_pows, bounty_limit_per_iteration, originating_height, height, combined_storage, storage_size, source_code, latest) "
+                        "iterations, iterations_left, blocks_remaining, closed, cancelled, timedout, xel_per_bounty, received_bounties, received_pows, bounty_limit_per_iteration, originating_height, height, storage_size, source_code, latest) "
                         + "KEY (id, height) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)")) {
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)")) {
             int i = 0;
             pstmt.setLong(++i, this.id);
             pstmt.setInt(++i, this.cap_number_pow);
@@ -386,7 +375,6 @@ public final class Work {
             pstmt.setInt(++i, this.bounty_limit_per_iteration);
             pstmt.setInt(++i, this.originating_height);
             pstmt.setInt(++i,Nxt.getBlockchain().getHeight());
-            pstmt.setBytes(++i, Convert.int2byte(this.combined_storage));
             pstmt.setInt(++i, this.storage_size);
             pstmt.setString(++i, this.source_code);
             pstmt.executeUpdate();
@@ -482,11 +470,29 @@ public final class Work {
         return response;
     }
 
-    public static int[] getStorage(Work work, int storage_slot){
-        int[] storage_area = new int[work.storage_size];
-        if (storage_slot>=0 && storage_slot < work.bounty_limit_per_iteration) {
-            for (int i = 0; i < work.storage_size; ++i) {
-                storage_area[i] = work.combined_storage[storage_slot * work.storage_size + i];
+    public int[] getStorage(long storage_slot){
+        int[] storage_area = new int[storage_size];
+        if (storage_slot>=0 && storage_slot < bounty_limit_per_iteration) {
+            // only fill for reasonable storage slot
+
+            // first, check if work has enough storage submissions to be considered in 'the next round'
+            int fullrounds = this.getReceived_bounties()%bounty_limit_per_iteration;
+            if(fullrounds==0){
+                // not a full round yet, just return zero storage of correct length
+                return storage_area;
+            }
+
+            // appearently we know we have at least a full round, but there might be also bounties at the end not belonging to the last full round, i.e., to the new unfinished round which we do not
+            // consider 'mature combined storage' yet. Make sure to get the right indices here to pull from the db
+
+            int unfinished = this.getReceived_bounties() / bounty_limit_per_iteration;
+            try(DbIterator<PowAndBounty> it = PowAndBounty.getLastBountiesRelevantForStorageGeneration(this.id, fullrounds, unfinished, storage_slot)){ // the problem from above is handled in this function
+                PowAndBounty bty = it.next();
+                int[] resbty = Convert.byte2int(bty.getSubmitted_storage());
+                if(resbty.length != storage_size) return storage_area; // sth went wrong, just exit
+                for (int i = 0; i < storage_size; ++i) {
+                    storage_area[i] = resbty[i];
+                }
             }
         }
         return storage_area;
@@ -495,7 +501,7 @@ public final class Work {
         final JSONObject response = toJsonWithSource(work,with_source);
 
         if (storage_slot>=0 && storage_slot < work.bounty_limit_per_iteration) {
-            int[] storage_area = getStorage(work, storage_slot);
+            int[] storage_area = work.getStorage(storage_slot);
             response.put("storage_id", storage_slot);
             response.put("storage", Convert.toHexString(Convert.int2byte(storage_area)));
         }
