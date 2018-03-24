@@ -3,15 +3,10 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.xel</groupId>
   <artifactId>core</artifactId>
-  <packaging>pom</packaging>
+  <packaging>jar</packaging>
   <version>1.0</version>
   <name>core</name>
   <url>http://maven.apache.org</url>
-
-    <modules>
-        <module>externals/epl-to-c</module>
-        <module>externals/java-c-interpreter</module>
-    </modules>
 
     <build>
     <plugins>
@@ -24,6 +19,36 @@
           <target>1.8</target>
         </configuration>
       </plugin>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>2.12.4</version>
+            <configuration>
+                <skipTests>true</skipTests>
+            </configuration>
+        </plugin>
+        <plugin>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <configuration>
+                <archive>
+                    <manifest>
+                        <mainClass>org.xel.Nxt</mainClass>
+                    </manifest>
+                </archive>
+                <descriptorRefs>
+                    <descriptorRef>jar-with-dependencies</descriptorRef>
+                </descriptorRefs>
+            </configuration>
+            <executions>
+                <execution>
+                    <id>make-assembly</id> <!-- this is used for inheritance merges -->
+                    <phase>package</phase> <!-- bind to the packaging phase -->
+                    <goals>
+                        <goal>single</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
     </plugins>
 
         <resources>
@@ -140,16 +165,6 @@
           <artifactId>junit</artifactId>
           <version>4.10</version>
           <scope>test</scope>
-      </dependency>
-      <dependency>
-          <groupId>org.xel</groupId>
-          <artifactId>java-c-interpreter</artifactId>
-          <version>1.0</version>
-      </dependency>
-      <dependency>
-          <groupId>org.xel</groupId>
-          <artifactId>epl-to-c</artifactId>
-          <version>1.0</version>
       </dependency>
   </dependencies>
 </project>

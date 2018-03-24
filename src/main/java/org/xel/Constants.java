@@ -163,8 +163,8 @@ public final class Constants {
     // LAST_KNOWN_BLOCK must also be set in html/www/js/nrs.constants.js
     public static final int LAST_KNOWN_BLOCK = CHECKSUM_BLOCK_GENESIS;
 
-    public static final int[] MIN_VERSION = new int[] {3, 1, 0};
-    public static final int[] MIN_PROXY_VERSION = new int[] {3, 1, 0};
+    public static final int[] MIN_VERSION = (isTestnet)?new int[] {5, 0, 0}:new int[] {3, 1, 0};
+    public static final int[] MIN_PROXY_VERSION = (isTestnet)?new int[] {5, 0, 0}:new int[] {3, 1, 0};
 
     static final long UNCONFIRMED_POOL_DEPOSIT_NQT = (isTestnet ? 50 : 100) * TENTH_NXT;
 
