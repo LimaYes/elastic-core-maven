@@ -76,6 +76,8 @@ public final class Nxt {
         dirProvider = RuntimeEnvironment.getDirProvider();
         System.out.println("User home folder " + dirProvider.getUserHomeDir());
         if (JUnitEnvironment.isJUnitTest()) {
+            System.out.printf("WARNING, YOU ARE USING A JUNIT RUNTIME ENVIRONMENT");
+
             loadProperties(defaultProperties, NXT_DEFAULT_JUNIT_PROPERTIES, true);
         }else{
             loadProperties(defaultProperties, NXT_DEFAULT_PROPERTIES, true);
