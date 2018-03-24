@@ -400,7 +400,8 @@ public final class Nxt {
                         Logger.logInfoMessage("ERROR: The computation engine does not work properly, are you sure you have set up xel_miners in the work/ directory correctly?");
                         System.exit(1);
                     }
-
+                }else{
+                    Logger.logInfoMessage("Computation engine is deactivated. You do not need that if you are just supporting the network.");
                 }
 
 
