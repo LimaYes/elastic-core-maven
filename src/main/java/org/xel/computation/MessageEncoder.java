@@ -43,7 +43,7 @@ public class MessageEncoder {
     static byte[] MAGIC_INTERMEDIATE = {(byte)0xef, (byte)0xbe, (byte)0xad, (byte)0xde, (byte)0xde, (byte)0xad, (byte)0xbe, (byte)0xef};
 
 
-    static boolean useComputationEngine = Nxt.getBooleanProperty("nxt.enableComputationEngine");
+    public static boolean useComputationEngine = Nxt.getBooleanProperty("nxt.enableComputationEngine");
 
     static void processBlockInternal(Block block){
         // Check all TX for relevant stuff
