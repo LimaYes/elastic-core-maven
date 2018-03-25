@@ -51,7 +51,7 @@ import java.util.Properties;
 public final class Nxt {
 
     public static final String VERSION = "5.0.0";
-    public static final String APPLICATION = "XEL (Computation Node)";
+    public static final String APPLICATION = "XEL Evo";
 
     private static volatile Time time = new Time.EpochTime();
 
