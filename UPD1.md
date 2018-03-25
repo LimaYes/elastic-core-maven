@@ -210,7 +210,7 @@ Congratulations, you have executed the first job on the XEL blockchain
 
 Well, the second demo example is a bit trickier. It uses a distributed form of storage that gets synchronized on the XEL computer every x blocks and is being made available to the miners. This is pretty cool, because it allows to "remember" things which then other miners can use to improve their calculations on the problem.
 
-I am really sorry but I will have to write that guide the next week. It will appear here the moment it is ready - I have been working 34 hours straight and now even the 50th coffee does not help.
+Due to a immense lack of sleep, this guide - including some basic explanations - will appear here tomorrow.
 
 
 ## Hack On
