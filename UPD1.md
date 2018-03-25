@@ -214,7 +214,7 @@ Due to a immense lack of sleep, this guide - including some basic explanations -
 
 ## Bugs
 
-Yup, there will be plenty, and we - together - will get rid of them, and we will do it fast.
+Yup, there will be some, and we - together - will get rid of them, and we will do it fast.
 
 ## Hack On
 
