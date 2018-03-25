@@ -119,6 +119,7 @@ public class ExecutionEngine {
         ComputationResult r = new ComputationResult();
 
         String cmd = String.format("./xel_miner --test-target %s --test-publickey %s --test-multiplicator %s --test-block %d --test-work %d --verify-only --test-wcet-main %d --test-wcet-verify %d --deadswitch %d --test-stdin --test-limit-storage %d --test-vm code.epl", bytesToHex(target), bytesToHex(publicKey), bytesToHex(multiplicator), blockId, workId, ComputationConstants.MAX_MAIN_WCET, ComputationConstants.MAX_VERIFY_WCET, ComputationConstants.MAX_EXECUTION_TIME_IN_S, ComputationConstants.MAX_STORAGE_SIZE);
+        Logger.logDebugMessage(cmd);
         Process process=Runtime.getRuntime().exec(cmd,
                 null, new File("./work/"));
         BufferedReader reader =
@@ -145,7 +146,7 @@ public class ExecutionEngine {
             line = line.replaceAll("\\[\\d+m", "").trim();
 
             if(line.contains("ERROR") || line.contains("Error")) {
-                if(1==1 || getBooleanProperty("nxt.dump_pow_info")) {
+                if(getBooleanProperty("nxt.dump_pow_info")) {
                     Logger.logErrorMessage(cmd);
                     Logger.logErrorMessage(fullOutp);
                 }
