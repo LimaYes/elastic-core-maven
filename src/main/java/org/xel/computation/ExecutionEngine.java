@@ -145,7 +145,7 @@ public class ExecutionEngine {
             line = line.replaceAll("\\[\\d+m", "").trim();
 
             if(line.contains("ERROR") || line.contains("Error")) {
-                if(getBooleanProperty("nxt.dump_pow_info")) {
+                if(1==1 || getBooleanProperty("nxt.dump_pow_info")) {
                     Logger.logErrorMessage(cmd);
                     Logger.logErrorMessage(fullOutp);
                 }
