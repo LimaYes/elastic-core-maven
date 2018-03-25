@@ -10,7 +10,7 @@ Even though I have everything I need, if you want to help me enjoy life a bit mo
 
 >XEL: XEL-J8WX-622A-E4TH-GU5YP
 
->BTC: 18Nw6F62RNYNGnW1dcjiNURiJxNCVa45Je
+>BTC: 18Ed5LQFq3Txs1oDZQtFWpZM4MBvvUvB6Y
 
 By the way, some wonderful people, i guess they are as much of a XEL fanboy as I am, are right now putting together a nice website with lots of more information than you will find here. So be patient and lurk around :)
 
