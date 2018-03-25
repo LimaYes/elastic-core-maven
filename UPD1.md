@@ -1,11 +1,5 @@
 <img src="https://github.com/OrdinaryDude/elastic-core-maven/raw/master/html/www/img/nxt_logo.png" alt="Drawing" style="width: 200px;"/>
 
-## This is your last chance. After this, there is no turning back.
-
-This is your last chance. After this, there is no turning back. You take the blue pill - the story ends, and you continue to live in a world of corporate-talk, rambling, buzzword-bingo and a smorgasboard of mediocre and immature solutions presented in shiny blogs and glossy websites. In case you prefer this world, please close the browser now.
-
-You take the red pill - you begin a brutally honest, introspective journey into blockchain-driven grid computation and I take you deep down the rabbit hole, exploring how I have overcome many of the problems and limitations of decentralization and giving you a toolset that allows you to embark upon the exciting journey into a whole new field of blockchain technology and execute your first computation job on the blockchain.
-
 ## A brief summary
 
 I will not go deep into technical jibber jabber here and instead save it for the later sections. Yet, I feel it is important to quickly summarize what we have achieved in the last 2 years. After two years of coding - almost daily - and with the help of many very talended people, we have finally achieved a huge milestone. A milestone that - to my knowledge - nobody has ever achieved before as of now. We as a community have finally managed to launch a first working version of a truly decentralized super-computer - for now, in a test net to be honest - that allows people to submit arbitrary, self-coded jobs to the blockchain and have their tasks solved by so-called "miners" who are incentivized by tit-for-tat payments as they contribute their computational resources towards that task.
