@@ -18,6 +18,7 @@ package org.xel.http;
 
 import java.math.BigInteger;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
@@ -59,7 +60,7 @@ public final class GetWork extends APIServlet.APIRequestHandler {
             wid_filter = 0;
         }
 
-        long storage_slot;
+        long storage_slot = -1;
         try {
             final String readParam = ParameterParser.getParameterMultipart(req, "storage_id");
             final BigInteger b = new BigInteger(readParam);
@@ -107,26 +108,23 @@ public final class GetWork extends APIServlet.APIRequestHandler {
             }
             work_packages = jsonArray;
         }
-        else
-            if(storage_slot == -1) {
-                boolean finalWith_source = with_source;
-                JSONArray jsonArray = new JSONArray();
-                for (Work work2 : work) {
-                    JSONObject jsonObject = Work.toJsonWithSource(work2, finalWith_source);
-                    jsonArray.add(jsonObject);
-                }
-                work_packages = jsonArray;
-            }
-            else {
+        else {
+
+            {
                 int finalStorage_slot = (int) storage_slot;
                 boolean finalWith_source1 = with_source;
                 JSONArray jsonArray = new JSONArray();
                 for (Work work1 : work) {
-                    JSONObject jsonObject = Work.toJsonWithStorage(work1, finalStorage_slot, finalWith_source1);
+                    int gostor = finalStorage_slot;
+                    if(storage_slot==-1 && work1.getStorage_size()>0){
+                        gostor = ThreadLocalRandom.current().nextInt(0, work1.getStorage_size());
+                    }
+                    JSONObject jsonObject = Work.toJsonWithStorage(work1, gostor, finalWith_source1);
                     jsonArray.add(jsonObject);
                 }
                 work_packages = jsonArray;
             }
+        }
 
         final JSONObject response = new JSONObject();
         response.put("work_packages", work_packages);

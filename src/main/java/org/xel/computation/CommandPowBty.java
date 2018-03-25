@@ -258,8 +258,12 @@ public class CommandPowBty extends IComputationAttachment {
         }
 
 
-        if (submitted_storage.length/4 != w.getStorage_size()) {
+        if (this.isIs_proof_of_work()==false && (submitted_storage.length/4 != w.getStorage_size())) {
             Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: the submitted_storage does not match the works original storage size (" + String.valueOf(submitted_storage.length/4) + " != " + String.valueOf(w.getStorage_size()) + ").");
+            return false;
+        }
+        if (this.isIs_proof_of_work()==true && (submitted_storage.length!=0)) {
+            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: the submitted_storage must be empty for POW.");
             return false;
         }
 
@@ -351,9 +355,15 @@ public class CommandPowBty extends IComputationAttachment {
         }
 
 
-        if (submitted_storage.length/4 != w.getStorage_size()) {
+        if (this.isIs_proof_of_work()==false && (submitted_storage.length/4 != w.getStorage_size())) {
+            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: the submitted_storage does not match the works original storage size (" + String.valueOf(submitted_storage.length/4) + " != " + String.valueOf(w.getStorage_size()) + ").");
             return false;
         }
+        if (this.isIs_proof_of_work()==true && (submitted_storage.length!=0)) {
+            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: the submitted_storage must be empty for POW.");
+            return false;
+        }
+
 
         long lastBlocksTarget = Nxt.getBlockchain().getLastBlock().getCurrentBlockPowTarget(); // TODO: Observe, we are assuming this will go into next block with this
         if(lastBlocksTarget==0){

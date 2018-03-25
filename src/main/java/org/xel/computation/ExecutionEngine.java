@@ -137,7 +137,10 @@ public class ExecutionEngine {
             longstoryshort += "\n";
             writer.write(longstoryshort);
             writer.flush();
+            Logger.logInfoMessage(longstoryshort.substring(0, Math.min(longstoryshort.length()-1, 10000)));
+
         }
+
 
         String line;
         process.waitFor();

@@ -42,12 +42,14 @@ public final class SubmitSolution extends CreateTransaction {
     protected JSONStreamAware processRequest(final HttpServletRequest req) throws NxtException {
 
         final long workId = ParameterParser.getUnsignedLong(req, "work_id", true);
-        final byte[] data = ParameterParser.getBytes(req, "data", false);
+        byte[] data = ParameterParser.getBytes(req, "data", false);
         final byte[] multiplicator = ParameterParser.getBytes(req, "multiplicator", true);
         int storageId = ParameterParser.getInt(req, "storage_id",0,Integer.MAX_VALUE, true);
 
         if(data==null||data.length==0) storageId = -1;
         final boolean is_pow = ParameterParser.getBooleanByString(req, "is_pow", true);
+
+        if(is_pow) data=new byte[0];
         byte[] hash = ParameterParser.getBytes(req, "hash", false);
 
         Work w = Work.getWork(workId);

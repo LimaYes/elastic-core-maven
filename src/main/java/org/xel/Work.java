@@ -6,6 +6,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
+
 import org.xel.computation.CommandNewWork;
 import org.xel.computation.ComputationConstants;
 import org.xel.db.DbClause;
@@ -502,6 +504,7 @@ public final class Work {
     }
     public static JSONObject toJsonWithStorage(Work work, int storage_slot, boolean with_source) {
         final JSONObject response = toJsonWithSource(work,with_source);
+
 
         if (storage_slot>=0 && storage_slot < work.bounty_limit_per_iteration) {
             int[] storage_area = work.getStorage(storage_slot);
