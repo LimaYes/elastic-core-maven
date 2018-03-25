@@ -212,6 +212,9 @@ Well, the second demo example is a bit trickier. It uses a distributed form of s
 
 Due to a immense lack of sleep, this guide - including some basic explanations - will appear here tomorrow.
 
+## Bugs
+
+Yup, there will be plenty, and we - together - will get rid of them, and we will do it fast.
 
 ## Hack On
 
