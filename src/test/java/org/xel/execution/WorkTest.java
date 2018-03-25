@@ -12,6 +12,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.xel.util.Logger;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -143,8 +144,9 @@ public class WorkTest extends AbstractForgingTest {
         AbstractBlockchainTest.forgeNumberOfBlocks(1, AbstractForgingTest.testForgingSecretPhrase);
 
         long id = 0;
+        Work w;
         try(DbIterator<Work> wxx = Work.getActiveWork()){
-            Work w = wxx.next();
+            w = wxx.next();
             id = w.getId();
         }
 
@@ -153,11 +155,27 @@ public class WorkTest extends AbstractForgingTest {
         Assert.assertEquals(1, Work.getCount());
         Assert.assertEquals(1, Work.getActiveCount());
         byte[] m = new byte[32];
+        byte[] m2 = new byte[32];
+
         byte[] testarray = new byte[32*4];
         for(int i=0;i<25; ++i) {
             m[0]=(byte)(m[0]+1);
-            CommandPowBty pow = new CommandPowBty(id, true, m, new byte[16], testarray, 0);
-            MessageEncoder.push(pow, AbstractForgingTest.testForgingSecretPhrase);
+            CommandPowBty pow = new CommandPowBty(id, true, m, new byte[16], testarray, 0, w.getCurrentRound());
+            m2[0]=(byte)(m2[0]+2);
+            m2[1]=1;
+            CommandPowBty pow2 = new CommandPowBty(id, true, m2, new byte[16], testarray, 0, w.getCurrentRound());
+
+            try {
+                MessageEncoder.push(pow, AbstractForgingTest.testForgingSecretPhrase);
+            }catch(Exception e){
+                Logger.logDebugMessage("Could not push POW: " + e.getMessage());
+            }
+            try {
+                MessageEncoder.push(pow2, AbstractForgingTest.testForgingSecretPhrase);
+            }catch(Exception e){
+                Logger.logDebugMessage("Could not push POW: " + e.getMessage());
+            }
+
             // Mine a bit so the work times out
             AbstractBlockchainTest.forgeNumberOfBlocks(1, AbstractForgingTest.testForgingSecretPhrase);
         }

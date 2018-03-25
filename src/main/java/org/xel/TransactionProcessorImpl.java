@@ -640,6 +640,8 @@ public final class TransactionProcessorImpl implements TransactionProcessor {
                 }
                 addedUnconfirmedTransactions.add(transaction);
 
+                transaction.getType().executeOnEachUnconfirmedTXUponReceive(transaction); // This is just for our stupidLimiters
+
             } catch (NxtException.NotCurrentlyValidException ignore) {
             } catch (NxtException.ValidationException|RuntimeException e) {
                 Logger.logDebugMessage(String.format("Invalid transaction from peer: %s", ((JSONObject) transactionData).toJSONString()), e);

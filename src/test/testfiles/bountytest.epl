@@ -1,5 +1,5 @@
 array_uint   1000;
-submit_sz 1;
+submit_sz 32;
 submit_idx 0;
 
 function verify {

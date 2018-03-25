@@ -12,10 +12,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /******************************************************************************
  * Copyright © 2017 The XEL Core Developers.                                  *
@@ -44,6 +41,75 @@ public class MessageEncoder {
 
 
     public static boolean useComputationEngine = Nxt.getBooleanProperty("nxt.enableComputationEngine");
+    public static Map<Long, Integer> stupidLimiterBty = new HashMap<Long, Integer>();
+    public static Map<Long, Integer> stupidLimiterPow = new HashMap<Long, Integer>();
+
+    public static synchronized CommandPowBty hasPowAndBountyContent(Transaction t){
+        Appendix.PrunablePlainMessage m = t.getPrunablePlainMessage();
+        if(m==null || !m.hasPrunableData()) return null;
+
+        try {
+            Appendix.PrunablePlainMessage[] reconstructedChain = MessageEncoder.extractMessages(t);
+
+            // Allow the decoding of the attachment
+            IComputationAttachment att = MessageEncoder.decodeAttachment(reconstructedChain);
+            if(att == null) return null;
+
+            if(att instanceof CommandPowBty)
+                return (CommandPowBty)att;
+
+        } catch (Exception e) {
+            // generous catch, do not allow anything to cripple the blockchain integrity
+            return null;
+        }
+        return null;
+    }
+
+    public static synchronized boolean limitHit(Transaction transaction, CommandPowBty c){
+
+        // basic simple test
+        long wid = c.getWork_id();
+        Work w = Work.getWork(wid);
+        if (w == null) return false;
+        if (w.isClosed() == true) return false;
+
+        Logger.logDebugMessage("Checking stupidLimiters for work " + c.getWork_id() + ": pow = " + ((stupidLimiterPow.containsKey(w.getId())==false)?0:stupidLimiterPow.get(w.getId())) + ", bty = " + ((stupidLimiterBty.containsKey(w.getId())==false)?0:stupidLimiterBty.get(w.getId())));
+            if(c.isIs_proof_of_work()){
+            if(stupidLimiterPow.containsKey(w.getId())==false) return false;
+            return stupidLimiterPow.get(w.getId())>=25;
+        }else{
+            if(stupidLimiterBty.containsKey(w.getId())==false) return false;
+            return stupidLimiterBty.get(w.getId())>=w.getBounty_limit_per_iteration();
+        }
+    }
+
+    public static synchronized void preValidate(Transaction transaction, CommandPowBty c) throws NxtException.NotCurrentlyValidException {
+
+        // basic simple test
+        long wid = c.getWork_id();
+        Work w = Work.getWork(wid);
+        if(w==null) throw new NxtException.NotCurrentlyValidException("The work is not yet known, delaying");
+        if (w.isClosed() == true) throw new NxtException.NotCurrentlyValidException("The work is already closed");
+
+        if(w.getCurrentRound() != c.getCurrent_round()) throw new NxtException.NotCurrentlyValidException("The work is not yet known, delaying");
+        boolean ret = c.prevalidate(transaction);
+        if(!ret) throw new NxtException.NotCurrentlyValidException("The submitted pow/bty was simply wrong");
+
+        // looks good enough to keep it for now, real validation will be performed later
+        if(c.isIs_proof_of_work()){
+            if(stupidLimiterPow.containsKey(w.getId()))
+                stupidLimiterPow.put(w.getId(), stupidLimiterPow.get(w.getId())+1);
+            else
+                stupidLimiterPow.put(w.getId(), 1);
+        } else{
+            if(stupidLimiterBty.containsKey(w.getId()))
+                stupidLimiterBty.put(w.getId(), stupidLimiterPow.get(w.getId())+1);
+            else
+                stupidLimiterBty.put(w.getId(), 1);
+        }
+
+    }
+
 
     static void processBlockInternal(Block block){
         // Check all TX for relevant stuff
@@ -52,7 +118,7 @@ public class MessageEncoder {
 
         for(Transaction t : block.getTransactions()){
             Appendix.PrunablePlainMessage m = t.getPrunablePlainMessage();
-            if(m==null) continue;
+            if(m==null || !m.hasPrunableData()) continue;
             if(MessageEncoder.checkMessageForPiggyback(m, true, false)){
                 try {
                     Appendix.PrunablePlainMessage[] reconstructedChain = MessageEncoder.extractMessages(t);
@@ -73,7 +139,9 @@ public class MessageEncoder {
         }
         block.calculatePowTarget(powCounter);
         block.setLocallyProcessed();
-
+        // and clean the stupidLimiters
+        stupidLimiterPow.clear();
+        stupidLimiterBty.clear();
     }
 
     static {
@@ -187,6 +255,10 @@ public class MessageEncoder {
             Transaction.Builder builder = ParameterParser.parseTransaction(aw[i].toString(), null, null);
             Transaction transaction = builder.build();
             transaction.validate(); // safe guard, so it cannot happen that tx1 goes through and tx2 fails validation
+
+            // As a safeguard for ourselves, check if we should postpone that TX
+            transaction.getType().postponeForNow(transaction);
+
             toPush.add(transaction);
         }
 

@@ -40,9 +40,10 @@ public class CommandPowBty extends IComputationAttachment {
     private boolean validated = false;
     private boolean isValid = false;
     private int storage_bucket;
+    private int current_round;
 
     public CommandPowBty(long work_id, boolean is_proof_of_work, byte[] multiplier, byte[] hash,
-                         byte[] submitted_storage, int storage_bucket) {
+                         byte[] submitted_storage, int storage_bucket, int current_round) {
         super();
         this.work_id = work_id;
         this.is_proof_of_work = is_proof_of_work;
@@ -50,6 +51,7 @@ public class CommandPowBty extends IComputationAttachment {
         this.hash = hash;
         this.storage_bucket = storage_bucket;
         this.submitted_storage = submitted_storage;
+        this.current_round = current_round;
     }
 
     CommandPowBty(ByteBuffer buffer) {
@@ -95,7 +97,8 @@ public class CommandPowBty extends IComputationAttachment {
 
             submitted_storage = new byte[readsize];
             buffer.get(submitted_storage);
-            System.out.println("POWBTY - About to decode " + this.storage_bucket);
+            current_round = buffer.getInt();
+            //System.out.println("POWBTY - About to decode " + this.storage_bucket + ", round " + current_round);
         } catch (Exception e) {
             // pass through any error
             this.work_id = 0;
@@ -104,6 +107,7 @@ public class CommandPowBty extends IComputationAttachment {
             this.submitted_storage = new byte[0];
             this.hash = new byte[0];
             this.storage_bucket = 0;
+            this.current_round = 0;
         }
     }
 
@@ -123,7 +127,11 @@ public class CommandPowBty extends IComputationAttachment {
 
     @Override
     int getMySize() {
-        return 8 + 1 + 2 + 2 + 2 + this.multiplier.length + this.submitted_storage.length  + this.hash.length  + 4 /*storage bucket in t */;
+        return 8 + 1 + 2 + 2 + 2 + this.multiplier.length + this.submitted_storage.length  + this.hash.length  + 4 /*storage bucket in t */ + 4 /* current round */;
+    }
+
+    public int getCurrent_round() {
+        return current_round;
     }
 
     @Override
@@ -148,6 +156,7 @@ public class CommandPowBty extends IComputationAttachment {
         buffer.putInt(this.storage_bucket);
         buffer.putShort((short)this.submitted_storage.length);
         buffer.put(this.submitted_storage);
+        buffer.putInt(this.current_round);
 
     }
 
@@ -214,6 +223,7 @@ public class CommandPowBty extends IComputationAttachment {
         Work w = Work.getWork(this.work_id);
         if (w == null) return false;
         if (w.isClosed() == true) return false;
+        if (w.getCurrentRound() != this.getCurrent_round()) return false;
 
         // TODO WARNING: Badly programmed jobs that allow the same output (POW/BTY) for a different multiplicator can suffer big time here! Be careful coding!
         byte[] myMultiplier = this.getMultiplier();
@@ -301,6 +311,84 @@ public class CommandPowBty extends IComputationAttachment {
         return true;
     }
 
+    boolean validateLight(Transaction transaction) {
+
+        // This construction avoids multiple code-evaluations which are not really required
+        if(validated) return isValid;
+        validated = true;
+
+        if (this.work_id == 0) return false;
+        Work w = Work.getWork(this.work_id);
+        if (w == null) return false;
+        if (w.isClosed() == true) return false;
+        if (w.getCurrentRound() != this.getCurrent_round()) return false;
+
+        // TODO WARNING: Badly programmed jobs that allow the same output (POW/BTY) for a different multiplicator can suffer big time here! Be careful coding!
+        byte[] myMultiplier = this.getMultiplier();
+        if(PowAndBounty.hasMultiplier(w.getId(), myMultiplier)) {
+            return false;
+        }
+
+        // checking multiplicator length requirements
+        if (multiplier.length != ComputationConstants.MULTIPLIER_LENGTH) {
+            return false;
+        }
+
+        // checking pow_hash length requirements once again
+        if (hash.length != ComputationConstants.MD5LEN) {
+            return false;
+        }
+
+        // !! if storage size is larger than 0 this indicates the presence of a storage. Therefore, storage bucket must be in a valid range
+        if((w.getStorage_size()>0) && (this.storage_bucket >= w.getBounty_limit_per_iteration() || this.storage_bucket < 0)) {
+            return false;
+        }
+
+        // !! otherwise, if storage_size == 0, then no storage is there and storage_bucket must be -1
+        if(w.getStorage_size()==0 && this.storage_bucket != -1) {
+            return false;
+        }
+
+
+        if (submitted_storage.length/4 != w.getStorage_size()) {
+            return false;
+        }
+
+        long lastBlocksTarget = Nxt.getBlockchain().getLastBlock().getCurrentBlockPowTarget(); // TODO: Observe, we are assuming this will go into next block with this
+        if(lastBlocksTarget==0){
+            lastBlocksTarget = 1;
+        }
+
+        BigInteger myTarget = ComputationConstants.MAXIMAL_WORK_TARGET;
+        myTarget = myTarget.divide(BigInteger.valueOf(Long.MAX_VALUE/100)); // Note, our target in compact form is in range 1..LONG_MAX/100
+        myTarget = myTarget.multiply(BigInteger.valueOf(lastBlocksTarget));
+        if(myTarget.compareTo(ComputationConstants.MAXIMAL_WORK_TARGET) == 1)
+            myTarget = ComputationConstants.MAXIMAL_WORK_TARGET;
+        if(myTarget.compareTo(BigInteger.ONE) == 2)
+            myTarget = BigInteger.ONE;
+        int[] target = Convert.bigintToInts(myTarget,4);
+        // safeguard
+        if(target.length!=4) target = new int[]{0,0,0,0};
+        byte[] tgt;
+        try {
+            tgt = integersToBytes(target);
+        } catch (IOException e) {
+            return false;
+        }
+
+        // Validate code-level
+        if (this.is_proof_of_work && !validatePow(transaction.getSenderPublicKey(), w.getBlock_id(),
+                work_id, tgt)) {
+            return false;
+        }
+        if (!this.is_proof_of_work && !validateBty(transaction.getSenderPublicKey(), w.getBlock_id(),
+                work_id, tgt)) {
+            return false;
+        }
+
+        return true;
+    }
+
     @Override
     void apply(Transaction transaction) {
         if (!validate(transaction))
@@ -308,6 +396,12 @@ public class CommandPowBty extends IComputationAttachment {
         // Here, apply the actual package
         Logger.logInfoMessage("processing pow-or-bty for work: id=" + Long.toUnsignedString(this.work_id));
         PowAndBounty.addPowBty(transaction, this);
+    }
+
+    public boolean prevalidate(Transaction transaction) { // TODO This must become more "fluid", what about DOS?
+        if (!validateLight(transaction))
+            return false;
+        return true;
     }
 
     public byte[] getSubmittedStorageHash() {

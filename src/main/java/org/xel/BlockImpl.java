@@ -345,6 +345,15 @@ final class BlockImpl implements Block {
         }
     }
 
+    @Override
+    public long getCurrentBlockPowTarget() {
+        try {
+            return this.getPowTarget();
+        }catch(Exception e){
+            return 0;
+        }
+    }
+
     static BlockImpl parseBlock(JSONObject blockData) throws NxtException.NotValidException {
         try {
             int version = ((Long) blockData.get("version")).intValue();

@@ -393,7 +393,7 @@ public final class Nxt {
                 Logger.logInfoMessage("STARTED: Catching up work related transaction history.");
                 MessageEncoder.init();
 
-                if(MessageEncoder.useComputationEngine){
+                if(MessageEncoder.useComputationEngine && !JUnitEnvironment.isJUnitTest()){
                     Logger.logInfoMessage("Computation engine is activated, we will perform a test now to see if it works properly.");
                     try {
                         TestVm2.verifyItIsWorking();

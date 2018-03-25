@@ -16,13 +16,16 @@ package org.xel.http;
  *                                                                            *
  ******************************************************************************/
 
+import org.json.simple.JSONObject;
 import org.xel.NxtException;
+import org.xel.Work;
 import org.xel.computation.CommandCancelWork;
 import org.xel.computation.CommandPowBty;
 import org.xel.computation.MessageEncoder;
 import org.xel.util.Convert;
 import org.json.simple.JSONStreamAware;
 import org.spongycastle.crypto.digests.SkeinEngine;
+import org.xel.util.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -45,17 +48,25 @@ public final class SubmitSolution extends CreateTransaction {
         final boolean is_pow = ParameterParser.getBooleanByString(req, "is_pow", true);
         byte[] hash = ParameterParser.getBytes(req, "hash", false);
 
-        if(is_pow == true)
-            hash = Convert.EMPTY_BYTE;
+        Work w = Work.getWork(workId);
+        if(w==null || w.isClosed()){
+            return JSONResponses.ERROR_WORK_INCORRECT;
+        }
 
-        CommandPowBty work = new CommandPowBty(workId, is_pow, multiplicator, hash, data, storageId);
+        CommandPowBty work = new CommandPowBty(workId, is_pow, multiplicator, hash, data, storageId, w.getCurrentRound());
 
         try {
             MessageEncoder.push(work, ParameterParser.getSecretPhrase(req, true));
             return JSONResponses.EVERYTHING_ALRIGHT;
         } catch (IOException e) {
-            e.printStackTrace();
+            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " submission failed. IO Exception");
             return JSONResponses.ERROR_INCORRECT_REQUEST;
+        } catch (NxtException.ValidationException e) {
+            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " submission failed: " + e.getMessage());
+            JSONObject response  = new JSONObject();
+            response.put("errorCode", 6009);
+            response.put("errorDescription", e.getMessage());
+            return response;
         }
     }
 

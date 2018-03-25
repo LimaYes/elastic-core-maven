@@ -21,6 +21,8 @@ import org.xel.AccountLedger.LedgerEvent;
 import org.xel.Attachment.AbstractAttachment;
 import org.xel.NxtException.ValidationException;
 import org.xel.VoteWeighting.VotingModel;
+import org.xel.computation.CommandPowBty;
+import org.xel.computation.MessageEncoder;
 import org.xel.util.Convert;
 import org.xel.util.Logger;
 import org.apache.tika.Tika;
@@ -122,6 +124,9 @@ public abstract class TransactionType {
     public abstract byte getType();
 
     public abstract byte getSubtype();
+
+    public void executeOnEachUnconfirmedTXUponReceive(Transaction transaction){  }
+    public void postponeForNow(Transaction transaction) throws NxtException.NotCurrentlyValidException {  }
 
     public abstract LedgerEvent getLedgerEvent();
 
@@ -520,6 +525,38 @@ public abstract class TransactionType {
         @Override
         final boolean applyAttachmentUnconfirmed(Transaction transaction, Account senderAccount) {
             return true;
+        }
+
+        @Override
+        public void executeOnEachUnconfirmedTXUponReceive(Transaction transaction) {
+            if(MessageEncoder.useComputationEngine==false) return;
+
+            CommandPowBty isIt = MessageEncoder.hasPowAndBountyContent(transaction);
+            if(isIt==null) return;
+
+            if(MessageEncoder.limitHit(transaction, isIt)) return;
+
+            try {
+                MessageEncoder.preValidate(transaction, isIt);
+            }catch(Exception e){
+
+            }
+
+            return;
+        }
+
+        @Override
+        public void postponeForNow(Transaction transaction) throws NxtException.NotCurrentlyValidException {
+            if(MessageEncoder.useComputationEngine==false) return;
+
+            CommandPowBty isIt = MessageEncoder.hasPowAndBountyContent(transaction);
+            if(isIt==null) return;
+
+            if(MessageEncoder.limitHit(transaction, isIt)) throw new NxtException.NotCurrentlyValidException("The limit of bty/pow for that block has been hit for work " + isIt.getWork_id());
+
+            MessageEncoder.preValidate(transaction, isIt);
+
+            return;
         }
 
         @Override

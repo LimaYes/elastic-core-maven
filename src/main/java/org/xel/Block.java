@@ -82,4 +82,6 @@ public interface Block {
     JSONObject getJSONObject();
 
     long getPreviousBlockPowTarget();
+    long getCurrentBlockPowTarget();
+
 }

@@ -230,7 +230,7 @@ public final class Redeem {
        return "Hereby, I confirm to redeem "
                 + String.valueOf(nqt).replace("L", "") + " NQT-XEL from genesis entry "
                 + address + " to account "
-                + Long.toUnsignedString(receipient);
+                + Long.toUnsignedString(receipient) + ((Constants.isTestnet)?" (Evo 5.0.0 Testnet)":"");
     }
 
     public static long getGuaranteedRedeemed(int height) {

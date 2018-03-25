@@ -220,6 +220,14 @@ public final class JSONResponses {
         ERROR_INCORRECT_REQUEST = JSON.prepare(response);
     }
 
+    public static final JSONStreamAware ERROR_WORK_INCORRECT;
+    static {
+        JSONObject response  = new JSONObject();
+        response.put("errorCode", 6001);
+        response.put("errorDescription", "The work is unknown or already closed. You do not want to submit any pow/bty anymore");
+        ERROR_WORK_INCORRECT = JSON.prepare(response);
+    }
+
     public static final JSONStreamAware EVERYTHING_ALRIGHT;
     static {
         JSONObject response  = new JSONObject();
