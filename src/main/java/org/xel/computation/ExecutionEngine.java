@@ -146,8 +146,8 @@ public class ExecutionEngine {
 
             if(line.contains("ERROR") || line.contains("Error")) {
                 if(getBooleanProperty("nxt.dump_pow_info")) {
-                    System.err.println(cmd);
-                    System.err.println(fullOutp);
+                    Logger.logErrorMessage(cmd);
+                    Logger.logErrorMessage(fullOutp);
                 }
                 throw new IOException("EPL code produced error: " + line);
             }
