@@ -45,7 +45,7 @@ public class ComputationConstants {
     public static final short MULTIPLIER_LENGTH = 32;
     public static final int POW_MIN = 10;
     public static final int POW_MAX = Integer.MAX_VALUE;
-    public static final int MAX_EXECUTION_TIME_IN_S = 8;
+    public static final int MAX_EXECUTION_TIME_IN_S = 10;
     public static final int MAX_STORAGE_SIZE = 500;
     public static final short MD5LEN = 16 ;
     public static final int WE_WANT_X_POW_PER_MINUTE = 10;
