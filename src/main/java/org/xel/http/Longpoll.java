@@ -83,7 +83,7 @@ final class ExpiringListPointer {
 }
 
 public final class Longpoll extends APIServlet.APIRequestHandler {
-	static boolean allowLongpollRelaxed = Nxt.getBooleanProperty("org.xel.longPollFromAnywhere");
+	static boolean allowLongpollRelaxed = Nxt.getBooleanProperty("nxt.longPollFromAnywhere");
 
 	private static final int waitTimeValue = 5000;
 	private static final int garbageTimeout = 10000;

@@ -93,7 +93,7 @@ public class MessageEncoder {
 
         if(w.getCurrentRound() != c.getCurrent_round()) throw new NxtException.NotCurrentlyValidException("The work is not yet known, delaying");
         boolean ret = c.prevalidate(transaction);
-        if(!ret) throw new NxtException.NotCurrentlyValidException("The submitted pow/bty was simply wrong");
+        if(!ret) throw new NxtException.NotCurrentlyValidException("The submitted " + ((c.isIs_proof_of_work())?"POW":"BOUNTY") + " was simply wrong");
 
         // looks good enough to keep it for now, real validation will be performed later
         if(c.isIs_proof_of_work()){

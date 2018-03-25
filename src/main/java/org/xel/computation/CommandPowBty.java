@@ -51,6 +51,7 @@ public class CommandPowBty extends IComputationAttachment {
         this.hash = hash;
         this.storage_bucket = storage_bucket;
         this.submitted_storage = submitted_storage;
+        if(this.submitted_storage==null)this.submitted_storage=new byte[0];
         this.current_round = current_round;
     }
 

@@ -114,6 +114,7 @@ public class ExecutionEngine {
         FileWriter fileWriter = new FileWriter("work/code.epl");
         PrintWriter printWriter = new PrintWriter(fileWriter);
         printWriter.print(epl);
+        printWriter.flush();
         printWriter.close();
 
         ComputationResult r = new ComputationResult();
@@ -170,6 +171,9 @@ public class ExecutionEngine {
             }
             fullOutp += line + "\n";
         }
+
+        //System.out.println(fullOutp);
+        //System.out.println(fullOutp);
 
         if(process.exitValue()!=0) {
             if(getBooleanProperty("nxt.dump_pow_info")) {

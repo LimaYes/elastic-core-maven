@@ -257,7 +257,7 @@ public class CommandNewWork extends IComputationAttachment {
             long workId = -1;
             byte[] multi = publicKey; // leave it empty ffs
             int storage_id = -1;
-            ComputationResult r = e.compute(target, publicKey, blockId, multi, workId, storage_id);
+            ComputationResult r = e.compute(target, publicKey, blockId, multi, workId, new String(this.getSourceCode()), storage_id);
             storage_size = r.storage_size;
 
             // HERE, DOUBLE CHECK FOR STORAGE SIZE IN CASE IT SLIPPED THROUGH -  IT CAN BE CRITICAL
