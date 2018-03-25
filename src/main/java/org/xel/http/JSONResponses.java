@@ -204,6 +204,14 @@ public final class JSONResponses {
         ERROR_NOT_ALLOWED = JSON.prepare(response);
     }
 
+    public static final JSONStreamAware ERROR_WORK_UNKNOWN;
+    static {
+        JSONObject response = new JSONObject();
+        response.put("errorCode", 70001);
+        response.put("errorDescription", "This work is either unknown or already closed");
+        ERROR_WORK_UNKNOWN = JSON.prepare(response);
+    }
+
     public static final JSONStreamAware ERROR_DISABLED;
     static {
         JSONObject response  = new JSONObject();

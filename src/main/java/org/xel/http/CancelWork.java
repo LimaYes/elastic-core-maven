@@ -18,6 +18,7 @@ package org.xel.http;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.xel.Work;
 import org.xel.computation.CommandCancelWork;
 import org.xel.computation.MessageEncoder;
 import org.json.simple.JSONStreamAware;
@@ -37,6 +38,10 @@ public final class CancelWork extends CreateTransaction {
     protected JSONStreamAware processRequest(final HttpServletRequest req) throws NxtException {
 
         final long workId = ParameterParser.getUnsignedLong(req, "work_id", true);
+
+        Work w = Work.getWork(workId);
+        if(w==null || w.isClosed())
+            return JSONResponses.ERROR_WORK_UNKNOWN;
 
         CommandCancelWork work = new CommandCancelWork(workId);
 
