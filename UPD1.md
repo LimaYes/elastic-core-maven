@@ -215,6 +215,9 @@ I am really sorry but I will have to write that guide the next week. It will app
 
 ## Hack On
 
-That’s about it. Thanks for listening. I will update this document and improve it tomorrow. I have been working 15 hrs straight and really need to get some rest.
+That’s about it. Thanks for listening.
+Please keep in mind, it looks so easy because it was made to be used easily. And this was a huge effort by itself. Under the hood, many complex things are happening, and it was a very tough job to make it all work in a decentralized fashion and tamper proof. You will soon learn about all details of XEL, how it is working under the hood, what ePL is capable of, and what limitations you are about to expect - because there are some, simply because of the "better safe than sorry" principle.
+
+I will update this document and improve it tomorrow and in the course of the next week. I have been working 34 hrs straight and really need to get some rest now.
 
 
