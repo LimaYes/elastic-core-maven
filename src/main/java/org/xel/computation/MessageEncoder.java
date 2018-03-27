@@ -73,8 +73,8 @@ public class MessageEncoder {
         if (w == null) return false;
         if (w.isClosed() == true) return false;
 
-        Logger.logDebugMessage("Checking stupidLimiters for work " + c.getWork_id() + ": pow = " + ((stupidLimiterPow.containsKey(w.getId())==false)?0:stupidLimiterPow.get(w.getId())) + ", bty = " + ((stupidLimiterBty.containsKey(w.getId())==false)?0:stupidLimiterBty.get(w.getId())));
-            if(c.isIs_proof_of_work()){
+        Logger.logDebugMessage("Checking stupidLimiters for work " + c.getWork_id() + ": pow = " + ((stupidLimiterPow.containsKey(w.getId())==false)?0:stupidLimiterPow.get(w.getId())) + " (of " + w.getCap_number_pow() + "), bty = " + ((stupidLimiterBty.containsKey(w.getId())==false)?0:stupidLimiterBty.get(w.getId())) + " (of " + w.getBounty_limit_per_iteration() + ")");
+        if(c.isIs_proof_of_work()){
             if(stupidLimiterPow.containsKey(w.getId())==false) return false;
             return stupidLimiterPow.get(w.getId())>=25;
         }else{
@@ -103,7 +103,7 @@ public class MessageEncoder {
                 stupidLimiterPow.put(w.getId(), 1);
         } else{
             if(stupidLimiterBty.containsKey(w.getId()))
-                stupidLimiterBty.put(w.getId(), stupidLimiterPow.get(w.getId())+1);
+                stupidLimiterBty.put(w.getId(), stupidLimiterBty.get(w.getId())+1);
             else
                 stupidLimiterBty.put(w.getId(), 1);
         }
