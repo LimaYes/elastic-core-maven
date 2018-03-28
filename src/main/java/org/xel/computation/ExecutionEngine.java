@@ -94,17 +94,17 @@ public class ExecutionEngine {
     }
 
 
-    public ComputationResult compute(final byte[] target, final byte[] publicKey, final long blockId, final byte[] multiplicator, final long workId, final int storage_idx) throws Exception {
+    public ComputationResult compute(final byte[] target, final byte[] publicKey, final long blockId, final byte[] multiplicator, final long workId, final int storage_idx, boolean nocache) throws Exception {
         String epl;
         if (workId == -1)
             epl = getEplCode(getStringProperty("nxt.test_file"));
         else
             epl = getEplCode(workId);
 
-        return compute(target, publicKey, blockId, multiplicator, workId, epl, storage_idx);
+        return compute(target, publicKey, blockId, multiplicator, workId, epl, storage_idx, nocache);
     }
 
-    public ComputationResult compute(final byte[] target, final byte[] publicKey, final long blockId, final byte[] multiplicator, final long workId, String epl, final int storage_idx) throws Exception {
+    public ComputationResult compute(final byte[] target, final byte[] publicKey, final long blockId, final byte[] multiplicator, final long workId, String epl, final int storage_idx, boolean nocache) throws Exception {
         int[] storage = null;
         if(workId == -1)
             storage = getDummyStorage();
@@ -119,7 +119,12 @@ public class ExecutionEngine {
 
         ComputationResult r = new ComputationResult();
 
-        String cmd = String.format("./xel_miner --test-target %s --test-publickey %s --test-multiplicator %s --test-block %d --test-work %d --verify-only --test-wcet-main %d --test-wcet-verify %d --deadswitch %d --test-stdin --test-limit-storage %d --test-vm code.epl", bytesToHex(target), bytesToHex(publicKey), bytesToHex(multiplicator), blockId, workId, ComputationConstants.MAX_MAIN_WCET, ComputationConstants.MAX_VERIFY_WCET, ComputationConstants.MAX_EXECUTION_TIME_IN_S, ComputationConstants.MAX_STORAGE_SIZE);
+        String cmd = "";
+        if(!nocache)
+            cmd = String.format("./xel_miner --test-target %s --test-publickey %s --test-multiplicator %s --test-block %d --test-work %d --verify-only --test-wcet-main %d --test-wcet-verify %d --deadswitch %d --test-stdin --test-limit-storage %d --test-vm code.epl", bytesToHex(target), bytesToHex(publicKey), bytesToHex(multiplicator), blockId, workId, ComputationConstants.MAX_MAIN_WCET, ComputationConstants.MAX_VERIFY_WCET, ComputationConstants.MAX_EXECUTION_TIME_IN_S, ComputationConstants.MAX_STORAGE_SIZE);
+        else
+            cmd = String.format("./xel_miner --test-avoidcache --test-target %s --test-publickey %s --test-multiplicator %s --test-block %d --test-work %d --verify-only --test-wcet-main %d --test-wcet-verify %d --deadswitch %d --test-stdin --test-limit-storage %d --test-vm code.epl", bytesToHex(target), bytesToHex(publicKey), bytesToHex(multiplicator), blockId, workId, ComputationConstants.MAX_MAIN_WCET, ComputationConstants.MAX_VERIFY_WCET, ComputationConstants.MAX_EXECUTION_TIME_IN_S, ComputationConstants.MAX_STORAGE_SIZE);
+
         Logger.logInfoMessage(cmd);
         Process process=Runtime.getRuntime().exec(cmd,
                 null, new File("./work/"));
@@ -176,7 +181,7 @@ public class ExecutionEngine {
         }
 
         //System.out.println(fullOutp);
-        //System.out.println(fullOutp);
+        System.out.println(fullOutp);
 
         if(process.exitValue()!=0) {
             if(getBooleanProperty("nxt.dump_pow_info")) {

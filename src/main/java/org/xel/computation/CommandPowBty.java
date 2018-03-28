@@ -181,7 +181,7 @@ public class CommandPowBty extends IComputationAttachment {
         ExecutionEngine e = new ExecutionEngine();
 
         try {
-            ComputationResult r = e.compute(target, pubkey, blockid, multiplier_array, workId, storage_bucket);
+            ComputationResult r = e.compute(target, pubkey, blockid, multiplier_array, workId, storage_bucket, false);
             return r.isPow;
         } catch (Exception e1) {
             return false;
@@ -195,7 +195,7 @@ public class CommandPowBty extends IComputationAttachment {
         ExecutionEngine e = new ExecutionEngine();
 
         try {
-            ComputationResult r = e.compute(target, pubkey, blockid, multiplier_array, workId, storage_bucket);
+            ComputationResult r = e.compute(target, pubkey, blockid, multiplier_array, workId, storage_bucket, false);
             return r.isBty;
         } catch (Exception e1) {
             return false;

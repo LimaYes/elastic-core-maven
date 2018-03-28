@@ -22,7 +22,7 @@ public class TestVm2 {
 
 
         try {
-            ComputationResult r = e.compute(target, publicKey, blockId, multi, workId, storage_id);
+            ComputationResult r = e.compute(target, publicKey, blockId, multi, workId, storage_id, true);
         } catch (Exception e1) {
             e1.printStackTrace();
         }
@@ -41,7 +41,7 @@ public class TestVm2 {
         int storage_id = -1;
 
 
-        ComputationResult r = e.compute(target, publicKey, blockId, multi, -1, ExecutionEngine.getEplCode(Nxt.getStringProperty("nxt.test_verify_file")), storage_id);
+        ComputationResult r = e.compute(target, publicKey, blockId, multi, -1, ExecutionEngine.getEplCode(Nxt.getStringProperty("nxt.test_verify_file")), storage_id, true);
         if(Convert.toHexString(r.powHash).equalsIgnoreCase("d0620fbdd8c18e5f2e7258290dc3c5e6")) return;
 
         throw new IOException("The work produces an unpredictable result. xel_miner does not return what should be expected. " + Convert.toHexString(r.powHash) + " != XX");
