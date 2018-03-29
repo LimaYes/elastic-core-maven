@@ -222,6 +222,8 @@ public class CommandNewWork extends IComputationAttachment {
     @Override
     boolean validate(Transaction transaction) {
 
+        if(Nxt.getBlockchain().getHeight()<5370) return false;
+
         if (((this.sourceCode == null) || (this.sourceCode.length == 0)) && (this.sourceCodeCompressed == null) || (this.sourceCodeCompressed.length == 0)) return false;
 
         if(!Commons.checkRange(ComputationConstants.DEADLINE_MIN, ComputationConstants.DEADLINE_MAX, this.deadline))

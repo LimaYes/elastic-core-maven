@@ -421,7 +421,7 @@ public final class TransactionProcessorImpl implements TransactionProcessor {
                 Logger.logDebugMessage("Will broadcast new transaction later " + transaction.getStringId());
             } else {
                 processTransaction(unconfirmedTransaction);
-                Logger.logDebugMessage("Accepted new transaction " + transaction.getStringId());
+                //Logger.logDebugMessage("Accepted new transaction " + transaction.getStringId());
                 List<Transaction> acceptedTransactions = Collections.singletonList(transaction);
                 Peers.sendToSomePeers(acceptedTransactions);
                 transactionListeners.notify(acceptedTransactions, Event.ADDED_UNCONFIRMED_TRANSACTIONS);

@@ -14,7 +14,7 @@ public class ExecutionEngine {
 
     private static final Properties defaultProperties = new Properties();
     private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
-
+    static boolean dda = getBooleanProperty("nxt.dump_pow_info");
 
     public static byte[] getMaximumTargetForTesting() {
         byte[] target = new byte[16];
@@ -125,7 +125,7 @@ public class ExecutionEngine {
         else
             cmd = String.format("./xel_miner --test-avoidcache --test-target %s --test-publickey %s --test-multiplicator %s --test-block %d --test-work %d --verify-only --test-wcet-main %d --test-wcet-verify %d --deadswitch %d --test-stdin --test-limit-storage %d --test-vm code.epl", bytesToHex(target), bytesToHex(publicKey), bytesToHex(multiplicator), blockId, workId, ComputationConstants.MAX_MAIN_WCET, ComputationConstants.MAX_VERIFY_WCET, ComputationConstants.MAX_EXECUTION_TIME_IN_S, ComputationConstants.MAX_STORAGE_SIZE);
 
-        Logger.logInfoMessage(cmd);
+        //Logger.logInfoMessage(cmd);
         Process process=Runtime.getRuntime().exec(cmd,
                 null, new File("./work/"));
         BufferedReader reader =
@@ -155,7 +155,7 @@ public class ExecutionEngine {
             line = line.replaceAll("\\[\\d+m", "").trim();
 
             if(line.contains("ERROR") || line.contains("Error")) {
-                if(getBooleanProperty("nxt.dump_pow_info")) {
+                if(dda) {
                     Logger.logErrorMessage(cmd);
                     Logger.logErrorMessage(fullOutp);
                 }
@@ -181,10 +181,9 @@ public class ExecutionEngine {
         }
 
         //System.out.println(fullOutp);
-        System.out.println(fullOutp);
 
         if(process.exitValue()!=0) {
-            if(getBooleanProperty("nxt.dump_pow_info")) {
+            if(dda) {
                 System.err.println(cmd);
                 System.err.println(fullOutp);
             }
@@ -192,7 +191,7 @@ public class ExecutionEngine {
         }
 
 
-        if(getBooleanProperty("nxt.dump_pow_info")) {
+        if(dda) {
             System.out.println("Result is POW: " + r.isPow);
             System.out.println("Result is BTY: " + r.isBty);
             System.out.println("Pow Hash: " + bytesToHex(r.powHash));

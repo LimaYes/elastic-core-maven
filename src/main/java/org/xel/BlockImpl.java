@@ -645,7 +645,6 @@ final class BlockImpl implements Block {
             darkTarget /= ComputationConstants.POW_RETARGET_DEPTH;
             nActualTimespan = ((double)this.getTimestamp()-b.getTimestamp());
 
-            // TODO: check implication of setting this to no-retarget in case no POW submissions come in
             nTargetTimespan = nActualTimespan;
             if(powMass!=0)
                 nTargetTimespan = powMass * (60 / ComputationConstants.WE_WANT_X_POW_PER_MINUTE);
@@ -656,9 +655,8 @@ final class BlockImpl implements Block {
                 nActualTimespan = nTargetTimespan * 3.0;
 
             double tmp = darkTarget;
-            darkTarget = (darkTarget / nTargetTimespan)*nActualTimespan;
+            darkTarget = (darkTarget / nActualTimespan)*nTargetTimespan;
 
-            // Overflow safety, TODO: long-term evaluate if these overflows can be handled this way on signed long
             if((nActualTimespan>nTargetTimespan && darkTarget<tmp) || (darkTarget > Long.MAX_VALUE / 100)){
                 darkTarget = Long.MAX_VALUE / 100;
             }
@@ -687,8 +685,8 @@ final class BlockImpl implements Block {
 
         }
 
-        Logger.logInfoMessage("Block " + this.getHeight() + " POW retarget; powLastMass=" + powLastMass + ", powMass=" +
-                        powMass + ", targetLastMass=" + targetLastMass + ", targetMass=" + targetMass + ", a=" + nActualTimespan + ", t=" +  nTargetTimespan + "\t-> TARGET = " + Convert.toHexString(tgt));
+        Logger.logInfoMessage("Block " + this.getHeight() + " POW retarget; lM=" + powLastMass + ", cumulM=" +
+                        powMass + ", took=" + nActualTimespan + ", shouldTake=" +  nTargetTimespan + ", adjustmentRatio = " + (nTargetTimespan/nActualTimespan) + "\t-> TARGET = " + Convert.toHexString(tgt));
 
 
     }
