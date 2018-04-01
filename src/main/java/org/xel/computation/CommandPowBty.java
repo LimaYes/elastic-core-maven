@@ -275,11 +275,11 @@ public class CommandPowBty extends IComputationAttachment {
         }
 
         BigInteger myTarget = ComputationConstants.MAXIMAL_WORK_TARGET;
-        myTarget = myTarget.divide(BigInteger.valueOf(Long.MAX_VALUE/100)); // Note, our target in compact form is in range 1..LONG_MAX/100
+        myTarget = myTarget.divide(BigInteger.valueOf(Long.MAX_VALUE/10000)); // Note, our target in compact form is in range 1..LONG_MAX/100
         myTarget = myTarget.multiply(BigInteger.valueOf(lastBlocksTarget));
         if(myTarget.compareTo(ComputationConstants.MAXIMAL_WORK_TARGET) == 1)
             myTarget = ComputationConstants.MAXIMAL_WORK_TARGET;
-        if(myTarget.compareTo(BigInteger.ONE) == 2)
+        if(myTarget.compareTo(BigInteger.ONE) == -1)
             myTarget = BigInteger.ONE;
         int[] target = Convert.bigintToInts(myTarget,4);
         // safeguard
@@ -306,10 +306,10 @@ public class CommandPowBty extends IComputationAttachment {
 
         if(this.is_proof_of_work) {
             transaction.itWasAPow();
-            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification succeeded: pow submission passed all checks.");
+            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification succeeded: pow submission passed all checks. (txid " + transaction.getStringId() + ")");
         }
         else
-            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification succeeded: bty submission passed all checks.");
+            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification succeeded: bty submission passed all checks. (txid " + transaction.getStringId() + ")");
 
 
         isValid = true;
@@ -326,31 +326,40 @@ public class CommandPowBty extends IComputationAttachment {
         Work w = Work.getWork(this.work_id);
         if (w == null) return false;
         if (w.isClosed() == true) return false;
-        if (w.getCurrentRound() != this.getCurrent_round()) return false;
+        if (w.getCurrentRound() != this.getCurrent_round()) {
+            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: round wrong");
+            return false;
+        }
 
         // TODO WARNING: Badly programmed jobs that allow the same output (POW/BTY) for a different multiplicator can suffer big time here! Be careful coding!
         byte[] myMultiplier = this.getMultiplier();
         if(PowAndBounty.hasMultiplier(w.getId(), myMultiplier)) {
+            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: multiplier already known");
             return false;
         }
 
         // checking multiplicator length requirements
         if (multiplier.length != ComputationConstants.MULTIPLIER_LENGTH) {
+            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: multiplier wrong");
             return false;
         }
 
         // checking pow_hash length requirements once again
         if (hash.length != ComputationConstants.MD5LEN) {
+            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: hash wrong");
             return false;
         }
 
         // !! if storage size is larger than 0 this indicates the presence of a storage. Therefore, storage bucket must be in a valid range
         if((w.getStorage_size()>0) && (this.storage_bucket >= w.getBounty_limit_per_iteration() || this.storage_bucket < 0)) {
+            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: bad storage bucket");
             return false;
         }
 
         // !! otherwise, if storage_size == 0, then no storage is there and storage_bucket must be -1
         if(w.getStorage_size()==0 && this.storage_bucket != -1) {
+            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: bad storage length");
+
             return false;
         }
 
@@ -371,11 +380,11 @@ public class CommandPowBty extends IComputationAttachment {
         }
 
         BigInteger myTarget = ComputationConstants.MAXIMAL_WORK_TARGET;
-        myTarget = myTarget.divide(BigInteger.valueOf(Long.MAX_VALUE/100)); // Note, our target in compact form is in range 1..LONG_MAX/100
+        myTarget = myTarget.divide(BigInteger.valueOf(Long.MAX_VALUE/10000)); // Note, our target in compact form is in range 1..LONG_MAX/100
         myTarget = myTarget.multiply(BigInteger.valueOf(lastBlocksTarget));
         if(myTarget.compareTo(ComputationConstants.MAXIMAL_WORK_TARGET) == 1)
             myTarget = ComputationConstants.MAXIMAL_WORK_TARGET;
-        if(myTarget.compareTo(BigInteger.ONE) == 2)
+        if(myTarget.compareTo(BigInteger.ONE) == -1)
             myTarget = BigInteger.ONE;
         int[] target = Convert.bigintToInts(myTarget,4);
         // safeguard
@@ -390,10 +399,12 @@ public class CommandPowBty extends IComputationAttachment {
         // Validate code-level
         if (this.is_proof_of_work && !validatePow(transaction.getSenderPublicKey(), w.getBlock_id(),
                 work_id, tgt)) {
+            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: code level validation failed pow");
             return false;
         }
         if (!this.is_proof_of_work && !validateBty(transaction.getSenderPublicKey(), w.getBlock_id(),
                 work_id, tgt)) {
+            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: code level validation failed bty");
             return false;
         }
 
@@ -405,7 +416,7 @@ public class CommandPowBty extends IComputationAttachment {
         if (!validate(transaction))
             return;
         // Here, apply the actual package
-        Logger.logInfoMessage("processing pow-or-bty for work: id=" + Long.toUnsignedString(this.work_id));
+        Logger.logInfoMessage("processing " + (this.isIs_proof_of_work()?"POW":"BTY") + " for work: id=" + Long.toUnsignedString(this.work_id));
         PowAndBounty.addPowBty(transaction, this);
     }
 

@@ -73,7 +73,7 @@ public interface Block {
 
     long getTargetMass();
 
-    void calculatePowTarget(int powCounter);
+    void calculatePowTarget(int powCounter, int min, int max);
 
     BigInteger getCumulativeDifficulty();
 

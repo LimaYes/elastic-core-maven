@@ -66,7 +66,8 @@ public final class SubmitSolution extends CreateTransaction {
             Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " submission failed. IO Exception");
             return JSONResponses.ERROR_INCORRECT_REQUEST;
         } catch (NxtException.ValidationException e) {
-            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " submission failed: " + e.getMessage());
+            if(e.getMessage().contains("limit")==false)
+                Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " submission failed: " + e.getMessage());
             JSONObject response  = new JSONObject();
             response.put("errorCode", 6009);
             response.put("errorDescription", e.getMessage());

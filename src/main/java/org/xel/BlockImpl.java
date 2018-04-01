@@ -601,12 +601,10 @@ final class BlockImpl implements Block {
         return baos.toByteArray();
     }
 
-    public void calculatePowTarget(int powCounter) {
-        int powcnt = 0;
-        double nTargetTimespan = 0;
-        double nActualTimespan = 0;
+    public void calculatePowTarget(int powCounter, int minTxTime, int maxTxTime) {
 
         BlockImpl previousBlock = null;
+        powMass = powCounter;
 
         if(this.getHeight() == 60){
             previousBlock = null;
@@ -616,77 +614,56 @@ final class BlockImpl implements Block {
 
         if(previousBlock == null || (this.getHeight() < ComputationConstants.START_ENCODING_BLOCK)){
             // Do nothing
+            powTarget = Long.MAX_VALUE/10000;
             return;
         }
-        else if(this.getHeight() < ComputationConstants.START_ENCODING_BLOCK + ComputationConstants
-                .POW_RETARGET_DEPTH){
-            powcnt = powCounter;
-            // Initialization Window. Just count and set target to MAX, don't adjust anything
-            powTarget = Long.MAX_VALUE / 100;
-            if(this.getHeight()==ComputationConstants.START_ENCODING_BLOCK)
-            {
-                powMass = powcnt;
-                targetMass = powTarget;
-            }else{
-                powMass = powcnt + previousBlock.powMass;
-                targetMass = previousBlock.targetMass + powTarget;
+
+        int nActualTimespan = this.getTimestamp() - previousBlock.getTimestamp();
+
+        int nActualPows = this.getPowMass();
+        long targetForThisBlock = previousBlock.getPowTarget();
+        double nTargetTimespan = 0;
+        double ratio = 0;
+        if (nActualTimespan < 60*0.5 || nActualTimespan > 60*1.5){ // For too short blocks, let us just leave the target untouched
+            powTarget = targetForThisBlock;
+        }else {
+
+            // Here, we give it another chance to be more precise on the actual time span in case we hit the cap
+            if(powMass == 25 && minTxTime != Integer.MAX_VALUE){
+                    nActualTimespan = maxTxTime - minTxTime;
             }
-            powLastMass = powcnt;
-            targetLastMass = powTarget;
 
-        }else{
-            powcnt = powCounter;
-            // Regular handling with "rolling window"
-            BlockImpl b = BlockDb.findBlockAtHeight(this.getHeight()-ComputationConstants.POW_RETARGET_DEPTH);
-            powMass = powcnt + previousBlock.powMass - b.getPowLastMass();
-            powLastMass = powcnt;
+            nTargetTimespan = (nActualPows * 60) / ComputationConstants.WE_WANT_X_POW_PER_MINUTE;
 
-            double darkTarget = (double)previousBlock.targetMass;
-            darkTarget /= ComputationConstants.POW_RETARGET_DEPTH;
-            nActualTimespan = ((double)this.getTimestamp()-b.getTimestamp());
 
-            nTargetTimespan = nActualTimespan;
-            if(powMass!=0)
-                nTargetTimespan = powMass * (60 / ComputationConstants.WE_WANT_X_POW_PER_MINUTE);
+            ratio = nActualTimespan / nTargetTimespan;
 
-            if (nActualTimespan < nTargetTimespan / 3.0)
-                nActualTimespan = nTargetTimespan / 3.0;
-            if (nActualTimespan > nTargetTimespan * 3.0)
-                nActualTimespan = nTargetTimespan * 3.0;
-
-            double tmp = darkTarget;
-            darkTarget = (darkTarget / nActualTimespan)*nTargetTimespan;
-
-            if((nActualTimespan>nTargetTimespan && darkTarget<tmp) || (darkTarget > Long.MAX_VALUE / 100)){
-                darkTarget = Long.MAX_VALUE / 100;
+            if (this.getPowMass() == 25) {
+                // if cap was hit, allow drastic changes
+                if (ratio < 0.10) ratio = 0.10;
+                else if (ratio > 1.9) ratio = 1.9;
+            } else {
+                // Otherwise be conservative
+                // But take care, 20% means 34% up again
+                if (ratio < 0.85) ratio = 0.85;
+                else if (ratio > 1.18) ratio = 1.18;
             }
-            if((nActualTimespan<nTargetTimespan && darkTarget>tmp) || (darkTarget < 1)){
-                darkTarget = 1;
-            }
-            powTarget = (long)darkTarget;
-            targetMass = powTarget + previousBlock.targetMass - b.targetLastMass;
-            targetLastMass = powTarget;
+
+            powTarget = (long) (targetForThisBlock * ratio);
+            if(powTarget > Long.MAX_VALUE/10000) powTarget = Long.MAX_VALUE/10000;
+            else if(powTarget < 1) powTarget = 1;
         }
 
         BigInteger myTarget = ComputationConstants.MAXIMAL_WORK_TARGET;
-        myTarget = myTarget.divide(BigInteger.valueOf(Long.MAX_VALUE/100)); // Note, our target in compact form is in range 1..LONG_MAX/100
+        myTarget = myTarget.divide(BigInteger.valueOf(Long.MAX_VALUE/10000)); // Note, our target in compact form is in range 1..LONG_MAX/100
         myTarget = myTarget.multiply(BigInteger.valueOf(powTarget));
         if(myTarget.compareTo(ComputationConstants.MAXIMAL_WORK_TARGET) == 1)
             myTarget = ComputationConstants.MAXIMAL_WORK_TARGET;
-        if(myTarget.compareTo(BigInteger.ONE) == 2)
+        if(myTarget.compareTo(BigInteger.ONE) == -1)
             myTarget = BigInteger.ONE;
-        int[] target = Convert.bigintToInts(myTarget,4);
-        // safeguard
-        if(target.length!=4) target = new int[]{0,0,0,0};
-        byte[] tgt = new byte[0];
-        try {
-            tgt = integersToBytes(target);
-        } catch (IOException e) {
 
-        }
+        Logger.logInfoMessage("Block " + this.getHeight() + ": new minimal target = " + myTarget.toString(16) + ", powMass = " + powMass + ", thisTarget = " + targetForThisBlock + ", newT = " + powTarget + ", actTime = " + nActualTimespan + ", targetTime = " + nTargetTimespan + ", adjRatio = " + ratio);
 
-        Logger.logInfoMessage("Block " + this.getHeight() + " POW retarget; lM=" + powLastMass + ", cumulM=" +
-                        powMass + ", took=" + nActualTimespan + ", shouldTake=" +  nTargetTimespan + ", adjustmentRatio = " + (nTargetTimespan/nActualTimespan) + "\t-> TARGET = " + Convert.toHexString(tgt));
 
 
     }

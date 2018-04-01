@@ -183,10 +183,8 @@ public class ExecutionEngine {
         //System.out.println(fullOutp);
 
         if(process.exitValue()!=0) {
-            if(dda) {
                 System.err.println(cmd);
                 System.err.println(fullOutp);
-            }
             throw new IOException("EPL code exited with error code.");
         }
 

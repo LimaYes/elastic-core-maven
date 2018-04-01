@@ -115,6 +115,8 @@ public class MessageEncoder {
         // Check all TX for relevant stuff
 
         int powCounter = 0;
+        int mintime = Integer.MAX_VALUE;
+        int maxtime = 0;
 
         for(Transaction t : block.getTransactions()){
             Appendix.PrunablePlainMessage m = t.getPrunablePlainMessage();
@@ -128,8 +130,11 @@ public class MessageEncoder {
                     if(att == null) continue;
                     att.apply(t);
 
-                    if(t.wasAPow())
+                    if(t.wasAPow()) {
+                        if(t.getTimestamp()>maxtime) maxtime = t.getTimestamp();
+                        if(t.getTimestamp()<mintime) mintime = t.getTimestamp();
                         powCounter++;
+                    }
 
                 } catch (Exception e) {
                     // generous catch, do not allow anything to cripple the blockchain integrity
@@ -137,7 +142,7 @@ public class MessageEncoder {
                 }
             }
         }
-        block.calculatePowTarget(powCounter);
+        block.calculatePowTarget(powCounter, mintime, maxtime);
         block.setLocallyProcessed();
         // and clean the stupidLimiters
         stupidLimiterPow.clear();

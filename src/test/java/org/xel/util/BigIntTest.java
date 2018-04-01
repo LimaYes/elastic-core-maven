@@ -12,12 +12,12 @@ public class BigIntTest {
 
         BigInteger myTarget = ComputationConstants.MAXIMAL_WORK_TARGET;
         System.out.println(myTarget.toString(16));
-        myTarget = myTarget.divide(BigInteger.valueOf(Long.MAX_VALUE/100)); // Note, our target in compact form is in range 1..LONG_MAX/100
+        myTarget = myTarget.divide(BigInteger.valueOf(Long.MAX_VALUE/10000)); // Note, our target in compact form is in range 1..LONG_MAX/100
         System.out.println(myTarget.toString(16));
         myTarget = myTarget.multiply(BigInteger.valueOf(92233720368547760L));
         if(myTarget.compareTo(ComputationConstants.MAXIMAL_WORK_TARGET) == 1)
             myTarget = ComputationConstants.MAXIMAL_WORK_TARGET;
-        if(myTarget.compareTo(BigInteger.ONE) == 2)
+        if(myTarget.compareTo(BigInteger.ONE) == -1)
             myTarget = BigInteger.ONE;
         System.out.println(92233720368547760L);
         System.out.println(Long.MAX_VALUE/100);

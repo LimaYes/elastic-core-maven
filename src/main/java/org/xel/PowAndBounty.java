@@ -82,7 +82,7 @@ public final class PowAndBounty{
         {
             // logic for PoW
             w.setReceived_pows(w.getReceived_pows() + 1);
-            System.out.println("Work already got " + w.getReceived_pows() + " of " + w.getCap_number_pow() + " POWS!");
+            //System.out.println("Work already got " + w.getReceived_pows() + " of " + w.getCap_number_pow() + " POWS!");
 
             // Close work if enough bounties were received
             int cap = w.getCap_number_pow();

@@ -140,7 +140,7 @@ public final class Longpoll extends APIServlet.APIRequestHandler {
 	protected JSONStreamAware processRequest(final HttpServletRequest req) throws NxtException {
 
 		final JSONObject response = new JSONObject();
-		Logger.logDebugMessage("Longpoll request from: " + req.getRemoteAddr() + " (" + req.getRemoteHost() + ")");
+		// Logger.logDebugMessage("Longpoll request from: " + req.getRemoteAddr() + " (" + req.getRemoteHost() + ")");
 		if(!allowLongpollRelaxed && req.getRemoteAddr().equalsIgnoreCase("127.0.0.1")==false){
 			// Do not allow long polling for remote addresses
 			response.put("error", "permission denied, longpoll only from 127.0.0.1");
