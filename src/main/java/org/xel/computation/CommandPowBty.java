@@ -274,13 +274,7 @@ public class CommandPowBty extends IComputationAttachment {
                     "block: " + transaction.getBlock().getStringId());
         }
 
-        BigInteger myTarget = ComputationConstants.MAXIMAL_WORK_TARGET;
-        myTarget = myTarget.divide(BigInteger.valueOf(Long.MAX_VALUE/10000)); // Note, our target in compact form is in range 1..LONG_MAX/100
-        myTarget = myTarget.multiply(BigInteger.valueOf(lastBlocksTarget));
-        if(myTarget.compareTo(ComputationConstants.MAXIMAL_WORK_TARGET) == 1)
-            myTarget = ComputationConstants.MAXIMAL_WORK_TARGET;
-        if(myTarget.compareTo(BigInteger.ONE) == -1)
-            myTarget = BigInteger.ONE;
+        BigInteger myTarget = Scaler.get(lastBlocksTarget);
         int[] target = Convert.bigintToInts(myTarget,4);
         // safeguard
         if(target.length!=4) target = new int[]{0,0,0,0};
@@ -374,18 +368,12 @@ public class CommandPowBty extends IComputationAttachment {
         }
 
 
-        long lastBlocksTarget = Nxt.getBlockchain().getLastBlock().getCurrentBlockPowTarget(); // TODO: Observe, we are assuming this will go into next block with this
+        long lastBlocksTarget = Nxt.getBlockchain().getLastBlock().getPowTarget(); // TODO: Observe, we are assuming this will go into next block with this
         if(lastBlocksTarget==0){
             lastBlocksTarget = 1;
         }
 
-        BigInteger myTarget = ComputationConstants.MAXIMAL_WORK_TARGET;
-        myTarget = myTarget.divide(BigInteger.valueOf(Long.MAX_VALUE/10000)); // Note, our target in compact form is in range 1..LONG_MAX/100
-        myTarget = myTarget.multiply(BigInteger.valueOf(lastBlocksTarget));
-        if(myTarget.compareTo(ComputationConstants.MAXIMAL_WORK_TARGET) == 1)
-            myTarget = ComputationConstants.MAXIMAL_WORK_TARGET;
-        if(myTarget.compareTo(BigInteger.ONE) == -1)
-            myTarget = BigInteger.ONE;
+        BigInteger myTarget = Scaler.get(lastBlocksTarget);
         int[] target = Convert.bigintToInts(myTarget,4);
         // safeguard
         if(target.length!=4) target = new int[]{0,0,0,0};

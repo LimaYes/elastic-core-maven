@@ -1419,7 +1419,7 @@ public final class BlockchainProcessorImpl implements BlockchainProcessor {
         }
     }
 
-    private void pushBlock(final BlockImpl block) throws BlockNotAcceptedException {
+    public void pushBlock(final BlockImpl block) throws BlockNotAcceptedException {
 
         int curTime = Nxt.getEpochTime();
 
@@ -1461,6 +1461,8 @@ public final class BlockchainProcessorImpl implements BlockchainProcessor {
                 throw e;
             } finally {
                 Db.db.endTransaction();
+
+                // if(Nxt.getBlockchain().getHeight()==11599) System.exit(1);
             }
             blockListeners.notify(block, Event.AFTER_BLOCK_ACCEPT);
         } finally {

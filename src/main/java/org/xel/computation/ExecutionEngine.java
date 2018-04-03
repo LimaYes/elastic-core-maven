@@ -180,8 +180,6 @@ public class ExecutionEngine {
             fullOutp += line + "\n";
         }
 
-        //System.out.println(fullOutp);
-
         if(process.exitValue()!=0) {
                 System.err.println(cmd);
                 System.err.println(fullOutp);

@@ -19,6 +19,7 @@ package org.xel;
 
 import org.xel.AccountLedger.LedgerEvent;
 import org.xel.computation.ComputationConstants;
+import org.xel.computation.Scaler;
 import org.xel.crypto.Crypto;
 import org.xel.db.DbIterator;
 import org.xel.util.Convert;
@@ -30,6 +31,7 @@ import org.json.simple.JSONObject;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -59,7 +61,7 @@ final class BlockImpl implements Block {
     private byte[] blockSignature;
     private BigInteger cumulativeDifficulty = BigInteger.ZERO;
     private long baseTarget = Constants.INITIAL_BASE_TARGET;
-    private long powTarget = 0;
+    private long powTarget = Long.MAX_VALUE/10000;
     private int powLastMass = 0;
     private int powMass = 0;
     private long targetLastMass = 0;
@@ -345,14 +347,7 @@ final class BlockImpl implements Block {
         }
     }
 
-    @Override
-    public long getCurrentBlockPowTarget() {
-        try {
-            return this.getPowTarget();
-        }catch(Exception e){
-            return 0;
-        }
-    }
+
 
     static BlockImpl parseBlock(JSONObject blockData) throws NxtException.NotValidException {
         try {
@@ -654,15 +649,9 @@ final class BlockImpl implements Block {
             else if(powTarget < 1) powTarget = 1;
         }
 
-        BigInteger myTarget = ComputationConstants.MAXIMAL_WORK_TARGET;
-        myTarget = myTarget.divide(BigInteger.valueOf(Long.MAX_VALUE/10000)); // Note, our target in compact form is in range 1..LONG_MAX/100
-        myTarget = myTarget.multiply(BigInteger.valueOf(powTarget));
-        if(myTarget.compareTo(ComputationConstants.MAXIMAL_WORK_TARGET) == 1)
-            myTarget = ComputationConstants.MAXIMAL_WORK_TARGET;
-        if(myTarget.compareTo(BigInteger.ONE) == -1)
-            myTarget = BigInteger.ONE;
+        BigInteger myTargetInt = Scaler.get(powTarget);
 
-        Logger.logInfoMessage("Block " + this.getHeight() + ": new minimal target = " + myTarget.toString(16) + ", powMass = " + powMass + ", thisTarget = " + targetForThisBlock + ", newT = " + powTarget + ", actTime = " + nActualTimespan + ", targetTime = " + nTargetTimespan + ", adjRatio = " + ratio);
+        Logger.logInfoMessage("Block " + this.getHeight() + ": new minimal target = " + myTargetInt.toString(16) + ", powMass = " + powMass + ", thisTarget = " + targetForThisBlock + ", newT = " + powTarget + ", actTime = " + nActualTimespan + ", targetTime = " + nTargetTimespan + ", adjRatio = " + ratio);
 
 
 

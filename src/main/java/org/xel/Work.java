@@ -10,6 +10,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import org.xel.computation.CommandNewWork;
 import org.xel.computation.ComputationConstants;
+import org.xel.computation.Scaler;
 import org.xel.db.DbClause;
 import org.xel.db.DbIterator;
 import org.xel.db.DbKey;
@@ -455,13 +456,7 @@ public final class Work {
         response.put("storage_size", work.storage_size);
 
 
-        BigInteger myTarget = ComputationConstants.MAXIMAL_WORK_TARGET;
-        myTarget = myTarget.divide(BigInteger.valueOf(Long.MAX_VALUE/10000)); // Note, our target in compact form is in range 1..LONG_MAX/100
-        myTarget = myTarget.multiply(BigInteger.valueOf(Nxt.getBlockchain().getLastBlock().getPowTarget()));
-        if(myTarget.compareTo(ComputationConstants.MAXIMAL_WORK_TARGET) == 1)
-            myTarget = ComputationConstants.MAXIMAL_WORK_TARGET;
-        if(myTarget.compareTo(BigInteger.ONE) == -1)
-            myTarget = BigInteger.ONE;
+        BigInteger myTarget = Scaler.get(Nxt.getBlockchain().getLastBlock().getPowTarget());
         response.put("target", String.format("%032x", myTarget));
 
 

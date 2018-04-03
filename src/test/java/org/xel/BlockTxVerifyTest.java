@@ -46,6 +46,16 @@ public class BlockTxVerifyTest extends AbstractForgingTest {
         Block b = Nxt.getBlockchain().getBlock(Nxt.getBlockchain().getBlockIdAtHeight(11594));
         System.out.println("TX: " + b.getTransactions().size());
         System.out.println("POW: " + b.getPowMass());
+        System.out.println(b.getJSONObject().toJSONString());
+
+        /*Nxt.getBlockchainProcessor().popOffTo(11593);
+        try {
+            Nxt.getBlockchainProcessor().pushBlock((BlockImpl)b);
+        } catch (BlockchainProcessor.BlockNotAcceptedException e) {
+            e.printStackTrace();
+        }*/
+
+        if(1==1) return;
         for(Transaction t : b.getTransactions()){
             Appendix.PrunablePlainMessage m = t.getPrunablePlainMessage();
             if(m==null || !m.hasPrunableData()) {
