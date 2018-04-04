@@ -83,4 +83,5 @@ public interface Block {
 
     long getPreviousBlockPowTarget();
 
+    byte[] getBlockHash();
 }

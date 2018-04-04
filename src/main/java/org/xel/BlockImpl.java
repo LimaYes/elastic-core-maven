@@ -347,6 +347,10 @@ final class BlockImpl implements Block {
         }
     }
 
+    @Override
+    public byte[] getBlockHash() {
+        return Crypto.sha256().digest(bytes());
+    }
 
 
     static BlockImpl parseBlock(JSONObject blockData) throws NxtException.NotValidException {

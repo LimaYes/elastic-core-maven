@@ -41,6 +41,15 @@ public class BlockTxVerifyTest extends AbstractForgingTest {
         AbstractForgingTest.shutdown();
     }
 
+    // strange block
+    // 2018-04-04 08:58:56 INFO: Block 13877: new minimal target = d99ce8a43b6414b994a309a6e9d, powMass = 4, thisTarget = 41527181659603, newT = 49002074358331, actTime = 42, targetTime = 24.0, adjRatio = 1.18
+    // 2018-04-04 09:00:23 INFO: Block 13878: new minimal target = 100c8832831971a7ed33b43b59d5, powMass = 0, thisTarget = 49002074358331, newT = 57822447742830, actTime = 87, targetTime = 0.0, adjRatio = 1.18
+    /*
+
+    Clearly, the GUI indicated something different
+    13878	4/4/2018 9:00:02	0	3.6	36	XEL-2S3Z-QQYR-WTJU-9MUX6	9 KB	5054 %
+    13877	4/4/2018 8:58:35	0	3.5	35	XEL-2S3Z-QQYR-WTJU-9MUX6	9 KB	5054 %
+     */
     @Test
     public void testStrangeBlock(){
         Block b = Nxt.getBlockchain().getBlock(Nxt.getBlockchain().getBlockIdAtHeight(11594));
@@ -55,7 +64,6 @@ public class BlockTxVerifyTest extends AbstractForgingTest {
             e.printStackTrace();
         }*/
 
-        if(1==1) return;
         for(Transaction t : b.getTransactions()){
             Appendix.PrunablePlainMessage m = t.getPrunablePlainMessage();
             if(m==null || !m.hasPrunableData()) {
