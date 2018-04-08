@@ -537,4 +537,30 @@ public final class JSONResponses {
 
     private JSONResponses() {} // never
 
+    public static final JSONStreamAware FAUCET_DISABLED;
+    static {
+        JSONObject response = new JSONObject();
+        response.put("errorCode", 10000);
+        response.put("errorDescription", "The faucet is disabled on this node");
+        FAUCET_DISABLED = JSON.prepare(response);
+    }
+    public static final JSONStreamAware FAUCET_EMPTY;
+    static {
+        JSONObject response = new JSONObject();
+        response.put("errorCode", 10001);
+        response.put("errorDescription", "Faucet is empty, please wait until it gets topped up");
+        FAUCET_EMPTY = JSON.prepare(response);
+    }
+
+    public static JSONStreamAware faucetThanks(String error) {
+        JSONObject response = new JSONObject();
+        response.put("successMessage", "Thanks for using our faucet! " + error + " XEL are heading your way, have fun!");
+        return JSON.prepare(response);
+    }
+
+    public static JSONStreamAware faucetWait(String error) {
+        JSONObject response = new JSONObject();
+        response.put("successMessage", "Sorry, but you can use the faucet only once every " + error + " seconds");
+        return JSON.prepare(response);
+    }
 }

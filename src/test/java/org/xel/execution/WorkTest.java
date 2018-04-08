@@ -74,7 +74,7 @@ public class WorkTest extends AbstractForgingTest {
         String doublecheckcode = new String(code.getBytes());
         System.out.println("[!!]\tcode length: " + code.length());
         CommandNewWork work = new CommandNewWork(100, (short)15,1000001,1000001,10,10, code.getBytes());
-        MessageEncoder.push(work, AbstractForgingTest.testForgingSecretPhrase);
+        MessageEncoder.push(work, AbstractForgingTest.testForgingSecretPhrase, 5);
 
         // Mine a bit so the work gets confirmed
         AbstractBlockchainTest.forgeNumberOfBlocks(1, AbstractForgingTest.testForgingSecretPhrase);
@@ -90,7 +90,7 @@ public class WorkTest extends AbstractForgingTest {
         }
 
         CommandCancelWork cancel = new CommandCancelWork(id);
-        MessageEncoder.push(cancel, AbstractForgingTest.testForgingSecretPhrase);
+        MessageEncoder.push(cancel, AbstractForgingTest.testForgingSecretPhrase, 5);
 
         // Mine a bit so the work gets confirmed
         AbstractBlockchainTest.forgeNumberOfBlocks(5, AbstractForgingTest.testForgingSecretPhrase);
@@ -113,7 +113,7 @@ public class WorkTest extends AbstractForgingTest {
         String code = readFile("src/test/testfiles/btc.epl", Charset.forName("UTF-8"));
         System.out.println("[!!]\tcode length: " + code.length());
         CommandNewWork work = new CommandNewWork(100, (short)15,1000001,1000001,10,10, code.getBytes());
-        MessageEncoder.push(work, AbstractForgingTest.testForgingSecretPhrase);
+        MessageEncoder.push(work, AbstractForgingTest.testForgingSecretPhrase, 5);
 
         // Mine a bit so the work gets confirmed
         AbstractBlockchainTest.forgeNumberOfBlocks(1, AbstractForgingTest.testForgingSecretPhrase);
@@ -138,7 +138,7 @@ public class WorkTest extends AbstractForgingTest {
         redeemPubkeyhash();
         String code = readFile("src/test/testfiles/btc.epl", Charset.forName("UTF-8"));
         CommandNewWork work = new CommandNewWork(10, (short)100,1000001,1000001,10,10, code.getBytes());
-        MessageEncoder.push(work, AbstractForgingTest.testForgingSecretPhrase);
+        MessageEncoder.push(work, AbstractForgingTest.testForgingSecretPhrase,5);
 
         // Mine a bit so the work gets confirmed
         AbstractBlockchainTest.forgeNumberOfBlocks(1, AbstractForgingTest.testForgingSecretPhrase);
@@ -166,12 +166,12 @@ public class WorkTest extends AbstractForgingTest {
             CommandPowBty pow2 = new CommandPowBty(id, true, m2, new byte[16], testarray, 0, w.getCurrentRound());
 
             try {
-                MessageEncoder.push(pow, AbstractForgingTest.testForgingSecretPhrase);
+                MessageEncoder.push(pow, AbstractForgingTest.testForgingSecretPhrase, 1);
             }catch(Exception e){
                 Logger.logDebugMessage("Could not push POW: " + e.getMessage());
             }
             try {
-                MessageEncoder.push(pow2, AbstractForgingTest.testForgingSecretPhrase);
+                MessageEncoder.push(pow2, AbstractForgingTest.testForgingSecretPhrase, 1);
             }catch(Exception e){
                 Logger.logDebugMessage("Could not push POW: " + e.getMessage());
             }

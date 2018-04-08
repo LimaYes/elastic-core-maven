@@ -55,7 +55,10 @@ import java.util.Collections;
 public final class SendTransaction extends APIServlet.APIRequestHandler {
 
     static final SendTransaction instance = new SendTransaction();
-
+    @Override
+    protected final boolean requirePost() {
+        return false;
+    }
     private SendTransaction() {
         super(new APITag[] {APITag.TRANSACTIONS}, "transactionJSON", "transactionBytes", "prunableAttachmentJSON");
     }
@@ -78,16 +81,6 @@ public final class SendTransaction extends APIServlet.APIRequestHandler {
             JSONData.putException(response, e, "Failed to broadcast transaction");
         }
         return response;
-    }
-
-    @Override
-    protected boolean requirePost() {
-        return true;
-    }
-
-    @Override
-    protected boolean requirePassword() {
-        return true;
     }
 
     @Override

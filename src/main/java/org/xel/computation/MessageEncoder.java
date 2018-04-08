@@ -85,28 +85,24 @@ public class MessageEncoder {
 
     public static synchronized void preValidate(Transaction transaction, CommandPowBty c) throws NxtException.NotCurrentlyValidException {
 
-        // basic simple test
-        long wid = c.getWork_id();
-        Work w = Work.getWork(wid);
-        if(w==null) throw new NxtException.NotCurrentlyValidException("The work is not yet known, delaying");
-        if (w.isClosed() == true) throw new NxtException.NotCurrentlyValidException("The work is already closed");
 
-        if(w.getCurrentRound() != c.getCurrent_round()) throw new NxtException.NotCurrentlyValidException("The work is not yet known, delaying");
-        boolean ret = c.prevalidate(transaction);
+        boolean ret = c.validate(transaction, true); // use light mode
         if(!ret) throw new NxtException.NotCurrentlyValidException("The submitted " + ((c.isIs_proof_of_work())?"POW":"BOUNTY") + " was simply wrong");
 
         // looks good enough to keep it for now, real validation will be performed later
         if(c.isIs_proof_of_work()){
-            if(stupidLimiterPow.containsKey(w.getId()))
-                stupidLimiterPow.put(w.getId(), stupidLimiterPow.get(w.getId())+1);
+            if(stupidLimiterPow.containsKey(c.getWork_id()))
+                stupidLimiterPow.put(c.getWork_id(), stupidLimiterPow.get(c.getWork_id())+1);
             else
-                stupidLimiterPow.put(w.getId(), 1);
+                stupidLimiterPow.put(c.getWork_id(), 1);
         } else{
-            if(stupidLimiterBty.containsKey(w.getId()))
-                stupidLimiterBty.put(w.getId(), stupidLimiterBty.get(w.getId())+1);
+            if(stupidLimiterBty.containsKey(c.getWork_id()))
+                stupidLimiterBty.put(c.getWork_id(), stupidLimiterBty.get(c.getWork_id())+1);
             else
-                stupidLimiterBty.put(w.getId(), 1);
+                stupidLimiterBty.put(c.getWork_id(), 1);
         }
+
+        Logger.logDebugMessage("(PREVALIDATION PASSED) for submitted " + ((c.isIs_proof_of_work())?"POW":"BOUNTY") + " (limiter bty=" + stupidLimiterBty.get(c.getWork_id()) + ", pow = " + stupidLimiterPow.get(c.getWork_id()));
 
     }
 
@@ -180,9 +176,9 @@ public class MessageEncoder {
     }
 
 
-    public static long push(IComputationAttachment work, String secretPhrase) throws NxtException, IOException {
+    public static long push(IComputationAttachment work, String secretPhrase, int deadline) throws NxtException, IOException {
         Appendix.PrunablePlainMessage[] messages = MessageEncoder.encodeAttachment(work);
-        JSONStreamAware[] individual_txs = MessageEncoder.encodeTransactions(messages, secretPhrase);
+        JSONStreamAware[] individual_txs = MessageEncoder.encodeTransactions(messages, secretPhrase, deadline);
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         for(int i=0;i<individual_txs.length;++i){
@@ -233,7 +229,7 @@ public class MessageEncoder {
     }
 
 
-    public static JSONStreamAware[] encodeTransactions(Appendix.PrunablePlainMessage[] msgs, String passphraseOrPubkey) throws NxtException {
+    public static JSONStreamAware[] encodeTransactions(Appendix.PrunablePlainMessage[] msgs, String passphraseOrPubkey, int deadline) throws NxtException {
         ArrayList<JSONStreamAware> array_tx = new ArrayList<>(msgs.length);
 
         // Transactions have to be created from "end to start" to get the "referenced tx hashes" chained up correctly
@@ -241,11 +237,11 @@ public class MessageEncoder {
         for(int i=msgs.length-1; i>=0; --i){
             Pair<JSONStreamAware, String> t = null;
             if(previousHash.length()==0) {
-                t = CustomTransactionBuilder.createTransaction(msgs[i], passphraseOrPubkey);
+                t = CustomTransactionBuilder.createTransaction(msgs[i], passphraseOrPubkey, deadline);
                 previousHash = t.getElement1();
             }
             else
-                t = CustomTransactionBuilder.createTransaction(msgs[i], passphraseOrPubkey, previousHash);
+                t = CustomTransactionBuilder.createTransaction(msgs[i], passphraseOrPubkey, previousHash, deadline);
             array_tx.add(t.getElement0());
         }
 

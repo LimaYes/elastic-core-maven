@@ -2,7 +2,6 @@ package org.xel.computation;
 
 import org.xel.*;
 import org.xel.util.Logger;
-import org.xel.util.Pair;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -223,7 +222,7 @@ public class CommandNewWork extends IComputationAttachment {
     boolean validate(Transaction transaction) {
 
         if(Nxt.getBlockchain().getHeight()<5370) return false;
-
+        if(transaction.getDeadline()>ComputationConstants.WORK_TRANSACTION_DEADLINE_VALUE) return false;
         if (((this.sourceCode == null) || (this.sourceCode.length == 0)) && (this.sourceCodeCompressed == null) || (this.sourceCodeCompressed.length == 0)) return false;
 
         if(!Commons.checkRange(ComputationConstants.DEADLINE_MIN, ComputationConstants.DEADLINE_MAX, this.deadline))

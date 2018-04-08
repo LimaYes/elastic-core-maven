@@ -284,7 +284,7 @@ abstract class CreateTransaction extends APIServlet.APIRequestHandler {
     }
 
     @Override
-    protected final boolean requirePost() {
+    protected boolean requirePost() {
         return true;
     }
 

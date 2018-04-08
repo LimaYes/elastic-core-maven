@@ -1153,9 +1153,6 @@ public final class Account {
         if (unconfirmed < 0) {
             throw new DoubleSpendingException("Negative unconfirmed balance or quantity: ", accountId, confirmed, unconfirmed);
         }
-        if (unconfirmed > confirmed) {
-            throw new DoubleSpendingException("Unconfirmed exceeds confirmed balance or quantity: ", accountId, confirmed, unconfirmed);
-        }
     }
 
     private void addToGuaranteedBalanceNQT(long amountNQT) {

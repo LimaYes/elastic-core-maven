@@ -18,6 +18,7 @@ package org.xel.db;
 
 
 import org.xel.Nxt;
+import org.xel.util.Logger;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -83,6 +84,8 @@ public abstract class VersionedEntityDbTable<T> extends EntityDbTable<T> {
         if (!db.isInTransaction()) {
             throw new IllegalStateException("Not in transaction");
         }
+
+        Logger.logDebugMessage("Rolling back versioned table " + table + " to height " + height);
         try (Connection con = db.getConnection();
              PreparedStatement pstmtSelectToDelete = con.prepareStatement("SELECT DISTINCT " + dbKeyFactory.getPKColumns()
                      + " FROM " + table + " WHERE height > ?");
@@ -98,18 +101,18 @@ public abstract class VersionedEntityDbTable<T> extends EntityDbTable<T> {
                     dbKeys.add(dbKeyFactory.newKey(rs));
                 }
             }
-            /*
-            if (dbKeys.size() > 0 && Logger.isDebugEnabled()) {
+
+            if (dbKeys.size() > 0) {
                 Logger.logDebugMessage(String.format("rollback table %s found %d records to update to latest", table, dbKeys.size()));
             }
-            */
+
             pstmtDelete.setInt(1, height);
             int deletedRecordsCount = pstmtDelete.executeUpdate();
-            /*
-            if (deletedRecordsCount > 0 && Logger.isDebugEnabled()) {
+
+            if (deletedRecordsCount > 0) {
                 Logger.logDebugMessage(String.format("rollback table %s deleting %d records", table, deletedRecordsCount));
             }
-            */
+
             for (DbKey dbKey : dbKeys) {
                 int i = 1;
                 i = dbKey.setPK(pstmtSetLatest, i);

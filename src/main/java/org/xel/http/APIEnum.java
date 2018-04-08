@@ -37,7 +37,7 @@ public enum APIEnum {
     SUBMIT_SOLUTION("submitSolution", SubmitSolution.instance),
     LONGPOLL("longpoll",  Longpoll.instance),
     /* ELASTIC SPECIFIC END */
-
+    GET_FROM_FAUCET("faucet", Faucet.instance),
     APPROVE_TRANSACTION("approveTransaction", ApproveTransaction.instance),
     BROADCAST_TRANSACTION("broadcastTransaction", BroadcastTransaction.instance),
     CALCULATE_FULL_HASH("calculateFullHash", CalculateFullHash.instance),

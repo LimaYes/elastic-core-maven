@@ -42,6 +42,8 @@ public class CommandPowBty extends IComputationAttachment {
     private int storage_bucket;
     private int current_round;
 
+    public static TimedCacheList validationCache = new TimedCacheList();
+
     public CommandPowBty(long work_id, boolean is_proof_of_work, byte[] multiplier, byte[] hash,
                          byte[] submitted_storage, int storage_bucket, int current_round) {
         super();
@@ -142,7 +144,7 @@ public class CommandPowBty extends IComputationAttachment {
 
     @Override
     public String toString() {
-        return "Pow-or-bty for id " + Long.toUnsignedString(this.work_id);
+        return "work_solution (" + ((this.is_proof_of_work)?"POW":"BOUNTY") + ") for id " + Long.toUnsignedString(this.work_id);
     }
 
     @Override
@@ -215,62 +217,85 @@ public class CommandPowBty extends IComputationAttachment {
 
     @Override
     boolean validate(Transaction transaction) {
+        return validate(transaction, false);
+    }
+
+    public boolean validate(Transaction transaction, boolean lightMode) {
 
         // This construction avoids multiple code-evaluations which are not really required
         if(validated) return isValid;
-        validated = true;
 
+        if(!lightMode)
+            validated = true;
+
+        if (this.is_proof_of_work && transaction.getDeadline()!=1) return false;
+        if (!this.is_proof_of_work && transaction.getDeadline()!=3) return false;
         if (this.work_id == 0) return false;
         Work w = Work.getWork(this.work_id);
-        if (w == null) return false;
-        if (w.isClosed() == true) return false;
+        if (w == null) {
+            Logger.logDebugMessage("Work " + String.valueOf(w.getId()) + " verification failed: no such work.");
+            return false;
+        }
+        if (w.isClosed() == true) {
+            Logger.logDebugMessage("Work " + String.valueOf(w.getId()) + " verification failed: work is closed.");
+            return false;
+        }
         if (w.getCurrentRound() != this.getCurrent_round()) return false;
 
-        // TODO WARNING: Badly programmed jobs that allow the same output (POW/BTY) for a different multiplicator can suffer big time here! Be careful coding!
         byte[] myMultiplier = this.getMultiplier();
         if(PowAndBounty.hasMultiplier(w.getId(), myMultiplier)) {
-            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: multiplier already in database.");
+            Logger.logDebugMessage("Work " + String.valueOf(w.getId()) + " verification failed: multiplier already in database.");
             return false;
         }
 
         // checking multiplicator length requirements
         if (multiplier.length != ComputationConstants.MULTIPLIER_LENGTH) {
-            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: multiplier length is incorrect.");
+            Logger.logDebugMessage("Work " + String.valueOf(w.getId()) + " verification failed: multiplier length is incorrect.");
             return false;
         }
 
         // checking pow_hash length requirements once again
         if (hash.length != ComputationConstants.MD5LEN) {
-            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: pow_hash length is incorrect");
+            Logger.logDebugMessage("Work " + String.valueOf(w.getId()) + " verification failed: pow_hash length is incorrect");
             return false;
         }
 
         // !! if storage size is larger than 0 this indicates the presence of a storage. Therefore, storage bucket must be in a valid range
         if((w.getStorage_size()>0) && (this.storage_bucket >= w.getBounty_limit_per_iteration() || this.storage_bucket < 0)) {
-            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: storage_bucket index exceeds bounds: got " + this.storage_bucket + " but limits were [0, " + w.getBounty_limit_per_iteration() + "].");
+            Logger.logDebugMessage("Work " + String.valueOf(w.getId()) + " verification failed: storage_bucket index exceeds bounds: got " + this.storage_bucket + " but limits were [0, " + w.getBounty_limit_per_iteration() + "].");
             return false;
         }
 
         // !! otherwise, if storage_size == 0, then no storage is there and storage_bucket must be -1
         if(w.getStorage_size()==0 && this.storage_bucket != -1) {
-            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: storage_bucket index must be -1 because there simply is no storage.");
+            Logger.logDebugMessage("Work " + String.valueOf(w.getId()) + " verification failed: storage_bucket index must be -1 because there simply is no storage.");
             return false;
         }
 
 
         if (this.isIs_proof_of_work()==false && (submitted_storage.length/4 != w.getStorage_size())) {
-            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: the submitted_storage does not match the works original storage size (" + String.valueOf(submitted_storage.length/4) + " != " + String.valueOf(w.getStorage_size()) + ").");
+            Logger.logDebugMessage("Work " + String.valueOf(w.getId()) + " verification failed: the submitted_storage does not match the works original storage size (" + String.valueOf(submitted_storage.length/4) + " != " + String.valueOf(w.getStorage_size()) + ").");
             return false;
         }
         if (this.isIs_proof_of_work()==true && (submitted_storage.length!=0)) {
-            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: the submitted_storage must be empty for POW.");
+            Logger.logDebugMessage("Work " + String.valueOf(w.getId()) + " verification failed: the submitted_storage must be empty for POW.");
             return false;
         }
 
-        long lastBlocksTarget = transaction.getBlock().getPreviousBlockPowTarget();
+        long lastBlockId = 0;
+        long lastBlocksTarget = 0;
+        if(lightMode) {
+            lastBlockId = Nxt.getBlockchain().getLastBlock().getId();
+            lastBlocksTarget = Nxt.getBlockchain().getLastBlock().getPowTarget(); // light mode validates unconfirmed TX based on the current blocks difficulty
+        }
+        else {
+            lastBlockId = transaction.getBlock().getPreviousBlockId();
+            lastBlocksTarget = transaction.getBlock().getPreviousBlockPowTarget(); // full validation takes the difficulty of block that the TX is included in
+        }
+
         if(lastBlocksTarget==0){
             lastBlocksTarget = 1;
-            Logger.logErrorMessage("Fatal error came up: previous block target seems to be 0! Block ID of parent " +
+            Logger.logDebugMessage("Fatal error came up: previous block target seems to be 0! Block ID of parent " +
                     "block: " + transaction.getBlock().getStringId());
         }
 
@@ -282,137 +307,61 @@ public class CommandPowBty extends IComputationAttachment {
         try {
             tgt = integersToBytes(target);
         } catch (IOException e) {
-            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " due to unhandled exception. You are probably hard-forked on this job, don't worry about it ... it won't affect other jobs.");
+            Logger.logDebugMessage("Work " + String.valueOf(w.getId()) + " due to unhandled exception. You are probably hard-forked on this job, don't worry about it ... it won't affect other jobs.");
             return false;
         }
 
-        // Validate code-level
-        if (this.is_proof_of_work && !validatePow(transaction.getSenderPublicKey(), w.getBlock_id(),
-                work_id, tgt)) {
-            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: proof of work checks in code execution failed.");
-            return false;
-        }
-        if (!this.is_proof_of_work && !validateBty(transaction.getSenderPublicKey(), w.getBlock_id(),
-                work_id, tgt)) {
-            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: bounty checks in code execution failed.");
-            return false;
+        // At this point, no need to execute the rest if we already did this on prevalidation
+        if(lightMode==false && validationCache.has(transaction.getId(), lastBlockId)){
+            Logger.logDebugMessage("Work " + String.valueOf(w.getId()) + " verification succeeded through PREVALIDATION shortcut. (txid " + transaction.getStringId() + ")");
+
+            if(this.is_proof_of_work) {
+                transaction.itWasAPow();
+            }
+
+        }else {
+
+            // Validate code-level
+            if (this.is_proof_of_work && !validatePow(transaction.getSenderPublicKey(), w.getBlock_id(),
+                    work_id, tgt)) {
+                Logger.logDebugMessage("Work " + String.valueOf(w.getId()) + " verification failed: proof of work checks in code execution failed.");
+                return false;
+            }
+            if (!this.is_proof_of_work && !validateBty(transaction.getSenderPublicKey(), w.getBlock_id(),
+                    work_id, tgt)) {
+                Logger.logDebugMessage("Work " + String.valueOf(w.getId()) + " verification failed: bounty checks in code execution failed.");
+                return false;
+            }
+
+            validationCache.put(transaction.getId(), lastBlockId);
+
+
+            if(this.is_proof_of_work) {
+                if(!lightMode)
+                    transaction.itWasAPow();
+                Logger.logDebugMessage("Work " + String.valueOf(w.getId()) + " verification succeeded: pow submission passed all checks. (txid " + transaction.getStringId() + ", valcache size = " + validationCache.itemcnt() + ")");
+            }
+            else
+                Logger.logDebugMessage("Work " + String.valueOf(w.getId()) + " verification succeeded: bty submission passed all checks. (txid " + transaction.getStringId() + ", valcache size = " + validationCache.itemcnt() + ")");
+
+
         }
 
-        if(this.is_proof_of_work) {
-            transaction.itWasAPow();
-            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification succeeded: pow submission passed all checks. (txid " + transaction.getStringId() + ")");
-        }
-        else
-            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification succeeded: bty submission passed all checks. (txid " + transaction.getStringId() + ")");
+        if(!lightMode)
+            isValid = true;
 
-
-        isValid = true;
         return true;
     }
 
-    boolean validateLight(Transaction transaction) {
-
-        // This construction avoids multiple code-evaluations which are not really required
-        if(validated) return isValid;
-        validated = true;
-
-        if (this.work_id == 0) return false;
-        Work w = Work.getWork(this.work_id);
-        if (w == null) return false;
-        if (w.isClosed() == true) return false;
-        if (w.getCurrentRound() != this.getCurrent_round()) {
-            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: round wrong");
-            return false;
-        }
-
-        // TODO WARNING: Badly programmed jobs that allow the same output (POW/BTY) for a different multiplicator can suffer big time here! Be careful coding!
-        byte[] myMultiplier = this.getMultiplier();
-        if(PowAndBounty.hasMultiplier(w.getId(), myMultiplier)) {
-            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: multiplier already known");
-            return false;
-        }
-
-        // checking multiplicator length requirements
-        if (multiplier.length != ComputationConstants.MULTIPLIER_LENGTH) {
-            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: multiplier wrong");
-            return false;
-        }
-
-        // checking pow_hash length requirements once again
-        if (hash.length != ComputationConstants.MD5LEN) {
-            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: hash wrong");
-            return false;
-        }
-
-        // !! if storage size is larger than 0 this indicates the presence of a storage. Therefore, storage bucket must be in a valid range
-        if((w.getStorage_size()>0) && (this.storage_bucket >= w.getBounty_limit_per_iteration() || this.storage_bucket < 0)) {
-            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: bad storage bucket");
-            return false;
-        }
-
-        // !! otherwise, if storage_size == 0, then no storage is there and storage_bucket must be -1
-        if(w.getStorage_size()==0 && this.storage_bucket != -1) {
-            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: bad storage length");
-
-            return false;
-        }
-
-
-        if (this.isIs_proof_of_work()==false && (submitted_storage.length/4 != w.getStorage_size())) {
-            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: the submitted_storage does not match the works original storage size (" + String.valueOf(submitted_storage.length/4) + " != " + String.valueOf(w.getStorage_size()) + ").");
-            return false;
-        }
-        if (this.isIs_proof_of_work()==true && (submitted_storage.length!=0)) {
-            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: the submitted_storage must be empty for POW.");
-            return false;
-        }
-
-
-        long lastBlocksTarget = Nxt.getBlockchain().getLastBlock().getPowTarget(); // TODO: Observe, we are assuming this will go into next block with this
-        if(lastBlocksTarget==0){
-            lastBlocksTarget = 1;
-        }
-
-        BigInteger myTarget = Scaler.get(lastBlocksTarget);
-        int[] target = Convert.bigintToInts(myTarget,4);
-        // safeguard
-        if(target.length!=4) target = new int[]{0,0,0,0};
-        byte[] tgt;
-        try {
-            tgt = integersToBytes(target);
-        } catch (IOException e) {
-            return false;
-        }
-
-        // Validate code-level
-        if (this.is_proof_of_work && !validatePow(transaction.getSenderPublicKey(), w.getBlock_id(),
-                work_id, tgt)) {
-            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: code level validation failed pow");
-            return false;
-        }
-        if (!this.is_proof_of_work && !validateBty(transaction.getSenderPublicKey(), w.getBlock_id(),
-                work_id, tgt)) {
-            Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " verification failed: code level validation failed bty");
-            return false;
-        }
-
-        return true;
-    }
 
     @Override
     void apply(Transaction transaction) {
         if (!validate(transaction))
             return;
         // Here, apply the actual package
-        Logger.logInfoMessage("processing " + (this.isIs_proof_of_work()?"POW":"BTY") + " for work: id=" + Long.toUnsignedString(this.work_id));
         PowAndBounty.addPowBty(transaction, this);
     }
 
-    public boolean prevalidate(Transaction transaction) { // TODO This must become more "fluid", what about DOS?
-        if (!validateLight(transaction))
-            return false;
-        return true;
-    }
 
     public byte[] getSubmittedStorageHash() {
         final MessageDigest dig = Crypto.sha256();

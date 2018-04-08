@@ -74,7 +74,7 @@ public class CommandCancelWork extends IComputationAttachment {
 
     @Override
     boolean validate(Transaction transaction) {
-
+        if(transaction.getDeadline()>ComputationConstants.WORK_TRANSACTION_DEADLINE_VALUE) return false;
         if (this.cancel_work_id == 0) return false;
         Work w = Work.getWork(this.cancel_work_id);
         if(w == null) return false;

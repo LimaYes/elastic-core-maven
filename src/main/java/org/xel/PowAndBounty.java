@@ -88,6 +88,7 @@ public final class PowAndBounty{
             int cap = w.getCap_number_pow();
             if(w.getReceived_pows() == cap){
                 w.setClosed(true);
+                w.setClosing_timestamp(transaction.getBlockTimestamp());
             }
 
             w.EmitPow();
@@ -103,6 +104,7 @@ public final class PowAndBounty{
             int cap = w.getIterations() * w.getBounty_limit_per_iteration();
             if(w.getReceived_bounties() == cap){
                 w.setClosed(true);
+                w.setClosing_timestamp(transaction.getBlockTimestamp());
             }
 
 

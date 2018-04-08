@@ -29,7 +29,10 @@ public final class SendMoney extends CreateTransaction {
     private SendMoney() {
         super(new APITag[] {APITag.ACCOUNTS, APITag.CREATE_TRANSACTION}, "recipient", "amountNQT");
     }
-
+    @Override
+    protected final boolean requirePost() {
+        return false;
+    }
     @Override
     protected JSONStreamAware processRequest(HttpServletRequest req) throws NxtException {
         long recipient = ParameterParser.getAccountId(req, "recipient", true);

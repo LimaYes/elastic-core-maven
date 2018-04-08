@@ -46,6 +46,8 @@ public final class GetState extends APIServlet.APIRequestHandler {
 
         JSONObject response = GetBlockchainStatus.instance.processRequest(req);
 
+
+
         if ("true".equalsIgnoreCase(req.getParameter("includeCounts")) && API.checkPassword(req)) {
             response.put("numberOfTransactions", Nxt.getBlockchain().getTransactionCount());
             response.put("numberOfAccounts", Account.getCount());
@@ -68,6 +70,24 @@ public final class GetState extends APIServlet.APIRequestHandler {
         response.put("peerPort", Peers.getDefaultPeerPort());
         response.put("isOffline", Constants.isOffline);
         response.put("needsAdminPassword", !API.disableAdminPassword);
+
+        try {
+            Account account = ParameterParser.getAccount(req, false);
+            if (account == null) {
+                response.put("balanceNQT", "0");
+                response.put("unconfirmedBalanceNQT", "0");
+                response.put("forgedBalanceNQT", "0");
+
+            } else {
+                response.put("balanceNQT", String.valueOf(account.getBalanceNQT()));
+                response.put("unconfirmedBalanceNQT", String.valueOf(account.getUnconfirmedBalanceNQT()));
+                response.put("forgedBalanceNQT", String.valueOf(account.getForgedBalanceNQT()));
+
+            }
+        } catch (ParameterException e) {
+
+        }
+
         InetAddress externalAddress = UPnP.getExternalAddress();
         if (externalAddress != null) {
             response.put("upnpExternalAddress", externalAddress.getHostAddress());

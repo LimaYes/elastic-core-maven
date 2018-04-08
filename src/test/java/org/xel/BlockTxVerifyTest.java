@@ -8,6 +8,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.xel.computation.CommandPowBty;
 import org.xel.computation.IComputationAttachment;
 import org.xel.computation.MessageEncoder;
 import org.xel.crypto.Crypto;
@@ -38,7 +39,7 @@ public class BlockTxVerifyTest extends AbstractForgingTest {
 
     @After
     public void destroy() {
-        AbstractForgingTest.shutdown();
+        AbstractForgingTest.shutdown(); Nxt.shutdown();
     }
 
     // strange block
@@ -52,11 +53,23 @@ public class BlockTxVerifyTest extends AbstractForgingTest {
      */
     @Test
     public void testStrangeBlock(){
-        Block b = Nxt.getBlockchain().getBlock(Nxt.getBlockchain().getBlockIdAtHeight(11594));
+
+        int popofftarget = 18685;
+        Nxt.getBlockchainProcessor().popOffTo(popofftarget);
+        Block b = Nxt.getBlockchain().getBlock(Nxt.getBlockchain().getBlockIdAtHeight(popofftarget));
+        Nxt.getBlockchainProcessor().popOffTo(popofftarget-1);
+        try {
+            Nxt.getBlockchainProcessor().pushBlock((BlockImpl) b);
+        } catch (BlockchainProcessor.BlockNotAcceptedException e) {
+            e.printStackTrace();
+        }
+
         System.out.println("TX: " + b.getTransactions().size());
         System.out.println("POW: " + b.getPowMass());
         System.out.println(b.getJSONObject().toJSONString());
 
+
+        if(1==1)return;
         /*Nxt.getBlockchainProcessor().popOffTo(11593);
         try {
             Nxt.getBlockchainProcessor().pushBlock((BlockImpl)b);
@@ -81,7 +94,11 @@ public class BlockTxVerifyTest extends AbstractForgingTest {
 
                         continue;
                     }
-                    System.out.println("Applying tx " + t.getStringId() + ", correct");
+
+                    String attval = "N/A";
+                    if(att instanceof CommandPowBty)
+                        attval = ((CommandPowBty)att).validate(t, true)?"true":"false";
+                    System.out.println("Applying tx " + t.getStringId() + ", correct -> type was " + att.toString() + ", validation = " + attval);
 
 
 

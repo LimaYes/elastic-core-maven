@@ -42,6 +42,8 @@ public final class SubmitSolution extends CreateTransaction {
     protected JSONStreamAware processRequest(final HttpServletRequest req) throws NxtException {
 
         final long workId = ParameterParser.getUnsignedLong(req, "work_id", true);
+        int deadlineInt = ParameterParser.getInt(req, "deadline", 1, 3, false);
+        if(deadlineInt<1 || deadlineInt>3) deadlineInt = 1;
         byte[] data = ParameterParser.getBytes(req, "data", false);
         final byte[] multiplicator = ParameterParser.getBytes(req, "multiplicator", true);
         int storageId = ParameterParser.getInt(req, "storage_id",0,Integer.MAX_VALUE, true);
@@ -60,7 +62,7 @@ public final class SubmitSolution extends CreateTransaction {
         CommandPowBty work = new CommandPowBty(workId, is_pow, multiplicator, hash, data, storageId, w.getCurrentRound());
 
         try {
-            MessageEncoder.push(work, ParameterParser.getSecretPhrase(req, true));
+            MessageEncoder.push(work, ParameterParser.getSecretPhrase(req, true), deadlineInt);
             return JSONResponses.EVERYTHING_ALRIGHT;
         } catch (IOException e) {
             Logger.logInfoMessage("Work " + String.valueOf(w.getId()) + " submission failed. IO Exception");

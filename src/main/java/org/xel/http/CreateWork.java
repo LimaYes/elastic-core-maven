@@ -46,7 +46,8 @@ public final class CreateWork extends CreateTransaction {
         final String bountiesPerIteration = ParameterParser.getParameterMultipart(req, "bounty_limit_per_iteration");
         final String numberOfIterations = ParameterParser.getParameterMultipart(req, "iterations");
         final String cap_number_pow = ParameterParser.getParameterMultipart(req, "cap_pow");
-
+        int deadlineInt = ParameterParser.getInt(req, "deadline", 1, ComputationConstants.WORK_TRANSACTION_DEADLINE_VALUE, false);
+        if(deadlineInt<1 || deadlineInt>3) deadlineInt = ComputationConstants.WORK_TRANSACTION_DEADLINE_VALUE;
         if (programCode == null || programCode.length() == 0) return JSONResponses.MISSING_PROGAMCODE;
         else if (deadline == null) return JSONResponses.MISSING_DEADLINE;
         else if (xelPerBounty == null) return JSONResponses.MISSING_XEL_PER_BOUNTY;
@@ -82,7 +83,7 @@ public final class CreateWork extends CreateTransaction {
 
         CommandNewWork work = new CommandNewWork(numeric_cap_number_pow, (short)numeric_deadline,numeric_xelPerPow,numeric_xelPerBounty,numeric_bountiesPerIteration,numeric_numberOfIterations, programCode.getBytes());
         try {
-            MessageEncoder.push(work, ParameterParser.getSecretPhrase(req, true));
+            MessageEncoder.push(work, ParameterParser.getSecretPhrase(req, true), deadlineInt);
             return JSONResponses.EVERYTHING_ALRIGHT;
         } catch (IOException e) {
             return JSONResponses.ERROR_INCORRECT_REQUEST;

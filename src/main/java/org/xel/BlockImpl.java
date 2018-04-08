@@ -623,7 +623,7 @@ final class BlockImpl implements Block {
         long targetForThisBlock = previousBlock.getPowTarget();
         double nTargetTimespan = 0;
         double ratio = 0;
-        if (nActualTimespan < 60*0.5 || nActualTimespan > 60*1.5){ // For too short blocks, let us just leave the target untouched
+        if (nActualTimespan < 60*0.4 || nActualTimespan > 60*1.7){ // For too short blocks, let us just leave the target untouched
             powTarget = targetForThisBlock;
         }else {
 

@@ -9,7 +9,7 @@ package org.xel.crypto;
  *
  * Based on work by Daniel J Bernstein, http://cr.yp.to/ecdh.html
  */
-final class Curve25519 {
+public final class Curve25519 {
 
     /* key size */
     public static final int KEY_SIZE = 32;

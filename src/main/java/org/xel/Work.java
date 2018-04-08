@@ -184,7 +184,7 @@ public final class Work {
     }
 
     public int getCurrentRound(){
-        return this.getReceived_bounties()%this.bounty_limit_per_iteration;
+        return this.getReceived_bounties()/this.bounty_limit_per_iteration;
     }
     public static boolean addListener(final Listener<Work> listener, final Event eventType) {
         return Work.listeners.addListener(listener, eventType);
