@@ -19,12 +19,15 @@ package org.xel.http;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.xel.computation.CommandNewWork;
 import org.xel.computation.Commons;
 import org.xel.computation.ComputationConstants;
 import org.xel.computation.MessageEncoder;
 import org.json.simple.JSONStreamAware;
 import org.xel.NxtException;
+import org.xel.util.Convert;
 
 import java.io.IOException;
 
@@ -46,6 +49,12 @@ public final class CreateWork extends CreateTransaction {
         final String bountiesPerIteration = ParameterParser.getParameterMultipart(req, "bounty_limit_per_iteration");
         final String numberOfIterations = ParameterParser.getParameterMultipart(req, "iterations");
         final String cap_number_pow = ParameterParser.getParameterMultipart(req, "cap_pow");
+        final String secret = ParameterParser.getSecretPhrase(req, false);
+        String publicKeyValue = Convert.emptyToNull(req.getParameter("publicKey"));
+        byte pubKey[] = null;
+        if(publicKeyValue!=null)
+            pubKey = Convert.parseHexString(publicKeyValue);
+
         int deadlineInt = ParameterParser.getInt(req, "deadline", 1, ComputationConstants.WORK_TRANSACTION_DEADLINE_VALUE, false);
         if(deadlineInt<1 || deadlineInt>3) deadlineInt = ComputationConstants.WORK_TRANSACTION_DEADLINE_VALUE;
         if (programCode == null || programCode.length() == 0) return JSONResponses.MISSING_PROGAMCODE;
@@ -83,8 +92,23 @@ public final class CreateWork extends CreateTransaction {
 
         CommandNewWork work = new CommandNewWork(numeric_cap_number_pow, (short)numeric_deadline,numeric_xelPerPow,numeric_xelPerBounty,numeric_bountiesPerIteration,numeric_numberOfIterations, programCode.getBytes());
         try {
-            MessageEncoder.push(work, ParameterParser.getSecretPhrase(req, true), deadlineInt);
-            return JSONResponses.EVERYTHING_ALRIGHT;
+            if(secret!=null && secret.length()>0) {
+                MessageEncoder.push(work, ParameterParser.getSecretPhrase(req, true), deadlineInt);
+                return JSONResponses.EVERYTHING_ALRIGHT;
+            }else{
+                if(pubKey==null){
+                    return JSONResponses.ERROR_INCORRECT_REQUEST;
+                }else {
+                    JSONArray ar = new JSONArray();
+                    for(JSONStreamAware x : MessageEncoder.encodeOnly(work, pubKey, deadlineInt)){
+                        ar.add(x);
+                    }
+                    JSONObject o = new JSONObject();
+                    o.put("transactions", ar);
+                    return o;
+                }
+            }
+
         } catch (IOException e) {
             return JSONResponses.ERROR_INCORRECT_REQUEST;
         }

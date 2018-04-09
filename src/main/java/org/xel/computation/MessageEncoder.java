@@ -188,6 +188,12 @@ public class MessageEncoder {
         return MessageEncoder.pushThemAll(individual_txs);
     }
 
+    public static JSONStreamAware[] encodeOnly(IComputationAttachment work, byte[] pubkey, int deadline) throws NxtException, IOException {
+        Appendix.PrunablePlainMessage[] messages = MessageEncoder.encodeAttachment(work);
+        JSONStreamAware[] individual_txs = MessageEncoder.encodeTransactions(messages, pubkey, deadline);
+        return individual_txs;
+    }
+
     public static Appendix.PrunablePlainMessage[] extractMessages(Transaction _t) throws NxtException.ValidationException {
 
         Transaction t = _t;
@@ -242,6 +248,25 @@ public class MessageEncoder {
             }
             else
                 t = CustomTransactionBuilder.createTransaction(msgs[i], passphraseOrPubkey, previousHash, deadline);
+            array_tx.add(t.getElement0());
+        }
+
+        return array_tx.toArray(new JSONStreamAware[msgs.length]);
+    }
+
+    public static JSONStreamAware[] encodeTransactions(Appendix.PrunablePlainMessage[] msgs, byte[] passphraseOrPubkey, int deadline) throws NxtException {
+        ArrayList<JSONStreamAware> array_tx = new ArrayList<>(msgs.length);
+
+        // Transactions have to be created from "end to start" to get the "referenced tx hashes" chained up correctly
+        String previousHash = "";
+        for(int i=msgs.length-1; i>=0; --i){
+            Pair<JSONStreamAware, String> t = null;
+            if(previousHash.length()==0) {
+                t = CustomTransactionBuilder.createTransactionPubkey(msgs[i], passphraseOrPubkey, deadline);
+                previousHash = t.getElement1();
+            }
+            else
+                t = CustomTransactionBuilder.createTransactionPubkey(msgs[i], passphraseOrPubkey, previousHash, deadline);
             array_tx.add(t.getElement0());
         }
 

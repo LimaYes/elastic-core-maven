@@ -18,12 +18,15 @@ package org.xel.http;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.xel.Work;
 import org.xel.computation.CommandCancelWork;
 import org.xel.computation.ComputationConstants;
 import org.xel.computation.MessageEncoder;
 import org.json.simple.JSONStreamAware;
 import org.xel.NxtException;
+import org.xel.util.Convert;
 
 import java.io.IOException;
 
@@ -44,12 +47,31 @@ public final class CancelWork extends CreateTransaction {
         Work w = Work.getWork(workId);
         if(w==null || w.isClosed())
             return JSONResponses.ERROR_WORK_UNKNOWN;
-
+        final String secret = ParameterParser.getSecretPhrase(req, false);
+        String publicKeyValue = Convert.emptyToNull(req.getParameter("publicKey"));
+        byte pubKey[] = null;
+        if(publicKeyValue!=null)
+            pubKey = Convert.parseHexString(publicKeyValue);
         CommandCancelWork work = new CommandCancelWork(workId);
 
         try {
-            MessageEncoder.push(work, ParameterParser.getSecretPhrase(req, true), deadlineInt);
-            return JSONResponses.EVERYTHING_ALRIGHT;
+            if(secret!=null && secret.length()>0) {
+                MessageEncoder.push(work, ParameterParser.getSecretPhrase(req, true), deadlineInt);
+                return JSONResponses.EVERYTHING_ALRIGHT;
+            }else{
+                if(pubKey==null){
+                    return JSONResponses.ERROR_INCORRECT_REQUEST;
+                }else {
+                    JSONArray ar = new JSONArray();
+                    for(JSONStreamAware x : MessageEncoder.encodeOnly(work, pubKey, deadlineInt)){
+                        ar.add(x);
+                    }
+                    JSONObject o = new JSONObject();
+                    o.put("transactions", ar);
+                    return o;
+                }
+            }
+
         } catch (IOException e) {
             return JSONResponses.ERROR_INCORRECT_REQUEST;
         }
