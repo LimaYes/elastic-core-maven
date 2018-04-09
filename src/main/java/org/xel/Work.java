@@ -252,6 +252,27 @@ public final class Work {
                 Integer.MAX_VALUE);
     }
 
+    public static int getCount(long accountId) {
+        return Work.workTable.getCount(new DbClause.LongClause("sender_account_id", accountId));
+    }
+
+    public static long getGrabs() {
+        long grabs = 0;
+        try(DbIterator<Work> it = Work.getActiveWork()){
+            while(it.hasNext()){
+                Work w = (it.next());
+                grabs += w.getXel_per_pow() * (w.getCap_number_pow()-w.getReceived_pows());
+            }
+        }
+        return grabs;
+    }
+
+
+    public static int getActiveCount(long accountId) {
+        return Work.workTable.getCount(new DbClause.LongClause("sender_account_id", accountId).and(new DbClause.BooleanClause("closed", false)));
+    }
+
+
     public static int getCount() {
         return Work.workTable.getCount();
     }

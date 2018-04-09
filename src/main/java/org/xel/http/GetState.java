@@ -16,15 +16,8 @@
 
 package org.xel.http;
 
-import org.xel.Account;
-import org.xel.AccountRestrictions;
-import org.xel.Constants;
-import org.xel.Generator;
-import org.xel.Nxt;
-import org.xel.Poll;
-import org.xel.PrunableMessage;
-import org.xel.TaggedData;
-import org.xel.Vote;
+import org.json.simple.JSONArray;
+import org.xel.*;
 import org.xel.peer.Peers;
 import org.xel.util.UPnP;
 import org.json.simple.JSONObject;
@@ -45,8 +38,19 @@ public final class GetState extends APIServlet.APIRequestHandler {
     protected JSONStreamAware processRequest(HttpServletRequest req) {
 
         JSONObject response = GetBlockchainStatus.instance.processRequest(req);
+        boolean includeLastTargets = false;
 
+        try {
+            includeLastTargets = ParameterParser.getBooleanByString(req, "includeLastTargets", false);
+        } catch (ParameterException e) {
+        }
 
+        boolean includeTasks = false;
+
+        try {
+            includeTasks = ParameterParser.getBooleanByString(req, "includeTasks", false);
+        } catch (ParameterException e) {
+        }
 
         if ("true".equalsIgnoreCase(req.getParameter("includeCounts")) && API.checkPassword(req)) {
             response.put("numberOfTransactions", Nxt.getBlockchain().getTransactionCount());
@@ -70,7 +74,11 @@ public final class GetState extends APIServlet.APIRequestHandler {
         response.put("peerPort", Peers.getDefaultPeerPort());
         response.put("isOffline", Constants.isOffline);
         response.put("needsAdminPassword", !API.disableAdminPassword);
-
+        if (includeTasks) {
+            response.put("totalOpen", Work.getActiveCount());
+            response.put("totalClosed", Work.getCount()-Work.getActiveCount());
+            response.put("grabs", Work.getGrabs());
+        }
         try {
             Account account = ParameterParser.getAccount(req, false);
             if (account == null) {
@@ -82,6 +90,11 @@ public final class GetState extends APIServlet.APIRequestHandler {
                 response.put("balanceNQT", String.valueOf(account.getBalanceNQT()));
                 response.put("unconfirmedBalanceNQT", String.valueOf(account.getUnconfirmedBalanceNQT()));
                 response.put("forgedBalanceNQT", String.valueOf(account.getForgedBalanceNQT()));
+                if (includeTasks) {
+                    response.put("myOpen", Work.getActiveCount(account.getId()));
+                    response.put("myClosed", Work.getCount(account.getId())-Work.getActiveCount(account.getId()));
+                }
+
 
             }
         } catch (ParameterException e) {
@@ -91,6 +104,19 @@ public final class GetState extends APIServlet.APIRequestHandler {
         InetAddress externalAddress = UPnP.getExternalAddress();
         if (externalAddress != null) {
             response.put("upnpExternalAddress", externalAddress.getHostAddress());
+        }
+        if(includeLastTargets){
+            JSONArray arr = new JSONArray();
+            int counter = 0;
+            Block bl = Nxt.getBlockchain().getLastBlock();
+            for(counter=0; counter < 6; counter++){
+                if(bl==null) break;
+                JSONObject obj = new JSONObject();
+                obj.put(bl.getHeight(), bl.getPowTarget());
+                arr.add(obj);
+                bl=Nxt.getBlockchain().getBlock(bl.getPreviousBlockId());
+            }
+            response.put("lastTargets", arr);
         }
         return response;
     }
