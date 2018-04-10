@@ -180,6 +180,22 @@ public final class JSONResponses {
         NOT_ENOUGH_ASSETS = JSON.prepare(response);
     }
 
+    public static final JSONStreamAware WORK_NOT_VALID;
+    static {
+        JSONObject response = new JSONObject();
+        response.put("errorCode", 30000);
+        response.put("errorDescription", "Work does not validate, are you sure your EPL code is correct?");
+        WORK_NOT_VALID = JSON.prepare(response);
+    }
+
+    public static final JSONStreamAware WORK_CRASHED;
+    static {
+        JSONObject response = new JSONObject();
+        response.put("errorCode", 30001);
+        response.put("errorDescription", "Your EPL code is not executing properly, please fix it!");
+        WORK_CRASHED = JSON.prepare(response);
+    }
+
     public static final JSONStreamAware ASSET_NOT_ISSUED_YET;
     static {
         JSONObject response = new JSONObject();

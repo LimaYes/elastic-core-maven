@@ -71,15 +71,18 @@ public final class SendTransaction extends APIServlet.APIRequestHandler {
         String prunableAttachmentJSON = Convert.emptyToNull(req.getParameter("prunableAttachmentJSON"));
 
         JSONObject response = new JSONObject();
-        try {
-            Transaction.Builder builder = ParameterParser.parseTransaction(transactionJSON, transactionBytes, prunableAttachmentJSON);
-            Transaction transaction = builder.build();
-            Peers.sendToSomePeers(Collections.singletonList(transaction));
-            response.put("transaction", transaction.getStringId());
-            response.put("fullHash", transaction.getFullHash());
-        } catch (NxtException.ValidationException|RuntimeException e) {
-            JSONData.putException(response, e, "Failed to broadcast transaction");
-        }
+
+
+            try {
+                Transaction.Builder builder = ParameterParser.parseTransaction(transactionJSON, transactionBytes, prunableAttachmentJSON);
+                Transaction transaction = builder.build();
+                Peers.sendToSomePeers(Collections.singletonList(transaction));
+                response.put("transaction", transaction.getStringId());
+                response.put("fullHash", transaction.getFullHash());
+            } catch (NxtException.ValidationException | RuntimeException e) {
+                JSONData.putException(response, e, "Failed to broadcast transaction");
+            }
+
         return response;
     }
 

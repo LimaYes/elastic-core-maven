@@ -191,6 +191,11 @@ public class MessageEncoder {
     public static JSONStreamAware[] encodeOnly(IComputationAttachment work, byte[] pubkey, int deadline) throws NxtException, IOException {
         Appendix.PrunablePlainMessage[] messages = MessageEncoder.encodeAttachment(work);
         JSONStreamAware[] individual_txs = MessageEncoder.encodeTransactions(messages, pubkey, deadline);
+        for(int i=0; i<individual_txs.length;++i){
+            JSONObject prunableMess = new JSONObject();
+            messages[i].putMyJSON(prunableMess);
+            ((JSONObject)individual_txs[i]).put("toAttach",prunableMess);
+        }
         return individual_txs;
     }
 

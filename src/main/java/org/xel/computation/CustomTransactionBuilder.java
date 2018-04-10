@@ -90,14 +90,7 @@ public class CustomTransactionBuilder {
         JSONObject response = new JSONObject();
         response.put("transactionJSON", transactionJSON);
         response.put("unsignedTransactionBytes", Convert.toHexString(transaction.getUnsignedBytes()));
-        response.put("transaction", transaction.getStringId());
-        response.put("fullHash", transactionJSON.get("fullHash"));
-        response.put("transactionBytes", Convert.toHexString(transaction.getBytes()));
-        response.put("signatureHash", transactionJSON.get("signatureHash"));
 
-        transaction.validate();
-
-
-        return new Pair<>(transactionJSON, transaction.getFullHash());
+        return new Pair<>(response, "");
     }
 }

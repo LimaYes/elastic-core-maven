@@ -387,7 +387,7 @@ public interface Appendix {
         }
 
         @Override
-        void putMyJSON(JSONObject json) {
+        public void putMyJSON(JSONObject json) {
             if (prunableMessage != null) {
                 json.put("message", Convert.toString(prunableMessage.getMessage(), prunableMessage.messageIsText()));
                 json.put("messageIsText", prunableMessage.messageIsText());

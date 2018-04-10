@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
+import org.json.simple.JSONArray;
 import org.xel.computation.CommandNewWork;
 import org.xel.computation.ComputationConstants;
 import org.xel.computation.Scaler;
@@ -523,9 +524,32 @@ public final class Work {
 
 
         if (storage_slot>=0 && storage_slot < work.bounty_limit_per_iteration) {
-            int[] storage_area = work.getStorage(storage_slot);
-            response.put("storage_id", storage_slot);
-            response.put("storage", Convert.toHexString(Convert.int2byte(storage_area)));
+            if(storage_slot!=-100) {
+                int[] storage_area = work.getStorage(storage_slot);
+                response.put("storage_id", storage_slot);
+                response.put("storage", Convert.toHexString(Convert.int2byte(storage_area)));
+            }else{
+                JSONArray a = new JSONArray();
+                for(int i=0;i<work.bounty_limit_per_iteration;++i){
+                    JSONObject s = new JSONObject();
+                    int[] storage_area = work.getStorage(i);
+                    s.put("storage_id", i);
+                    s.put("storage", storage_area);
+                    a.add(s);
+                }
+                response.put("storages", a);
+
+                JSONArray az = new JSONArray();
+                // And also create the bounty m arrays here
+                try(DbIterator<PowAndBounty> b = PowAndBounty.getBounties(work.getId())){
+                    while(b.hasNext()){
+                        PowAndBounty h = b.next();
+                        az.add(h.getJSONInts());
+                    }
+
+                }
+                response.put("bounties", az);
+            }
         }
         return response;
     }

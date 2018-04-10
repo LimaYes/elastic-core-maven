@@ -19,12 +19,14 @@ package org.xel.http;
 import org.json.simple.JSONArray;
 import org.xel.*;
 import org.xel.peer.Peers;
+import org.xel.util.JSON;
 import org.xel.util.UPnP;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
 
 import javax.servlet.http.HttpServletRequest;
 import java.net.InetAddress;
+import java.util.List;
 
 public final class GetState extends APIServlet.APIRequestHandler {
 
@@ -93,6 +95,12 @@ public final class GetState extends APIServlet.APIRequestHandler {
                 if (includeTasks) {
                     response.put("myOpen", Work.getActiveCount(account.getId()));
                     response.put("myClosed", Work.getCount(account.getId())-Work.getActiveCount(account.getId()));
+                    JSONArray works = new JSONArray();
+                    List<Work> l = Work.getWork(account.getId(),true,0,100, 0);
+                    for(Work x : l){
+                        works.add(Work.toJsonWithStorage(x, -100, false));
+                    }
+                    response.put("myWorks", works);
                 }
 
 

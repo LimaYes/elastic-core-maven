@@ -1,10 +1,13 @@
 package org.xel;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import org.json.simple.JSONArray;
 import org.xel.computation.CommandPowBty;
 
 import org.xel.db.DbClause;
@@ -12,6 +15,7 @@ import org.xel.db.DbIterator;
 import org.xel.db.DbKey;
 import org.xel.db.DbUtils;
 import org.xel.db.VersionedEntityDbTable;
+import org.xel.util.Convert;
 import org.xel.util.Listener;
 import org.xel.util.Listeners;
 import org.xel.util.Logger;
@@ -32,10 +36,86 @@ import org.xel.util.Logger;
  *                                                                            *
  ******************************************************************************/
 
-
+import static java.security.MessageDigest.getInstance;
 public final class PowAndBounty{
+    public static MessageDigest dig = null;
+    public static int toInt(final byte[] bytes, final int offset) {
+        int ret = 0;
+        for (int i = 0; (i < 4) && ((i + offset) < bytes.length); i++) {
+            ret <<= 8;
+            ret |= bytes[i + offset] & 0xFF;
+        }
+        return ret;
+    }
+    static {
+        try {
+            dig = getInstance("MD5");
+        } catch (NoSuchAlgorithmException e) {
+            // Should always work
+            e.printStackTrace();
+            System.exit(1);
+        }
+    }
+    public static int[] personalizedIntStream(final byte[] publicKey, final long blockId, final byte[] multiplicator, final long workId) throws Exception {
+        final int[] stream = new int[12];
+
+        dig.reset();
+        dig.update(multiplicator);
+        dig.update(publicKey);
+
+        System.out.println("Calculating Personalized Int Stream");
+        System.out.println("Multiplicator: " + Convert.toHexString(multiplicator));
+        System.out.println("PublicKey: " + Convert.toHexString(publicKey));
+
+        final byte[] b1 = new byte[16];
+        for (int i = 0; i < 8; ++i) b1[i] = (byte) (workId >> ((8 - i - 1) << 3));
+        for (int i = 0; i < 8; ++i) b1[i + 8] = (byte) (blockId >> ((8 - i - 1) << 3));
+
+        dig.update(b1);
+        System.out.println("TotalBytes: " + (16+multiplicator.length+publicKey.length));
+
+        System.out.println("b1: " + Convert.toHexString(b1));
+
+        byte[] digest = dig.digest();
+
+        System.out.println("Digest: " + Convert.toHexString(digest));
+
+        int ln = digest.length;
+        if (ln == 0) {
+            throw new Exception("Bad digest calculation");
+        }
+
+        int[] multi32 = Convert.byte2int(multiplicator);
+
+        for (int i = 0; i < 10; ++i) {
+            int got = toInt(digest, (i * 4) % ln);
+            if (i > 4) got = got ^ stream[i - 3];
+            stream[i] = got;
+            System.out.println(i + ": " + Integer.toHexString(stream[i]));
+
+        }
+        stream[10] = multi32[1];
+        stream[11] = multi32[2];
+        System.out.println("10" + ": " + Integer.toHexString(stream[10]));
+        System.out.println("11" + ": " + Integer.toHexString(stream[11]));
 
 
+        return stream;
+    }
+    //public static int[] personalizedIntStream(final byte[] publicKey, final long blockId, final byte[] multiplicator, final long workId) throws Exception {
+
+    public JSONArray getJSONInts() {
+        JSONArray arr = new JSONArray();
+        byte[] pbkey = Account.getPublicKey(this.accountId);
+        try {
+            int[] ints = personalizedIntStream(pbkey, Work.getWork(this.work_id).getBlock_id(), this.multiplier, this.work_id);
+            for(int x : ints){
+                arr.add(x);
+            }
+        } catch (Exception e) {
+        }
+        return arr;
+    }
 
     public enum Event {
         POW_SUBMITTED, BOUNTY_SUBMITTED

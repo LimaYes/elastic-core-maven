@@ -218,11 +218,15 @@ public class CommandNewWork extends IComputationAttachment {
         }
     }
 
+    public boolean validatePublic(Transaction transaction){
+        return validate(transaction);
+    }
     @Override
     boolean validate(Transaction transaction) {
 
-        if(Nxt.getBlockchain().getHeight()<5370) return false;
-        if(transaction.getDeadline()>ComputationConstants.WORK_TRANSACTION_DEADLINE_VALUE) return false;
+
+
+        if(transaction!=null && transaction.getDeadline()>ComputationConstants.WORK_TRANSACTION_DEADLINE_VALUE) return false;
         if (((this.sourceCode == null) || (this.sourceCode.length == 0)) && (this.sourceCodeCompressed == null) || (this.sourceCodeCompressed.length == 0)) return false;
 
         if(!Commons.checkRange(ComputationConstants.DEADLINE_MIN, ComputationConstants.DEADLINE_MAX, this.deadline))
@@ -246,7 +250,10 @@ public class CommandNewWork extends IComputationAttachment {
         // Now, we have to validate whether the source code makes sense at all and meets the required WCET criteria
         // for the main as well as for the verify part. We can do it with a dummy compute call
         // The reason is, that the compute call will fail if syntax errors are present or if WCET boundaries are violated
-
+        String id = "not yet brdcst";
+        if(transaction!=null){
+            id = Long.toUnsignedString(transaction.getId());
+        }
         try{
 
             ExecutionEngine e = new ExecutionEngine();
@@ -262,13 +269,13 @@ public class CommandNewWork extends IComputationAttachment {
 
             // HERE, DOUBLE CHECK FOR STORAGE SIZE IN CASE IT SLIPPED THROUGH -  IT CAN BE CRITICAL
             if(storage_size>ComputationConstants.MAX_STORAGE_SIZE){
-                Logger.logInfoMessage("work package dropped: id=" + Long.toUnsignedString(transaction.getId()) + " (reason: requested storage size is way too high)");
+                Logger.logInfoMessage("work package dropped: id=" + id + " (reason: requested storage size is way too high)");
                 return false;
             }
 
             validated = true;
         }catch(Exception e){
-            Logger.logInfoMessage("work package dropped: id=" + Long.toUnsignedString(transaction.getId()) + " (reason: " + e.getMessage() + ")");
+            Logger.logInfoMessage("work package dropped: id=" + id + " (reason: " + e.getMessage() + ")");
             return false;
         }
 

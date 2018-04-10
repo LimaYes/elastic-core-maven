@@ -21,10 +21,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.xel.computation.CommandNewWork;
-import org.xel.computation.Commons;
-import org.xel.computation.ComputationConstants;
-import org.xel.computation.MessageEncoder;
+import org.xel.computation.*;
 import org.json.simple.JSONStreamAware;
 import org.xel.NxtException;
 import org.xel.util.Convert;
@@ -91,6 +88,15 @@ public final class CreateWork extends CreateTransaction {
             return JSONResponses.MISSING_CAPPOW;
 
         CommandNewWork work = new CommandNewWork(numeric_cap_number_pow, (short)numeric_deadline,numeric_xelPerPow,numeric_xelPerBounty,numeric_bountiesPerIteration,numeric_numberOfIterations, programCode.getBytes());
+
+        try{
+            if(!work.validatePublic(null))
+                return JSONResponses.WORK_NOT_VALID;
+        }catch(Exception e){
+            return JSONResponses.WORK_CRASHED;
+        }
+
+
         try {
             if(secret!=null && secret.length()>0) {
                 MessageEncoder.push(work, ParameterParser.getSecretPhrase(req, true), deadlineInt);
