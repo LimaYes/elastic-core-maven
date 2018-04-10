@@ -539,17 +539,19 @@ public final class Work {
                 }
                 response.put("storages", a);
 
-                JSONArray az = new JSONArray();
-                // And also create the bounty m arrays here
-                try(DbIterator<PowAndBounty> b = PowAndBounty.getBounties(work.getId())){
-                    while(b.hasNext()){
-                        PowAndBounty h = b.next();
-                        az.add(h.getJSONInts());
-                    }
-
-                }
-                response.put("bounties", az);
             }
+
+        }
+        if(storage_slot==-100) {
+            JSONArray az = new JSONArray();
+            // And also create the bounty m arrays here
+            try(DbIterator<PowAndBounty> it = PowAndBounty.getBounties(work.id)){
+                while (it.hasNext()) {
+                    PowAndBounty h = it.next();
+                    az.add(h.getJSONInts());
+                }
+            }
+            response.put("bounties", az);
         }
         return response;
     }

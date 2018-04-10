@@ -148,14 +148,16 @@ public final class PowAndBounty{
     };
 
     public static void addPowBty(final Transaction transaction, final CommandPowBty attachment) {
-        PowAndBounty shuffling = new PowAndBounty(transaction, attachment);
-        PowAndBounty.powAndBountyTable.insert(shuffling); // store immedeately!
 
         // Here check if it is counting or if it is "old"
         Work w = Work.getWork(attachment.getWork_id());
         if(w == null ||w.isClosed()){
             return; // just another line of defense
         }
+
+        PowAndBounty shuffling = new PowAndBounty(transaction, attachment);
+        PowAndBounty.powAndBountyTable.insert(shuffling); // store immedeately!
+
 
         // Now the work itself has to be manipulated (and close if necessary)
         if(attachment.isIs_proof_of_work())
