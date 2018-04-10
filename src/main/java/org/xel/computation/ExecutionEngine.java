@@ -125,7 +125,7 @@ public class ExecutionEngine {
         else
             cmd = String.format("./xel_miner --test-avoidcache --test-target %s --test-publickey %s --test-multiplicator %s --test-block %d --test-work %d --verify-only --test-wcet-main %d --test-wcet-verify %d --deadswitch %d --test-stdin --test-limit-storage %d --test-vm code.epl", bytesToHex(target), bytesToHex(publicKey), bytesToHex(multiplicator), blockId, workId, ComputationConstants.MAX_MAIN_WCET, ComputationConstants.MAX_VERIFY_WCET, ComputationConstants.MAX_EXECUTION_TIME_IN_S, ComputationConstants.MAX_STORAGE_SIZE);
 
-        //Logger.logInfoMessage(cmd);
+        Logger.logDebugMessage(cmd);
         Process process=Runtime.getRuntime().exec(cmd,
                 null, new File("./work/"));
         BufferedReader reader =

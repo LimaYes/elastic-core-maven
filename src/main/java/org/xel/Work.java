@@ -262,7 +262,7 @@ public final class Work {
         try(DbIterator<Work> it = Work.getActiveWork()){
             while(it.hasNext()){
                 Work w = (it.next());
-                grabs += w.getXel_per_pow() * (w.getCap_number_pow()-w.getReceived_pows());
+                grabs += w.getXel_per_pow() * (w.getCap_number_pow()-w.getReceived_pows()) + (w.getIterations_left()*w.bounty_limit_per_iteration*w.xel_per_bounty - w.received_bounties*w.xel_per_bounty);
             }
         }
         return grabs;

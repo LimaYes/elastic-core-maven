@@ -56,6 +56,16 @@ public final class PowAndBounty{
             System.exit(1);
         }
     }
+    public static int swap (int value)
+    {
+        int b1 = (value >>  0) & 0xff;
+        int b2 = (value >>  8) & 0xff;
+        int b3 = (value >> 16) & 0xff;
+        int b4 = (value >> 24) & 0xff;
+
+        return b1 << 24 | b2 << 16 | b3 << 8 | b4 << 0;
+    }
+
     public static int[] personalizedIntStream(final byte[] publicKey, final long blockId, final byte[] multiplicator, final long workId) throws Exception {
         final int[] stream = new int[12];
 
@@ -63,22 +73,15 @@ public final class PowAndBounty{
         dig.update(multiplicator);
         dig.update(publicKey);
 
-        System.out.println("Calculating Personalized Int Stream");
-        System.out.println("Multiplicator: " + Convert.toHexString(multiplicator));
-        System.out.println("PublicKey: " + Convert.toHexString(publicKey));
-
         final byte[] b1 = new byte[16];
         for (int i = 0; i < 8; ++i) b1[i] = (byte) (workId >> ((8 - i - 1) << 3));
         for (int i = 0; i < 8; ++i) b1[i + 8] = (byte) (blockId >> ((8 - i - 1) << 3));
 
         dig.update(b1);
-        System.out.println("TotalBytes: " + (16+multiplicator.length+publicKey.length));
 
-        System.out.println("b1: " + Convert.toHexString(b1));
 
         byte[] digest = dig.digest();
 
-        System.out.println("Digest: " + Convert.toHexString(digest));
 
         int ln = digest.length;
         if (ln == 0) {
@@ -91,13 +94,11 @@ public final class PowAndBounty{
             int got = toInt(digest, (i * 4) % ln);
             if (i > 4) got = got ^ stream[i - 3];
             stream[i] = got;
-            System.out.println(i + ": " + Integer.toHexString(stream[i]));
 
         }
-        stream[10] = multi32[1];
-        stream[11] = multi32[2];
-        System.out.println("10" + ": " + Integer.toHexString(stream[10]));
-        System.out.println("11" + ": " + Integer.toHexString(stream[11]));
+        stream[10] = swap(multi32[1]);
+        stream[11] = swap(multi32[2]);
+
 
 
         return stream;
