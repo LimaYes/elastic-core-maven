@@ -218,6 +218,14 @@ public final class PowAndBounty{
                 -1, "");
     }
 
+
+
+    public static int getUnpaidSubmissionCount(final long wid) {
+        return PowAndBounty.powAndBountyTable
+                .getCount(new DbClause.LongClause("work_id", wid).and(new DbClause.BooleanClause("was_paid", false)).and(new DbClause.BooleanClause("latest", true)));
+    }
+
+
     public static DbIterator<PowAndBounty> getBounties(final long wid, final long aid) {
         return PowAndBounty.powAndBountyTable.getManyBy(new DbClause.LongClause("work_id", wid)
                 .and(new DbClause.BooleanClause("is_pow", false)).and(new DbClause.LongClause("account_id", aid))
@@ -274,7 +282,10 @@ public final class PowAndBounty{
                 .getCount(new DbClause.BytesClause("multiplier", multiplier).and(new DbClause.LongClause("work_id",workId))) > 0;
     }
 
-
+    public void JustSave(){
+        PowAndBounty.powAndBountyTable.insert(this);
+        Logger.logDebugMessage("Work submission status of " + this.getId() + " is now: " + ((this.isWas_paid())?"paid":"unpaid"));
+    }
     static void init() {
     }
 
@@ -285,6 +296,7 @@ public final class PowAndBounty{
     private final long id;
     private final boolean is_pow;
     private boolean too_late;
+    private boolean was_paid;
     private final long work_id;
     private final long accountId;
     private final DbKey dbKey;
@@ -296,6 +308,14 @@ public final class PowAndBounty{
     private final byte[] submitted_storage;
 
     private int timestampReceived = 0;
+
+    public boolean isWas_paid() {
+        return was_paid;
+    }
+
+    public void setWas_paid(boolean was_paid) {
+        this.was_paid = was_paid;
+    }
 
     public long getWork_id() {
         return work_id;
@@ -313,6 +333,7 @@ public final class PowAndBounty{
         this.dbKey = dbKey;
         this.too_late = rs.getBoolean("too_late");
         this.hash = rs.getBytes("hash");
+        this.was_paid = rs.getBoolean("was_paid");
         this.verificator_hash = rs.getBytes("hash");
         this.multiplier = rs.getBytes("multiplier");
         this.pow_hash = rs.getBytes("pow_hash");
@@ -332,6 +353,7 @@ public final class PowAndBounty{
         this.dbKey = PowAndBounty.powAndBountyDbKeyFactory.newKey(this.id);
         this.is_pow = attachment.isIs_proof_of_work();
         this.hash = attachment.getHash();
+        this.was_paid = false;
         this.verificator_hash = attachment.getSubmittedStorageHash();
         this.multiplier = attachment.getMultiplier();
         this.pow_hash = attachment.getPowHash();
@@ -350,8 +372,8 @@ public final class PowAndBounty{
         try (PreparedStatement pstmt = con.prepareStatement( /* removed storage between multiplier and submitted_storage in
         next line */
                 "MERGE INTO pow_and_bounty (id, too_late, work_id, hash, multiplier, storage_bucket, submitted_storage, " +
-                        "account_id, is_pow, verificator_hash, pow_hash, timestamp, "
-                        + " height, latest) " + "KEY (id, height) " + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?," +
+                        "account_id, is_pow, verificator_hash, pow_hash, was_paid, timestamp, "
+                        + " height, latest) " + "KEY (id, height) " + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?," +
                         " TRUE)")) {
             int i = 0;
             pstmt.setLong(++i, this.id);
@@ -365,6 +387,7 @@ public final class PowAndBounty{
             pstmt.setBoolean(++i, this.is_pow);
             DbUtils.setBytes(pstmt, ++i, this.verificator_hash);
             DbUtils.setBytes(pstmt, ++i, this.pow_hash);
+            pstmt.setBoolean(++i, this.was_paid);
             pstmt.setInt(++i, this.timestampReceived);
             pstmt.setInt(++i, Nxt.getBlockchain().getHeight());
             pstmt.executeUpdate();

@@ -36,6 +36,7 @@ public enum APIEnum {
     CANCEL_WORK("cancelWork", CancelWork.instance),
     SUBMIT_SOLUTION("submitSolution", SubmitSolution.instance),
     LONGPOLL("longpoll",  Longpoll.instance),
+    LASTBLOCK("getLastBlockId",  GetLastBlockId.instance),
     /* ELASTIC SPECIFIC END */
     GET_FROM_FAUCET("faucet", Faucet.instance),
     APPROVE_TRANSACTION("approveTransaction", ApproveTransaction.instance),

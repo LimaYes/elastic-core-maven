@@ -220,7 +220,15 @@ public class CommandPowBty extends IComputationAttachment {
         return validate(transaction, false);
     }
 
-    public boolean validate(Transaction transaction, boolean lightMode) {
+    public void setValidated(boolean validated) {
+        this.validated = validated;
+    }
+
+    public boolean isValid() {
+        return isValid;
+    }
+
+    public synchronized boolean validate(Transaction transaction, boolean lightMode) {
 
         // This construction avoids multiple code-evaluations which are not really required
         if(validated) return isValid;
@@ -317,6 +325,7 @@ public class CommandPowBty extends IComputationAttachment {
 
             if(this.is_proof_of_work) {
                 transaction.itWasAPow();
+                this.isValid = true; // obsolete
             }
 
         }else {

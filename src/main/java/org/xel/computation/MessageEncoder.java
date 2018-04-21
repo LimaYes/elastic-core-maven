@@ -1,9 +1,12 @@
 package org.xel.computation;
 
 import org.xel.*;
+import org.xel.db.DbIterator;
+import org.xel.http.GetLastBlockId;
 import org.xel.http.ParameterException;
 import org.xel.http.ParameterParser;
 import org.xel.peer.Peers;
+import org.xel.util.Convert;
 import org.xel.util.Logger;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
@@ -114,9 +117,39 @@ public class MessageEncoder {
         int mintime = Integer.MAX_VALUE;
         int maxtime = 0;
 
+        // first all pow and else
+        // in second round the bounties
+
         for(Transaction t : block.getTransactions()){
+
+
             Appendix.PrunablePlainMessage m = t.getPrunablePlainMessage();
             if(m==null || !m.hasPrunableData()) continue;
+
+            // Here process all payments
+            if(m.isText()){
+                String str = Convert.toString(m.getMessage(), true);
+                if(str.length()>4 && str.length()<100){
+                    if(str.startsWith("/!")){
+                        str = str.substring(2);
+                        long p = 0;
+                        try {
+                            p = Long.parseLong(str);
+                            PowAndBounty bty = PowAndBounty.getPowOrBountyById(p);
+                            if(bty != null){
+                                bty.setWas_paid(true);
+                                bty.JustSave();
+                            }
+                        }catch(Exception e){}
+                        if(p!=0){
+
+                        }
+                    }
+                }
+
+            }
+
+
             if(MessageEncoder.checkMessageForPiggyback(m, true, false)){
                 try {
                     Appendix.PrunablePlainMessage[] reconstructedChain = MessageEncoder.extractMessages(t);
@@ -124,16 +157,54 @@ public class MessageEncoder {
                     // Allow the decoding of the attachment
                     IComputationAttachment att = MessageEncoder.decodeAttachment(reconstructedChain);
                     if(att == null) continue;
-                    att.apply(t);
 
-                    if(t.wasAPow()) {
-                        if(t.getTimestamp()>maxtime) maxtime = t.getTimestamp();
-                        if(t.getTimestamp()<mintime) mintime = t.getTimestamp();
-                        powCounter++;
+                    if(att instanceof CommandPowBty) {
+                        if (((CommandPowBty) att).isIs_proof_of_work())
+                            att.apply(t);
+                        if (((CommandPowBty) att).isIs_proof_of_work() && ((CommandPowBty) att).isValid()) {
+                            if (t.getTimestamp() > maxtime) maxtime = t.getTimestamp();
+                            if (t.getTimestamp() < mintime) mintime = t.getTimestamp();
+                            powCounter++;
+                        }
+                    }else{
+                        att.apply(t);
                     }
+
 
                 } catch (Exception e) {
                     // generous catch, do not allow anything to cripple the blockchain integrity
+                    e.printStackTrace();
+                    continue;
+                }
+            }
+        }
+
+        for(Transaction t : block.getTransactions()){
+
+
+            Appendix.PrunablePlainMessage m = t.getPrunablePlainMessage();
+            if(m==null || !m.hasPrunableData()) continue;
+
+
+
+            if(MessageEncoder.checkMessageForPiggyback(m, true, false)){
+                try {
+                    Appendix.PrunablePlainMessage[] reconstructedChain = MessageEncoder.extractMessages(t);
+
+                    // Allow the decoding of the attachment
+                    IComputationAttachment att = MessageEncoder.decodeAttachment(reconstructedChain);
+                    if(att == null) continue;
+
+                    if(att instanceof CommandPowBty) {
+                        if (((CommandPowBty) att).isIs_proof_of_work()) continue;
+                        att.apply(t);
+                    }
+
+
+
+                } catch (Exception e) {
+                    // generous catch, do not allow anything to cripple the blockchain integrity
+                    e.printStackTrace();
                     continue;
                 }
             }
@@ -143,10 +214,24 @@ public class MessageEncoder {
         // and clean the stupidLimiters
         stupidLimiterPow.clear();
         stupidLimiterBty.clear();
+
+        // Now clear all jobs that have not seen enough payments in the past
+        // Rule is, if more than 55 POW/BTY are open, we timeout this job immedeately
+        try(DbIterator<Work> it = Work.getActiveWork()){
+            while (it.hasNext()){
+                Work w = it.next();
+                int unpaid = PowAndBounty.getUnpaidSubmissionCount(w.getId());
+                if(unpaid > 55){
+                    w.CloseNoPayment(block);
+                }
+            }
+        }
     }
 
     static {
         Nxt.getBlockchainProcessor().addListener(block -> {
+
+            GetLastBlockId.lastBlockId = block.getId();
             if (block.getHeight() < ComputationConstants.START_ENCODING_BLOCK || !useComputationEngine) {
                 return;
             }

@@ -422,6 +422,17 @@ public final class Work {
         }
     }
 
+    public void CloseNoPayment(Block bl) {
+        if(this.closed == false) {
+            this.closed = true;
+            this.cancelled = true;
+            this.closing_timestamp = bl.getTimestamp();
+            Work.workTable.insert(this);
+            Work.listeners.notify(this, Event.WORK_CANCELLED);
+            Logger.logInfoMessage("work closed because payments were not coming in: id=" + Long.toUnsignedString(this.id));
+        }
+    }
+
     public void JustSave(){
         Work.workTable.insert(this);
         if(this.isClosed()) {

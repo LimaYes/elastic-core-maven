@@ -55,6 +55,7 @@ public final class GetBlockchainStatus extends APIServlet.APIRequestHandler {
         response.put("maxRollback", Constants.MAX_ROLLBACK);
         response.put("currentMinRollbackHeight", Nxt.getBlockchainProcessor().getMinRollbackHeight());
         response.put("isTestnet", Constants.isTestnet);
+        response.put("lastBlock", GetLastBlockId.getLastBlock());
         response.put("maxPrunableLifetime", Constants.MAX_PRUNABLE_LIFETIME);
         response.put("includeExpiredPrunable", Constants.INCLUDE_EXPIRED_PRUNABLE);
         response.put("correctInvalidFees", Constants.correctInvalidFees);
