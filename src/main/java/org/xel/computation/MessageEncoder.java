@@ -161,10 +161,15 @@ public class MessageEncoder {
                     if(att instanceof CommandPowBty) {
                         if (((CommandPowBty) att).isIs_proof_of_work())
                             att.apply(t);
+                        else
+                            continue;
                         if (((CommandPowBty) att).isIs_proof_of_work() && ((CommandPowBty) att).isValid()) {
                             if (t.getTimestamp() > maxtime) maxtime = t.getTimestamp();
                             if (t.getTimestamp() < mintime) mintime = t.getTimestamp();
                             powCounter++;
+                        }else{
+                            ((CommandPowBty) att).setValidated(false);
+                            att.validate(t);
                         }
                     }else{
                         att.apply(t);
