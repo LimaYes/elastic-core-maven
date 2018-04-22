@@ -615,9 +615,10 @@ final class BlockImpl implements Block {
         }
         long targetForThisBlock = previousBlock.getPowTarget();
 
-        if(Work.getActiveCount()==0 || Nxt.getBlockchain().getHeight()<418) {
+        if(Work.getActiveCount()==0 || Nxt.getBlockchain().getHeight()<535) {
             powTarget = targetForThisBlock;
-        }; // NO RETARGET WHEN NO WORK LIVE, and not for first 418 blocks
+            return;
+        }; // NO RETARGET WHEN NO WORK LIVE, and not for first 535 blocks
 
 
         int nActualTimespan = this.getTimestamp() - previousBlock.getTimestamp();
