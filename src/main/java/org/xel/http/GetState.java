@@ -16,16 +16,14 @@
 
 package org.xel.http;
 
-import com.google.gson.JsonArray;
-import com.sun.tools.internal.jxc.ap.Const;
+
 import org.json.simple.JSONArray;
 import org.xel.*;
 import org.xel.computation.CustomTransactionBuilder;
 import org.xel.computation.Pair;
 import org.xel.db.DbIterator;
 import org.xel.peer.Peers;
-import org.xel.util.Convert;
-import org.xel.util.JSON;
+
 import org.xel.util.Logger;
 import org.xel.util.UPnP;
 import org.json.simple.JSONObject;
@@ -34,7 +32,6 @@ import org.json.simple.JSONStreamAware;
 import javax.servlet.http.HttpServletRequest;
 import java.net.InetAddress;
 import java.util.List;
-import java.util.Objects;
 
 public final class GetState extends APIServlet.APIRequestHandler {
 
