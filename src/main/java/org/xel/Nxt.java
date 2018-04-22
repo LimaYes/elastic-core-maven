@@ -61,7 +61,7 @@ public final class Nxt {
 
     public static final String NXT_PROPERTIES = "nxt.properties";
     public static final String CONFIG_DIR = "conf";
-
+    public static final String CONFIG_DIR_USER = "conf_user";
     private static final RuntimeMode runtimeMode;
     private static final DirProvider dirProvider;
 
@@ -165,19 +165,41 @@ public final class Nxt {
                             Files.createDirectory(Paths.get(homeDir));
                         }
                     }
+
+                    boolean alternativeConf = false;
                     Path confDir = Paths.get(homeDir, CONFIG_DIR);
                     if (!Files.isReadable(confDir)) {
                         System.out.printf("Creating dir %s\n", confDir);
                         Files.createDirectory(confDir);
                     }
-                    Path propPath = Paths.get(confDir.toString()).resolve(Paths.get(propertiesFile));
-                    if (Files.isReadable(propPath)) {
-                        System.out.printf("Loading %s from dir %s\n", propertiesFile, confDir);
-                        properties.load(Files.newInputStream(propPath));
-                    } else {
-                        System.out.printf("Creating property file %s\n", propPath);
-                        Files.createFile(propPath);
-                        Files.write(propPath, Convert.toBytes("# use this file for workstation specific " + propertiesFile));
+
+                    Path confDirAlt = Paths.get(homeDir, CONFIG_DIR_USER);
+                    if (Files.isReadable(confDirAlt)) {
+                        alternativeConf=true;
+                    }
+
+                    if(alternativeConf){
+
+                        Path propPath = Paths.get(confDirAlt.toString()).resolve(Paths.get(propertiesFile));
+                        if (Files.isReadable(propPath)) {
+                            System.out.printf("Loading %s from dir %s\n", propertiesFile, confDir);
+                            properties.load(Files.newInputStream(propPath));
+                        } else {
+                            System.out.printf("Creating property file %s\n", propPath);
+                            Files.createFile(propPath);
+                            Files.write(propPath, Convert.toBytes("# use this file for workstation specific " + propertiesFile));
+                        }
+
+                    }else {
+                        Path propPath = Paths.get(confDir.toString()).resolve(Paths.get(propertiesFile));
+                        if (Files.isReadable(propPath)) {
+                            System.out.printf("Loading %s from dir %s\n", propertiesFile, confDir);
+                            properties.load(Files.newInputStream(propPath));
+                        } else {
+                            System.out.printf("Creating property file %s\n", propPath);
+                            Files.createFile(propPath);
+                            Files.write(propPath, Convert.toBytes("# use this file for workstation specific " + propertiesFile));
+                        }
                     }
                     return properties;
                 } catch (IOException e) {
