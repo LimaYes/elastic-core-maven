@@ -605,7 +605,6 @@ final class BlockImpl implements Block {
         BlockImpl previousBlock = null;
         powMass = powCounter;
 
-        if(Work.getActiveCount()==0 || Nxt.getBlockchain().getHeight()<332) return; // NO RETARGET WHEN NO WORK LIVE, and not for first 332 blocks
         if(this.getPreviousBlockId()!=0)
             previousBlock = BlockDb.findBlock(this.getPreviousBlockId());
 
@@ -614,11 +613,16 @@ final class BlockImpl implements Block {
             powTarget = Long.MAX_VALUE/10000;
             return;
         }
+        long targetForThisBlock = previousBlock.getPowTarget();
+
+        if(Work.getActiveCount()==0 || Nxt.getBlockchain().getHeight()<418) {
+            powTarget = targetForThisBlock;
+        }; // NO RETARGET WHEN NO WORK LIVE, and not for first 418 blocks
+
 
         int nActualTimespan = this.getTimestamp() - previousBlock.getTimestamp();
 
         int nActualPows = this.getPowMass();
-        long targetForThisBlock = previousBlock.getPowTarget();
         double nTargetTimespan = 0;
         double ratio = 0;
         if (nActualTimespan < 60*0.4 || nActualTimespan > 60*1.7){ // For too short blocks, let us just leave the target untouched
