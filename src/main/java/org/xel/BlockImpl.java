@@ -605,7 +605,7 @@ final class BlockImpl implements Block {
         BlockImpl previousBlock = null;
         powMass = powCounter;
 
-        if(Work.getActiveCount()==0) return; // NO RETARGET WHEN NO WORK LIVE
+        if(Work.getActiveCount()==0 || Nxt.getBlockchain().getHeight()<332) return; // NO RETARGET WHEN NO WORK LIVE, and not for first 332 blocks
         if(this.getPreviousBlockId()!=0)
             previousBlock = BlockDb.findBlock(this.getPreviousBlockId());
 
