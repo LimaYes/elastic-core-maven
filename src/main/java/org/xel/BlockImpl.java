@@ -605,9 +605,7 @@ final class BlockImpl implements Block {
         BlockImpl previousBlock = null;
         powMass = powCounter;
 
-        if(this.getHeight() == 60){
-            previousBlock = null;
-        }
+        if(Work.getActiveCount()==0) return; // NO RETARGET WHEN NO WORK LIVE
         if(this.getPreviousBlockId()!=0)
             previousBlock = BlockDb.findBlock(this.getPreviousBlockId());
 
