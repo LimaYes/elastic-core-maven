@@ -573,6 +573,7 @@ public final class Account {
         return account;
     }
 
+
     public static Account getAccount(byte[] publicKey) {
         long accountId = getId(publicKey);
         Account account = getAccount(accountId);

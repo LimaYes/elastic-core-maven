@@ -76,6 +76,7 @@ public final class SendTransaction extends APIServlet.APIRequestHandler {
             try {
                 Transaction.Builder builder = ParameterParser.parseTransaction(transactionJSON, transactionBytes, prunableAttachmentJSON);
                 Transaction transaction = builder.build();
+                transaction.validate();
                 Peers.sendToSomePeers(Collections.singletonList(transaction));
                 response.put("transaction", transaction.getStringId());
                 response.put("fullHash", transaction.getFullHash());

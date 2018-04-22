@@ -122,32 +122,35 @@ public class MessageEncoder {
 
         for(Transaction t : block.getTransactions()){
 
+            Appendix.Message m2 = t.getMessage();
 
-            Appendix.PrunablePlainMessage m = t.getPrunablePlainMessage();
-            if(m==null || !m.hasPrunableData()) continue;
+            if(m2!=null) {
 
-            // Here process all payments
-            if(m.isText()){
-                String str = Convert.toString(m.getMessage(), true);
-                if(str.length()>4 && str.length()<100){
-                    if(str.startsWith("/!")){
-                        str = str.substring(2);
-                        long p = 0;
-                        try {
-                            p = Long.parseLong(str);
-                            PowAndBounty bty = PowAndBounty.getPowOrBountyById(p);
-                            if(bty != null){
-                                bty.setWas_paid(true);
-                                bty.JustSave();
+                // Here process all payments
+                if (m2.isText()) {
+                    String str = Convert.toString(m2.getMessage(), true);
+                    if (str.length() > 4 && str.length() < 100) {
+                        if (str.startsWith("/!")) {
+                            str = str.substring(2);
+                            long p = 0;
+                            try {
+                                p = Long.parseLong(str);
+                                PowAndBounty bty = PowAndBounty.getPowOrBountyById(p);
+                                if (bty != null) {
+                                    bty.setWas_paid(true);
+                                    bty.JustSave();
+                                }
+                            } catch (Exception e) {
                             }
-                        }catch(Exception e){}
-                        if(p!=0){
+                            if (p != 0) {
 
+                            }
                         }
                     }
-                }
 
+                }
             }
+            Appendix.PrunablePlainMessage m = t.getPrunablePlainMessage();
 
 
             if(MessageEncoder.checkMessageForPiggyback(m, true, false)){

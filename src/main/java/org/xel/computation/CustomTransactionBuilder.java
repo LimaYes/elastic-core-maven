@@ -29,11 +29,11 @@ import static org.xel.http.JSONResponses.FEATURE_NOT_AVAILABLE;
 
 public class CustomTransactionBuilder {
 
-    final static Pair<JSONStreamAware, String> createTransaction(Appendix.PrunablePlainMessage work_rel_message, String secretPhrase, int deadline) throws NxtException {
+    public final static Pair<JSONStreamAware, String> createTransaction(Appendix.PrunablePlainMessage work_rel_message, String secretPhrase, int deadline) throws NxtException {
         return CustomTransactionBuilder.createTransaction(work_rel_message, secretPhrase, null, deadline);
     }
 
-    final static Pair<JSONStreamAware, String> createTransaction(Appendix.PrunablePlainMessage work_rel_message, String secretPhrase, String referencedTransactionFullHash, int deadline) throws NxtException {
+    public final static Pair<JSONStreamAware, String> createTransaction(Appendix.PrunablePlainMessage work_rel_message, String secretPhrase, String referencedTransactionFullHash, int deadline) throws NxtException {
 
         Appendix.PrunablePlainMessage prunablePlainMessage = work_rel_message;
 
@@ -65,11 +65,11 @@ public class CustomTransactionBuilder {
         return new Pair<>(transactionJSON, transaction.getFullHash());
     }
 
-    final static Pair<JSONStreamAware, String> createTransactionPubkey(Appendix.PrunablePlainMessage work_rel_message, byte[] publicKey, int deadline) throws NxtException {
+    public final static Pair<JSONStreamAware, String> createTransactionPubkey(Appendix.PrunablePlainMessage work_rel_message, byte[] publicKey, int deadline) throws NxtException {
         return CustomTransactionBuilder.createTransactionPubkey(work_rel_message, publicKey, null, deadline);
     }
 
-    final static Pair<JSONStreamAware, String> createTransactionPubkey(Appendix.PrunablePlainMessage work_rel_message, byte[] publicKey, String referencedTransactionFullHash, int deadline) throws NxtException {
+    public final static Pair<JSONStreamAware, String> createTransactionPubkey(Appendix.PrunablePlainMessage work_rel_message, byte[] publicKey, String referencedTransactionFullHash, int deadline) throws NxtException {
 
         Appendix.PrunablePlainMessage prunablePlainMessage = work_rel_message;
 
@@ -92,5 +92,34 @@ public class CustomTransactionBuilder {
         response.put("unsignedTransactionBytes", Convert.toHexString(transaction.getUnsignedBytes()));
 
         return new Pair<>(response, "");
+    }
+
+
+
+    // Only use this function if you know what you do!
+    public final static Pair<JSONStreamAware, JSONStreamAware> createTransactionPubkey(Appendix.Message work_rel_message, byte[] publicKey, int deadline, long amount, long to) throws NxtException {
+
+        Appendix.Message prunablePlainMessage = work_rel_message;
+
+        if (publicKey == null) {
+            throw new NxtException.NotValidException("No passphrase given");
+        }
+
+
+
+        Transaction.Builder builder = Nxt.newTransactionBuilder(publicKey, amount, 0,
+                (short)deadline, Attachment.ORDINARY_PAYMENT).referencedTransactionFullHash(null).recipientId(to);
+
+        builder.appendix(prunablePlainMessage);
+
+        Transaction transaction = builder.build();
+
+        JSONObject transactionJSON = JSONData.unconfirmedTransaction(transaction);
+        JSONObject response = new JSONObject();
+        response.put("transactionJSON", transactionJSON);
+        response.put("unsignedTransactionBytes", Convert.toHexString(transaction.getUnsignedBytes()));
+
+
+        return new Pair<>(response, work_rel_message.getJSONObject());
     }
 }

@@ -16,10 +16,17 @@
 
 package org.xel.http;
 
+import com.google.gson.JsonArray;
+import com.sun.tools.internal.jxc.ap.Const;
 import org.json.simple.JSONArray;
 import org.xel.*;
+import org.xel.computation.CustomTransactionBuilder;
+import org.xel.computation.Pair;
+import org.xel.db.DbIterator;
 import org.xel.peer.Peers;
+import org.xel.util.Convert;
 import org.xel.util.JSON;
+import org.xel.util.Logger;
 import org.xel.util.UPnP;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
@@ -27,6 +34,7 @@ import org.json.simple.JSONStreamAware;
 import javax.servlet.http.HttpServletRequest;
 import java.net.InetAddress;
 import java.util.List;
+import java.util.Objects;
 
 public final class GetState extends APIServlet.APIRequestHandler {
 
@@ -89,6 +97,43 @@ public final class GetState extends APIServlet.APIRequestHandler {
                 response.put("forgedBalanceNQT", "0");
 
             } else {
+
+
+                JSONArray awork = new JSONArray();
+                byte[] publicKey = Account.getPublicKey(account.getId());
+
+                Logger.logDebugMessage("GetFullState: account has Pubkey? " + (publicKey!=null));
+                // Get Unconfirmed TX
+                if(publicKey!=null) {
+                    List<Work> itw = Work.getActiveAndRecentlyClosedByAccountId(account.getId());
+                    for (Work w : itw) {
+                        Logger.logDebugMessage(" > open work " + w.getId());
+                        try (DbIterator<PowAndBounty> unpaidit = PowAndBounty.getUnpaidSubmission(w.getId())) {
+                            while (unpaidit.hasNext()) {
+                                PowAndBounty b = unpaidit.next();
+                                Logger.logDebugMessage("    > unpaid bty " + b.getId() + ", isPOW = " + b.is_pow + ", payout = " + ((b.is_pow) ? w.getXel_per_pow() : w.getXel_per_bounty()));
+                                String pmst = "/!" + String.valueOf(b.getId());
+
+
+                                Appendix.Message prunablePlainMessage = new Appendix.Message(pmst, true);
+
+
+                                try {
+                                    Pair<JSONStreamAware, JSONStreamAware> pr = CustomTransactionBuilder.createTransactionPubkey(prunablePlainMessage, publicKey,1,(b.is_pow) ? w.getXel_per_pow() : w.getXel_per_bounty(),b.getAccountId());
+                                    JSONArray ffb = new JSONArray();
+                                    ffb.add(pr.getElement0());
+                                    ffb.add(pr.getElement1());
+                                    awork.add(ffb);
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    }
+                }
+
+                response.put("pendingPayouts", awork);
+
                 response.put("balanceNQT", String.valueOf(account.getBalanceNQT()));
                 response.put("unconfirmedBalanceNQT", String.valueOf(account.getUnconfirmedBalanceNQT()));
                 response.put("forgedBalanceNQT", String.valueOf(account.getForgedBalanceNQT()));

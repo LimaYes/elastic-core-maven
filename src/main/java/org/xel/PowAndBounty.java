@@ -225,6 +225,12 @@ public final class PowAndBounty{
                 .getCount(new DbClause.LongClause("work_id", wid).and(new DbClause.BooleanClause("was_paid", false)).and(new DbClause.BooleanClause("latest", true)));
     }
 
+    public static DbIterator<PowAndBounty> getUnpaidSubmission(final long wid) {
+        return PowAndBounty.powAndBountyTable
+                .getManyBy(new DbClause.LongClause("work_id", wid).and(new DbClause.BooleanClause("was_paid", false)).and(new DbClause.BooleanClause("latest", true)), 0,
+                        -1, "");
+    }
+
 
     public static DbIterator<PowAndBounty> getBounties(final long wid, final long aid) {
         return PowAndBounty.powAndBountyTable.getManyBy(new DbClause.LongClause("work_id", wid)
@@ -294,7 +300,7 @@ public final class PowAndBounty{
     }
 
     private final long id;
-    private final boolean is_pow;
+    public final boolean is_pow;
     private boolean too_late;
     private boolean was_paid;
     private final long work_id;

@@ -207,13 +207,13 @@ public final class Work {
             PreparedStatement pstmt = null;
             if(accountId != 0)
                 pstmt = con.prepareStatement("SELECT work.* FROM work WHERE work.sender_account_id = ? "
-                             + (includeFinished ? "" : "AND work.blocks_remaining IS NOT NULL ")
+                             + ((includeFinished) ? "" : "AND work.closed = FALSE ")
                              + (onlyOneId == 0 ? "" : "AND work.id = ? ")
                              + "AND work.latest = TRUE ORDER BY closed, originating_height DESC "
                              + DbUtils.limitsClause(from, to));
             else
                 pstmt = con.prepareStatement("SELECT work.* FROM work WHERE work.sender_account_id != 0 "
-                        + (includeFinished ? "" : "AND work.blocks_remaining IS NOT NULL ")
+                        + ((includeFinished) ? "" : "AND work.closed = FALSE ")
                         + (onlyOneId == 0 ? "" : "AND work.id = ? ")
                         + "AND work.latest = TRUE ORDER BY closed, originating_height DESC "
                         + DbUtils.limitsClause(from, to));
@@ -565,6 +565,29 @@ public final class Work {
             response.put("bounties", az);
         }
         return response;
+    }
+
+    public static List<Work> getActiveAndRecentlyClosedByAccountId(long accountId) {
+        final List<Work> ret = new ArrayList<>();
+
+        try (Connection con = Db.db.getConnection();) {
+
+            PreparedStatement pstmt =  con.prepareStatement("SELECT work.* FROM work WHERE work.sender_account_id = ? "
+                        + "AND (work.closed = FALSE OR work.height > ?) "
+                        + "AND work.latest = TRUE ORDER BY closed, originating_height DESC ");
+
+            int i = 0;
+            pstmt.setLong(++i, accountId);
+            pstmt.setInt(++i, Nxt.getBlockchain().getHeight()-3);
+            try (DbIterator<Work> w_it = Work.workTable.getManyBy(con, pstmt, true)) {
+                while (w_it.hasNext()) ret.add(w_it.next());
+            } catch (final Exception ignored) {
+
+            }
+            return ret;
+        } catch (final SQLException e) {
+            throw new RuntimeException(e.toString(), e);
+        }
     }
 
     public enum Event {
