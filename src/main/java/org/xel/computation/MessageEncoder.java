@@ -129,21 +129,44 @@ public class MessageEncoder {
                 // Here process all payments
                 if (m2.isText()) {
                     String str = Convert.toString(m2.getMessage(), true);
-                    if (str.length() > 4 && str.length() < 100) {
+                    if (str.length() > 4 && str.length() < Constants.MAX_ARBITRARY_MESSAGE_LENGTH) {
                         if (str.startsWith("/!")) {
-                            str = str.substring(2);
-                            long p = 0;
                             try {
-                                p = Long.parseLong(str);
-                                PowAndBounty bty = PowAndBounty.getPowOrBountyById(p);
-                                if (bty != null) {
-                                    bty.setWas_paid(true);
-                                    bty.JustSave();
+                                if(str.indexOf(",")>0){
+                                    String[] sp = str.split(",");
+                                    long totalAttached = t.getAmountNQT();
+                                    for(String x : sp){
+                                        if(x.startsWith("/!") && x.length()>4){
+                                            x=x.substring(2);
+                                            long p = 0;
+                                            p = Long.parseLong(str);
+                                            PowAndBounty bty = PowAndBounty.getPowOrBountyById(p);
+
+                                            if (bty != null) {
+                                                Work w = Work.getWorkById(bty.getWork_id());
+                                                if((bty.is_pow && totalAttached>=w.getXel_per_pow()) || (!bty.is_pow && totalAttached>=w.getXel_per_bounty())){
+                                                    bty.setWas_paid(true);
+                                                    bty.JustSave();
+                                                    totalAttached -= ((bty.is_pow)?w.getXel_per_pow():w.getXel_per_bounty());
+                                                }else break;
+                                            }
+                                        }
+                                    }
+                                }else {
+                                    str = str.substring(2);
+                                    long p = 0;
+                                    p = Long.parseLong(str);
+                                    PowAndBounty bty = PowAndBounty.getPowOrBountyById(p);
+
+                                    if (bty != null) {
+                                        Work w = Work.getWorkById(bty.getWork_id());
+                                        if((bty.is_pow && t.getAmountNQT()>=w.getXel_per_pow()) || (!bty.is_pow && t.getAmountNQT()>=w.getXel_per_bounty())){
+                                            bty.setWas_paid(true);
+                                            bty.JustSave();
+                                        }
+                                    }
                                 }
                             } catch (Exception e) {
-                            }
-                            if (p != 0) {
-
                             }
                         }
                     }
