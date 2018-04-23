@@ -20,9 +20,12 @@ import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
 import org.xel.Account;
 import org.xel.Nxt;
+import org.xel.UnconfirmedGetter;
 import org.xel.peer.Hallmark;
 
 import javax.servlet.http.HttpServletRequest;
+
+import java.util.Map;
 
 import static org.xel.http.JSONResponses.INCORRECT_HALLMARK;
 import static org.xel.http.JSONResponses.MISSING_HALLMARK;
@@ -48,7 +51,12 @@ public final class GetLastBlockId extends APIServlet.APIRequestHandler {
         } catch (ParameterException e) {
         }
         if (account != null) {
-            o.put("unconfirmedBalanceNQT", account.getUnconfirmedBalanceNQT());
+            long adjuster = 0;
+            Map<Long, Long> unmap = UnconfirmedGetter.refreshMap();
+            if(unmap.containsKey(account.getId())){
+                adjuster = unmap.get(account.getId());
+            }
+            o.put("unconfirmedBalanceNQT", String.valueOf(account.getBalanceNQT() + adjuster));
         }
         return o;
     }
