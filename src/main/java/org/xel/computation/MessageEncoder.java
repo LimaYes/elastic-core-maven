@@ -139,7 +139,7 @@ public class MessageEncoder {
                                         if(x.startsWith("/!") && x.length()>4){
                                             x=x.substring(2);
                                             long p = 0;
-                                            p = Long.parseLong(str);
+                                            p = Long.parseLong(x);
                                             PowAndBounty bty = PowAndBounty.getPowOrBountyById(p);
 
                                             if (bty != null) {

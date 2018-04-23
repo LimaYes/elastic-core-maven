@@ -320,6 +320,7 @@ public final class PowAndBounty{
     }
 
     public void setWas_paid(boolean was_paid) {
+        //Logger.logDebugMessage("Pow/Bty with id " + this.getId() + " was paid.");
         this.was_paid = was_paid;
     }
 
