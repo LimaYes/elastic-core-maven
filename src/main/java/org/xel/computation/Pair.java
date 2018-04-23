@@ -2,11 +2,19 @@ package org.xel.computation;
 
 public class Pair<K, V> {
 
-    private final K element0;
-    private final V element1;
+    private K element0;
+    private V element1;
 
     public Pair(K element0, V element1) {
         this.element0 = element0;
+        this.element1 = element1;
+    }
+
+    public void setElement0(K element0) {
+        this.element0 = element0;
+    }
+
+    public void setElement1(V element1) {
         this.element1 = element1;
     }
 
