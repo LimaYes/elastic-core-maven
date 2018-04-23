@@ -110,11 +110,11 @@ public final class GetState extends APIServlet.APIRequestHandler {
 
                     List<Work> itw = Work.getActiveAndRecentlyClosedByAccountId(account.getId());
                     for (Work w : itw) {
-                        Logger.logDebugMessage(" > open work " + w.getId());
+                        //Logger.logDebugMessage(" > open work " + w.getId());
                         try (DbIterator<PowAndBounty> unpaidit = PowAndBounty.getUnpaidSubmission(w.getId())) {
                             while (unpaidit.hasNext()) {
                                 PowAndBounty b = unpaidit.next();
-                                Logger.logDebugMessage("    > unpaid bty " + b.getId() + ", isPOW = " + b.is_pow + ", payout = " + ((b.is_pow) ? w.getXel_per_pow() : w.getXel_per_bounty()));
+                                //Logger.logDebugMessage("    > unpaid bty " + b.getId() + ", isPOW = " + b.is_pow + ", payout = " + ((b.is_pow) ? w.getXel_per_pow() : w.getXel_per_bounty()));
                                 Pair<String, Long> oldpair = null;
                                 if(earnings.containsKey(b.getAccountId())){
                                     oldpair = earnings.get(b.getAccountId());
@@ -133,7 +133,7 @@ public final class GetState extends APIServlet.APIRequestHandler {
 
                                 // Flush if message too long
                                 if(oldpair.getElement0().length() > Constants.MAX_ARBITRARY_MESSAGE_LENGTH-40){ // arbitrary safegap
-                                    Appendix.Message prunablePlainMessage = new Appendix.Message(earnings.toString(), true);
+                                    Appendix.Message prunablePlainMessage = new Appendix.Message(oldpair.getElement0(), true);
                                     try {
                                         Pair<JSONStreamAware, JSONStreamAware> pr = CustomTransactionBuilder.createTransactionPubkey(prunablePlainMessage, publicKey,1, oldpair.getElement1(), b.getAccountId());
                                         JSONArray ffb = new JSONArray();
@@ -153,7 +153,7 @@ public final class GetState extends APIServlet.APIRequestHandler {
                     // Build all remaining TX
                     for(Long k : earnings.keySet()){
                         Pair<String, Long> payment = earnings.get(k);
-                        Appendix.Message prunablePlainMessage = new Appendix.Message(payment.toString(), true);
+                        Appendix.Message prunablePlainMessage = new Appendix.Message(payment.getElement0(), true);
                         try {
                             Pair<JSONStreamAware, JSONStreamAware> pr = CustomTransactionBuilder.createTransactionPubkey(prunablePlainMessage, publicKey,1, payment.getElement1(), k);
                             JSONArray ffb = new JSONArray();
