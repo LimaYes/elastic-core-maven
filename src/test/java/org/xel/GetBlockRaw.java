@@ -6,6 +6,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.xel.computation.IComputationAttachment;
 import org.xel.computation.MessageEncoder;
+import org.xel.db.DbIterator;
 import org.xel.util.Convert;
 
 import java.util.Properties;
@@ -30,12 +31,19 @@ public class GetBlockRaw extends AbstractForgingTest {
 
     @Test
     public void getRawBlock(){
-        Block b = Nxt.getBlockchain().getBlock(Nxt.getBlockchain().getBlockIdAtHeight(0));
+        Work w = Work.getWorkById(Long.parseUnsignedLong("16396654591714241603"));
 
-        System.out.println("JSN: " + b.getJSONObject().toJSONString());
-        System.out.println("RAW: " + Convert.toHexString(b.getBytes()));
-        System.out.println("HASH: " + Convert.toHexString(b.getBlockHash()));
-        System.out.println("ID: " + b.getStringId());
+        System.out.println("Inspecting work " + w.getId());
+        try(DbIterator<PowAndBounty> it = PowAndBounty.getLastBountiesRelevantForStorageGeneration(w.getId(),1,0,1)){
+            while(it.hasNext()){
+                PowAndBounty b = it.next();
+                if(b.is_pow==true) continue;
+                String raw = Convert.toHexString(b.getSubmitted_storage());
+                int[] resbty = Convert.byte2int(b.getSubmitted_storage());
+                System.out.println("Bty " + b.getId() + " - storage = " + resbty[0] + " - raw " + raw);
+            }
+        }
+
 
     }
 

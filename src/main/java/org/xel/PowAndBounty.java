@@ -118,6 +118,7 @@ public final class PowAndBounty{
         return arr;
     }
 
+
     public enum Event {
         POW_SUBMITTED, BOUNTY_SUBMITTED
     }
@@ -237,6 +238,12 @@ public final class PowAndBounty{
                 .and(new DbClause.BooleanClause("is_pow", false)).and(new DbClause.LongClause("account_id", aid))
                 .and(new DbClause.BooleanClause("latest", true)), 0, -1, "");
     }
+
+    public static DbIterator<PowAndBounty> getBountiesForStorageAnalysis(long wid) {
+        return PowAndBounty.powAndBountyTable.getManyBy(new DbClause.LongClause("work_id", wid)
+                        .and(new DbClause.BooleanClause("is_pow", false)).and(new DbClause.BooleanClause("latest", true)),0,9999, " ORDER BY height DESC");
+    }
+
 
     public static DbIterator<PowAndBounty> getLastBountiesRelevantForStorageGeneration(final long wid, int fullrounds, int skip, long index){
         return PowAndBounty.powAndBountyTable.getManyBy(new DbClause.LongClause("work_id", wid)

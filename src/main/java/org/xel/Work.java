@@ -509,7 +509,7 @@ public final class Work {
             // only fill for reasonable storage slot
 
             // first, check if work has enough storage submissions to be considered in 'the next round'
-            int fullrounds = this.getReceived_bounties()%bounty_limit_per_iteration;
+            int fullrounds = this.getReceived_bounties()/bounty_limit_per_iteration;
             if(fullrounds==0){
                 // not a full round yet, just return zero storage of correct length
                 return storage_area;
@@ -518,7 +518,7 @@ public final class Work {
             // appearently we know we have at least a full round, but there might be also bounties at the end not belonging to the last full round, i.e., to the new unfinished round which we do not
             // consider 'mature combined storage' yet. Make sure to get the right indices here to pull from the db
 
-            int unfinished = this.getReceived_bounties() / bounty_limit_per_iteration;
+            int unfinished = this.getReceived_bounties() % bounty_limit_per_iteration;
             try(DbIterator<PowAndBounty> it = PowAndBounty.getLastBountiesRelevantForStorageGeneration(this.id, fullrounds, unfinished, storage_slot)){ // the problem from above is handled in this function
                 PowAndBounty bty = it.next();
                 int[] resbty = Convert.byte2int(bty.getSubmitted_storage());

@@ -135,7 +135,7 @@ public final class GetState extends APIServlet.APIRequestHandler {
                                 if(oldpair.getElement0().length() > Constants.MAX_ARBITRARY_MESSAGE_LENGTH-40){ // arbitrary safegap
                                     Appendix.Message prunablePlainMessage = new Appendix.Message(oldpair.getElement0(), true);
                                     try {
-                                        Pair<JSONStreamAware, JSONStreamAware> pr = CustomTransactionBuilder.createTransactionPubkey(prunablePlainMessage, publicKey,1, oldpair.getElement1(), b.getAccountId());
+                                        Pair<JSONStreamAware, JSONStreamAware> pr = CustomTransactionBuilder.createTransactionPubkey(prunablePlainMessage, publicKey,3, oldpair.getElement1(), b.getAccountId());
                                         JSONArray ffb = new JSONArray();
                                         ffb.add(pr.getElement0());
                                         ffb.add(pr.getElement1());
