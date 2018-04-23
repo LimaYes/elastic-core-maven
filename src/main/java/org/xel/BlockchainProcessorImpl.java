@@ -1418,8 +1418,11 @@ public final class BlockchainProcessorImpl implements BlockchainProcessor {
             throw new RuntimeException(e.toString(), e);
         }
     }
-
     public void pushBlock(final BlockImpl block) throws BlockNotAcceptedException {
+        pushBlock(block, false);
+    }
+
+    public void pushBlock(final BlockImpl block, boolean pushAnyway) throws BlockNotAcceptedException {
 
         int curTime = Nxt.getEpochTime();
 
@@ -1469,7 +1472,7 @@ public final class BlockchainProcessorImpl implements BlockchainProcessor {
             blockchain.writeUnlock();
         }
 
-        if (block.getTimestamp() >= curTime - 600) {
+        if (block.getTimestamp() >= curTime - 600 || pushAnyway) {
             Peers.sendToSomePeers(block);
         }
 
@@ -1917,7 +1920,7 @@ public final class BlockchainProcessorImpl implements BlockchainProcessor {
                 payloadHash, publicKey, generationSignature, previousBlockHash, blockTransactions, secretPhrase);
 
         try {
-            pushBlock(block);
+            pushBlock(block, true);
             blockListeners.notify(block, Event.BLOCK_GENERATED);
             Logger.logDebugMessage("Account " + Long.toUnsignedString(block.getGeneratorId()) + " generated block " + block.getStringId()
                     + " at height " + block.getHeight() + " timestamp " + block.getTimestamp() + " fee " + ((float)block.getTotalFeeNQT())/Constants.ONE_NXT);

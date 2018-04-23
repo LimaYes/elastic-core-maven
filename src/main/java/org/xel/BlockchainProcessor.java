@@ -32,7 +32,7 @@ public interface BlockchainProcessor extends Observable<Block,BlockchainProcesso
         BEFORE_BLOCK_ACCEPT, AFTER_BLOCK_ACCEPT,
         BEFORE_BLOCK_APPLY, AFTER_BLOCK_APPLY
     }
-
+    void pushBlock(final BlockImpl block, boolean pushAnyway) throws BlockNotAcceptedException;
     void pushBlock(final BlockImpl block) throws BlockNotAcceptedException;
 
     Peer getLastBlockchainFeeder();
