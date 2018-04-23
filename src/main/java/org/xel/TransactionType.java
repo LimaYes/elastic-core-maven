@@ -168,11 +168,7 @@ public abstract class TransactionType {
             senderAccount.addToBalanceNQT(getLedgerEvent(), transactionId, -amount);
         }
         if (recipientAccount != null) {
-            if(transaction.getAttachment()!=null && transaction.getAttachment().getTransactionType().getSubtype() == TransactionType.SUBTYPE_PAYMENT_ORDINARY_PAYMENT && transaction.getAttachment().getTransactionType().getType() == TransactionType.TYPE_PAYMENT){
-                recipientAccount.addToBalanceNQT(getLedgerEvent(), transactionId, amount);
-            }else{
-                recipientAccount.addToBalanceAndUnconfirmedBalanceNQT(getLedgerEvent(), transactionId, amount);
-            }
+            recipientAccount.addToBalanceAndUnconfirmedBalanceNQT(getLedgerEvent(), transactionId, amount);
         }
         applyAttachment(transaction, senderAccount, recipientAccount);
     }
@@ -284,12 +280,12 @@ public abstract class TransactionType {
         }
 
         @Override
-        boolean applyAttachmentUnconfirmed(Transaction transaction, Account senderAccount) {
+        final boolean applyAttachmentUnconfirmed(Transaction transaction, Account senderAccount) {
             return true;
         }
 
         @Override
-        void undoAttachmentUnconfirmed(Transaction transaction, Account senderAccount) {
+        final void undoAttachmentUnconfirmed(Transaction transaction, Account senderAccount) {
         }
 
         @Override
@@ -300,18 +296,6 @@ public abstract class TransactionType {
 
         public static final TransactionType ORDINARY = new Payment() {
 
-            @Override
-            final boolean applyAttachmentUnconfirmed(Transaction transaction, Account senderAccount) {
-                Account recvaccount = Account.addOrGetAccount(transaction.getRecipientId());
-                recvaccount.addToUnconfirmedBalanceNQT(getLedgerEvent(), transaction.getId(), transaction.getAmountNQT(), 0);
-                return true;
-            }
-
-            @Override
-            final void undoAttachmentUnconfirmed(Transaction transaction, Account senderAccount) {
-                Account recvaccount = Account.addOrGetAccount(transaction.getRecipientId());
-                recvaccount.addToUnconfirmedBalanceNQT(getLedgerEvent(), transaction.getId(), -transaction.getAmountNQT(), 0);
-            }
 
             @Override
             final void applyAttachment(Transaction transaction, Account senderAccount, Account recipientAccount) {

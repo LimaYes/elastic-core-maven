@@ -1152,7 +1152,7 @@ public final class Account {
             throw new DoubleSpendingException("Negative balance or quantity: ", accountId, confirmed, unconfirmed);
         }
         if (unconfirmed < 0) {
-            // throw new DoubleSpendingException("Negative unconfirmed balance or quantity: ", accountId, confirmed, unconfirmed);
+            throw new DoubleSpendingException("Negative unconfirmed balance or quantity: ", accountId, confirmed, unconfirmed);
         }
     }
 

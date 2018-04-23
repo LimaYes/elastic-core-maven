@@ -32,6 +32,7 @@ import org.json.simple.JSONStreamAware;
 import javax.servlet.http.HttpServletRequest;
 import java.net.InetAddress;
 import java.util.List;
+import java.util.Map;
 
 public final class GetState extends APIServlet.APIRequestHandler {
 
@@ -130,9 +131,13 @@ public final class GetState extends APIServlet.APIRequestHandler {
                 }
 
                 response.put("pendingPayouts", awork);
-
                 response.put("balanceNQT", String.valueOf(account.getBalanceNQT()));
-                response.put("unconfirmedBalanceNQT", String.valueOf(account.getUnconfirmedBalanceNQT()));
+                long adjuster = 0;
+                Map<Long, Long> unmap = UnconfirmedGetter.refreshMap();
+                if(unmap.containsKey(account.getId())){
+                    adjuster = unmap.get(account.getId());
+                }
+                response.put("unconfirmedBalanceNQT", String.valueOf(account.getBalanceNQT() + adjuster));
                 response.put("forgedBalanceNQT", String.valueOf(account.getForgedBalanceNQT()));
                 if (includeTasks) {
                     response.put("myOpen", Work.getActiveCount(account.getId()));
@@ -144,8 +149,6 @@ public final class GetState extends APIServlet.APIRequestHandler {
                     }
                     response.put("myWorks", works);
                 }
-
-
             }
         } catch (ParameterException e) {
 
