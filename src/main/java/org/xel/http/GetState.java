@@ -31,6 +31,8 @@ import org.json.simple.JSONStreamAware;
 
 import javax.servlet.http.HttpServletRequest;
 import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -100,9 +102,12 @@ public final class GetState extends APIServlet.APIRequestHandler {
                 JSONArray awork = new JSONArray();
                 byte[] publicKey = Account.getPublicKey(account.getId());
 
-                Logger.logDebugMessage("GetFullState: account has Pubkey? " + (publicKey!=null));
+                //Logger.logDebugMessage("GetFullState: account has Pubkey? " + (publicKey!=null));
                 // Get Unconfirmed TX
                 if(publicKey!=null) {
+
+                    Map<Long,Pair<String, Long>> earnings = new HashMap<>();
+
                     List<Work> itw = Work.getActiveAndRecentlyClosedByAccountId(account.getId());
                     for (Work w : itw) {
                         Logger.logDebugMessage(" > open work " + w.getId());
@@ -110,22 +115,53 @@ public final class GetState extends APIServlet.APIRequestHandler {
                             while (unpaidit.hasNext()) {
                                 PowAndBounty b = unpaidit.next();
                                 Logger.logDebugMessage("    > unpaid bty " + b.getId() + ", isPOW = " + b.is_pow + ", payout = " + ((b.is_pow) ? w.getXel_per_pow() : w.getXel_per_bounty()));
-                                String pmst = "/!" + String.valueOf(b.getId());
-
-
-                                Appendix.Message prunablePlainMessage = new Appendix.Message(pmst, true);
-
-
-                                try {
-                                    Pair<JSONStreamAware, JSONStreamAware> pr = CustomTransactionBuilder.createTransactionPubkey(prunablePlainMessage, publicKey,1,(b.is_pow) ? w.getXel_per_pow() : w.getXel_per_bounty(),b.getAccountId());
-                                    JSONArray ffb = new JSONArray();
-                                    ffb.add(pr.getElement0());
-                                    ffb.add(pr.getElement1());
-                                    awork.add(ffb);
-                                } catch (Exception e) {
-                                    e.printStackTrace();
+                                Pair<String, Long> oldpair = null;
+                                if(earnings.containsKey(b.getAccountId())){
+                                    oldpair = earnings.get(b.getAccountId());
+                                }else
+                                {
+                                    oldpair = new Pair<>("", 0L);
                                 }
+
+
+                                if(oldpair.getElement0().length()==0)
+                                    oldpair.setElement0("/!" + String.valueOf(b.getId()));
+                                else
+                                    oldpair.setElement0(oldpair.getElement0() + ",/!" + String.valueOf(b.getId()));
+                                oldpair.setElement1(oldpair.getElement1() + ((b.is_pow) ? w.getXel_per_pow() : w.getXel_per_bounty()));
+                                earnings.put(b.getAccountId(), oldpair);
+
+                                // Flush if message too long
+                                if(oldpair.getElement0().length() > Constants.MAX_ARBITRARY_MESSAGE_LENGTH-40){ // arbitrary safegap
+                                    Appendix.Message prunablePlainMessage = new Appendix.Message(earnings.toString(), true);
+                                    try {
+                                        Pair<JSONStreamAware, JSONStreamAware> pr = CustomTransactionBuilder.createTransactionPubkey(prunablePlainMessage, publicKey,1, oldpair.getElement1(), b.getAccountId());
+                                        JSONArray ffb = new JSONArray();
+                                        ffb.add(pr.getElement0());
+                                        ffb.add(pr.getElement1());
+                                        awork.add(ffb);
+                                        earnings.remove(b.getAccountId());
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+
                             }
+                        }
+                    }
+
+                    // Build all remaining TX
+                    for(Long k : earnings.keySet()){
+                        Pair<String, Long> payment = earnings.get(k);
+                        Appendix.Message prunablePlainMessage = new Appendix.Message(payment.toString(), true);
+                        try {
+                            Pair<JSONStreamAware, JSONStreamAware> pr = CustomTransactionBuilder.createTransactionPubkey(prunablePlainMessage, publicKey,1, payment.getElement1(), k);
+                            JSONArray ffb = new JSONArray();
+                            ffb.add(pr.getElement0());
+                            ffb.add(pr.getElement1());
+                            awork.add(ffb);
+                        } catch (Exception e) {
+                            e.printStackTrace();
                         }
                     }
                 }
