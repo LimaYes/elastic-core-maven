@@ -308,7 +308,7 @@ final class BlockDb {
     static void updateBlockLocallyProcessed(BlockImpl block) {
         try {
             try (Connection con = Db.db.getConnection();
-                 PreparedStatement pstmt = con.prepareStatement("UPDATE block SET locally_processed = ? WHERE id = ?")) {
+                 PreparedStatement pstmt = con.prepareStatement("UPDATE block_comp SET locally_processed = ? WHERE id = ?")) {
                 int i = 0;
                 pstmt.setBoolean(++i, true);
                 pstmt.setLong(++i, block.getId());
@@ -322,7 +322,7 @@ final class BlockDb {
     static void updateBlockPowTargets(BlockImpl block) {
         try {
             try (Connection con = Db.db.getConnection();
-                 PreparedStatement pstmt = con.prepareStatement("UPDATE block SET pow_target = ?, pow_last_mass = ?," +
+                 PreparedStatement pstmt = con.prepareStatement("UPDATE block_comp SET pow_target = ?, pow_last_mass = ?," +
                          " pow_mass = ?, target_last_mass = ?, target_mass = ?" +
                          " WHERE id = ?")) {
                 int i = 0;

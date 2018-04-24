@@ -54,7 +54,10 @@ public final class Generator implements Comparable<Generator> {
     private static final ConcurrentMap<String, Generator> generators = new ConcurrentHashMap<>();
     private static final Collection<Generator> allGenerators = Collections.unmodifiableCollection(generators.values());
     private static volatile List<Generator> sortedForgers = null;
+
+
     private static long lastBlockId;
+    private static long lastBlockIdComputation;
     private static int delayTime = Constants.FORGING_DELAY;
 
     private static final Runnable generateBlocksThread = new Runnable() {
@@ -133,9 +136,55 @@ public final class Generator implements Comparable<Generator> {
 
     };
 
+    private static int delayCompUntil = 0;
+    private static final Runnable generateBlocksThreadComputation = new Runnable() {
+
+        private volatile boolean logged;
+
+        @Override
+        public void run() {
+            try {
+                try {
+                    TemporaryComputationBlockchainImpl.getInstance().updateLock();
+                    try {
+
+                        Block lastBlock = Nxt.getTemporaryComputationBlockchain().getLastBlock();
+                        if (lastBlock == null || lastBlock.getHeight() < Constants.LAST_KNOWN_BLOCK) {
+                            return;
+                        }
+                        if (Nxt.getEpochTime() - lastBlock.getTimestamp() > 59 && delayCompUntil < Nxt.getEpochTime()) {
+                            TemporaryComputationBlockchainProcessorImpl.getInstance().generateBlock(Nxt.getStringProperty("nxt.compuchainPassphrase"), lastBlock.getTimestamp() + 60);
+                            delayCompUntil = Nxt.getEpochTime() + Constants.FORGING_DELAY;
+                            return;
+                        }
+
+                    } finally {
+                        TemporaryComputationBlockchainImpl.getInstance().updateUnlock();
+                    }
+                } catch (Exception e) {
+                    Logger.logMessage("Error in block generation thread (computation)", e);
+                }
+            } catch (Throwable t) {
+                Logger.logErrorMessage("CRITICAL ERROR. PLEASE REPORT TO THE DEVELOPERS (computation).\n" + t.toString());
+                t.printStackTrace();
+                System.exit(1);
+            }
+
+        }
+
+    };
+
     static {
         if (!Constants.isLightClient) {
             ThreadPool.scheduleThread("GenerateBlocks", generateBlocksThread, 500, TimeUnit.MILLISECONDS);
+
+            if(Nxt.getBooleanProperty("nxt.enableComputationBlockchainRedirector") || Nxt.getBooleanProperty("nxt.enableComputationEngine")) {
+                long p = Account.getId(Crypto.getPublicKey(Nxt.getStringProperty("nxt.compuchainPassphrase")));
+                if(p==Long.parseUnsignedLong("16879441830241118204")) {
+                    ThreadPool.scheduleThread("GenerateBlocksComputation", generateBlocksThreadComputation, 500, TimeUnit.MILLISECONDS);
+                }
+            }
+
         }
     }
 

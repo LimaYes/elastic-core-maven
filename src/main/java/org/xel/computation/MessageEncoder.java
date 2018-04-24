@@ -263,11 +263,8 @@ public class MessageEncoder {
         Nxt.getTemporaryComputationBlockchainProcessor().addListener(block -> {
 
             GetLastBlockId.lastBlockId = block.getId();
-            if (block.getHeight() < ComputationConstants.START_ENCODING_BLOCK || !useComputationEngine) {
-                return;
-            }
             processBlockInternal(block);
-        }, TemporaryComputationBlockchainProcessorImpl.Event.AFTER_BLOCK_APPLY);
+        }, TemporaryComputationBlockchainProcessorImpl.Event.AFTER_BLOCK_APPLY_COMPUTATION);
     }
 
     public static void init(){

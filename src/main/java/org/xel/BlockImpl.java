@@ -61,7 +61,7 @@ final class BlockImpl implements Block {
     private byte[] blockSignature;
     private BigInteger cumulativeDifficulty = BigInteger.ZERO;
     private long baseTarget = Constants.INITIAL_BASE_TARGET;
-    private long powTarget = Long.MAX_VALUE/10000;
+    private long powTarget = Long.MAX_VALUE / 10000;
     private int powLastMass = 0;
     private int powMass = 0;
     private long targetLastMass = 0;
@@ -87,7 +87,7 @@ final class BlockImpl implements Block {
         this.version = version;
         this.timestamp = timestamp;
         this.previousBlockId = previousBlockId;
-        if(this.previousBlockId==0)
+        if (this.previousBlockId == 0)
             this.height = 0;
 
         this.totalAmountNQT = totalAmountNQT;
@@ -124,7 +124,7 @@ final class BlockImpl implements Block {
               byte[] previousBlockHash, BigInteger cumulativeDifficulty, long baseTarget, long powTarget, int
                       powLastMass, int powMass, long
                       targetLastMass, long targetMass, long
-              nextBlockId, int height, long id,
+                      nextBlockId, int height, long id,
               List<TransactionImpl> blockTransactions) {
         this(version, timestamp, previousBlockId, totalAmountNQT, totalFeeNQT, payloadLength, payloadHash,
                 null, generationSignature, blockSignature, previousBlockHash, null);
@@ -145,7 +145,7 @@ final class BlockImpl implements Block {
     @Override
     public void setLocallyProcessed() {
         BlockDb.updateBlockLocallyProcessed(this);
-        BlockDb.updateBlockPowTargets( this );
+        BlockDb.updateBlockPowTargets(this);
     }
 
     @Override
@@ -289,7 +289,7 @@ final class BlockImpl implements Block {
                 throw new IllegalStateException("Block is not signed yet");
             }
             byte[] hash = Crypto.sha256().digest(bytes());
-            BigInteger bigInteger = new BigInteger(1, new byte[] {hash[7], hash[6], hash[5], hash[4], hash[3], hash[2], hash[1], hash[0]});
+            BigInteger bigInteger = new BigInteger(1, new byte[]{hash[7], hash[6], hash[5], hash[4], hash[3], hash[2], hash[1], hash[0]});
             id = bigInteger.longValue();
             stringId = bigInteger.toString();
         }
@@ -317,12 +317,12 @@ final class BlockImpl implements Block {
 
     @Override
     public boolean equals(Object o) {
-        return o instanceof BlockImpl && this.getId() == ((BlockImpl)o).getId();
+        return o instanceof BlockImpl && this.getId() == ((BlockImpl) o).getId();
     }
 
     @Override
     public int hashCode() {
-        return (int)(getId() ^ (getId() >>> 32));
+        return (int) (getId() ^ (getId() >>> 32));
     }
 
     @Override
@@ -352,7 +352,7 @@ final class BlockImpl implements Block {
         try {
             BlockImpl previousBlock = BlockchainImpl.getInstance().getBlock(getPreviousBlockId());
             return previousBlock.getPowTarget();
-        }catch(Exception e){
+        } catch (Exception e) {
             return 0;
         }
     }
@@ -386,7 +386,7 @@ final class BlockImpl implements Block {
                 throw new NxtException.NotValidException("Invalid block signature");
             }
             return block;
-        } catch (NxtException.NotValidException|RuntimeException e) {
+        } catch (NxtException.NotValidException | RuntimeException e) {
             Logger.logDebugMessage("Failed to parse block: " + blockData.toJSONString());
             throw e;
         }
@@ -438,7 +438,7 @@ final class BlockImpl implements Block {
     private volatile boolean hasValidSignature = false;
 
     private boolean checkSignature() {
-        if (! hasValidSignature) {
+        if (!hasValidSignature) {
             byte[] data = Arrays.copyOf(bytes(), bytes.length - 64);
             hasValidSignature = blockSignature != null && Crypto.verify(blockSignature, data, getGeneratorPublicKey(), version >= 3);
         }
@@ -493,7 +493,9 @@ final class BlockImpl implements Block {
 
         try {
 
-            BlockImpl previousBlock = BlockchainImpl.getInstance().getBlock(getPreviousBlockId());
+            if(this.getId()==Genesis.GENESIS_BLOCK_ID_COMPUTATIONCHAIN) return true; // special treatment for genesis
+
+            BlockImpl previousBlock = TemporaryComputationBlockchainImpl.getInstance().getBlock(getPreviousBlockId());
             if (previousBlock == null) {
                 throw new BlockchainProcessor.BlockOutOfOrderException("Can't verify signature because previous block is missing", this);
             }
@@ -502,27 +504,22 @@ final class BlockImpl implements Block {
                 return false;
             }
 
-            Account account = Account.getAccount(getGeneratorId());
-            long effectiveBalance = account == null ? 0 : account.getEffectiveBalanceNXT();
-            if (effectiveBalance <= 0) {
+            long account = getGeneratorId();
+
+            if (account != Long.parseUnsignedLong("16879441830241118204")) {
                 return false;
             }
 
             MessageDigest digest = Crypto.sha256();
             byte[] generationSignatureHash;
-            if (version == 1) {
-                generationSignatureHash = digest.digest(generationSignature);
-            } else {
-                digest.update(previousBlock.generationSignature);
-                generationSignatureHash = digest.digest(getGeneratorPublicKey());
-                if (!Arrays.equals(generationSignature, generationSignatureHash)) {
-                    return false;
-                }
+
+            digest.update(previousBlock.generationSignature);
+            generationSignatureHash = digest.digest(getGeneratorPublicKey());
+            if (!Arrays.equals(generationSignature, generationSignatureHash)) {
+                return false;
             }
 
-            BigInteger hit = new BigInteger(1, new byte[]{generationSignatureHash[7], generationSignatureHash[6], generationSignatureHash[5], generationSignatureHash[4], generationSignatureHash[3], generationSignatureHash[2], generationSignatureHash[1], generationSignatureHash[0]});
-
-            return Generator.verifyHit(hit, BigInteger.valueOf(effectiveBalance), previousBlock, timestamp);
+            return true;
 
         } catch (RuntimeException e) {
 
@@ -533,9 +530,10 @@ final class BlockImpl implements Block {
 
     }
 
-    private static final long[] badBlocks = new long[] {
+    private static final long[] badBlocks = new long[]{
             5113090348579089956L, 8032405266942971936L, 7702042872885598917L, -407022268390237559L, -3320029330888410250L,
             -6568770202903512165L, 4288642518741472722L, 5315076199486616536L, -6175599071600228543L};
+
     static {
         Arrays.sort(badBlocks);
     }
@@ -619,20 +617,21 @@ final class BlockImpl implements Block {
         BlockImpl previousBlock = null;
         powMass = powCounter;
 
-        if(this.getPreviousBlockId()!=0)
+        if (this.getPreviousBlockId() != 0)
             previousBlock = BlockDb.findBlock(this.getPreviousBlockId());
 
-        if(previousBlock == null){
+        if (previousBlock == null) {
             // Do nothing
-            powTarget = Long.MAX_VALUE/10000;
+            powTarget = Long.MAX_VALUE / 10000;
             return;
         }
         long targetForThisBlock = previousBlock.getPowTarget();
 
-        if(Work.getActiveCount()==0 || Nxt.getBlockchain().getHeight()<535) {
+        if (Work.getActiveCount() == 0 || Nxt.getBlockchain().getHeight() < 535) {
             powTarget = targetForThisBlock;
             return;
-        }; // NO RETARGET WHEN NO WORK LIVE, and not for first 535 blocks
+        }
+        ; // NO RETARGET WHEN NO WORK LIVE, and not for first 535 blocks
 
 
         int nActualTimespan = this.getTimestamp() - previousBlock.getTimestamp();
@@ -640,13 +639,13 @@ final class BlockImpl implements Block {
         int nActualPows = this.getPowMass();
         double nTargetTimespan = 0;
         double ratio = 0;
-        if (nActualTimespan < 60*0.4 || nActualTimespan > 60*1.7){ // For too short blocks, let us just leave the target untouched
+        if (nActualTimespan < 60 * 0.4 || nActualTimespan > 60 * 1.7) { // For too short blocks, let us just leave the target untouched
             powTarget = targetForThisBlock;
-        }else {
+        } else {
 
             // Here, we give it another chance to be more precise on the actual time span in case we hit the cap
-            if(powMass == 25 && minTxTime != Integer.MAX_VALUE){
-                    nActualTimespan = maxTxTime - minTxTime;
+            if (powMass == 25 && minTxTime != Integer.MAX_VALUE) {
+                nActualTimespan = maxTxTime - minTxTime;
             }
 
             nTargetTimespan = (nActualPows * 60) / ComputationConstants.WE_WANT_X_POW_PER_MINUTE;
@@ -666,14 +665,13 @@ final class BlockImpl implements Block {
             }
 
             powTarget = (long) (targetForThisBlock * ratio);
-            if(powTarget > Long.MAX_VALUE/10000) powTarget = Long.MAX_VALUE/10000;
-            else if(powTarget < 1) powTarget = 1;
+            if (powTarget > Long.MAX_VALUE / 10000) powTarget = Long.MAX_VALUE / 10000;
+            else if (powTarget < 1) powTarget = 1;
         }
 
         BigInteger myTargetInt = Scaler.get(powTarget);
 
         Logger.logInfoMessage("Block " + this.getHeight() + ": new minimal target = " + myTargetInt.toString(16) + ", powMass = " + powMass + ", thisTarget = " + targetForThisBlock + ", newT = " + powTarget + ", actTime = " + nActualTimespan + ", targetTime = " + nTargetTimespan + ", adjRatio = " + ratio);
-
 
 
     }

@@ -1013,7 +1013,7 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
             List<TransactionImpl> transactions = new ArrayList<>();
             MessageDigest digest = Crypto.sha256();
             BlockImpl genesisBlock = new BlockImpl(getBlockVersion(0), 0, 0, 0, 0, 0, digest.digest(),
-                    Genesis.CREATOR_PUBLIC_KEY, new byte[64],  new byte[32], new byte[32], transactions);
+                    Genesis.CREATOR_PUBLIC_KEY, new byte[64], new byte[32], new byte[32], transactions);
             Logger.logInfoMessage("Computationchain: Creating Genesisblock with ID = " + genesisBlock.getStringId() + " [signed representation = " + genesisBlock.getId() + "]");
             System.out.println(genesisBlock.getJSONObject().toJSONString());
             genesisBlock.setPrevious(null);
@@ -1136,9 +1136,7 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
             throw new BlockNotAcceptedException("Duplicate block or invalid id", block);
         }
         if (!block.verifyGenerationSignatureParabolic()) {
-            Account generatorAccount = Account.getAccount(block.getGeneratorId());
-            long generatorBalance = generatorAccount == null ? 0 : generatorAccount.getEffectiveBalanceNXT();
-            throw new BlockNotAcceptedException("Generation signature verification failed, effective balance " + generatorBalance, block);
+            throw new BlockNotAcceptedException("Generation signature verification failed", block);
         }
         if (!block.verifyBlockSignature()) {
             throw new BlockNotAcceptedException("Block signature verification failed", block);
