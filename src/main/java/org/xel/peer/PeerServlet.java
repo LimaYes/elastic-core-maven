@@ -74,6 +74,10 @@ public final class PeerServlet extends WebSocketServlet {
             map.put("getNextBlockIdsComputation", GetNextBlockIdsComputation.instance);
             map.put("getNextBlocksComputation", GetNextBlocksComputation.instance);
             map.put("processBlockComputation", ProcessBlockComputation.instance);
+            map.put("processTransactionsComputation", ProcessTransactionsComputation.instance);
+            map.put("getUnconfirmedTransactionsComputation", GetUnconfirmedTransactionsComputation.instance);
+            map.put("getTransactionsComputation", GetTransactionsComputation.instance);
+
         }
 
         peerRequestHandlers = Collections.unmodifiableMap(map);

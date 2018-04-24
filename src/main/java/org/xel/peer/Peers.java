@@ -1009,6 +1009,12 @@ public final class Peers {
         sendToSomePeers(request);
     }
 
+    public static void sendToSomePeersComputation(Block block) {
+        JSONObject request = block.getJSONObject();
+        request.put("requestType", "processBlockComputation");
+        sendToSomePeersComputation(request);
+    }
+
     private static final int sendTransactionsBatchSize = 10;
 
     public static void sendToSomePeers(List<? extends Transaction> transactions) {
@@ -1026,6 +1032,21 @@ public final class Peers {
         }
     }
 
+    public static void sendToSomePeersComputation(List<? extends Transaction> transactions) {
+        int nextBatchStart = 0;
+        while (nextBatchStart < transactions.size()) {
+            JSONObject request = new JSONObject();
+            JSONArray transactionsData = new JSONArray();
+            for (int i = nextBatchStart; i < nextBatchStart + sendTransactionsBatchSize && i < transactions.size(); i++) {
+                transactionsData.add(transactions.get(i).getJSONObject());
+            }
+            request.put("requestType", "processTransactionsComputation");
+            request.put("transactions", transactionsData);
+            sendToSomePeers(request);
+            nextBatchStart += sendTransactionsBatchSize;
+        }
+    }
+
     private static void sendToSomePeers(final JSONObject request) {
         sendingService.submit(() -> {
             final JSONStreamAware jsonRequest = JSON.prepareRequest(request);
@@ -1033,6 +1054,48 @@ public final class Peers {
             int successful = 0;
             List<Future<JSONObject>> expectedResponses = new ArrayList<>();
             for (final Peer peer : peers.values()) {
+
+                if (Peers.enableHallmarkProtection && peer.getWeight() < Peers.pushThreshold) {
+                    continue;
+                }
+
+                if (!peer.isBlacklisted() && peer.getState() == Peer.State.CONNECTED && peer.getAnnouncedAddress() != null
+                        && peer.getBlockchainState() != Peer.BlockchainState.LIGHT_CLIENT) {
+                    Future<JSONObject> futureResponse = peersService.submit(() -> peer.send(jsonRequest));
+                    expectedResponses.add(futureResponse);
+                }
+                if (expectedResponses.size() >= Peers.sendToPeersLimit - successful) {
+                    for (Future<JSONObject> future : expectedResponses) {
+                        try {
+                            JSONObject response = future.get();
+                            if (response != null && response.get("error") == null) {
+                                successful += 1;
+                            }
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        } catch (ExecutionException e) {
+                            Logger.logDebugMessage("Error in sendToSomePeers", e);
+                        }
+
+                    }
+                    expectedResponses.clear();
+                }
+                if (successful >= Peers.sendToPeersLimit) {
+                    return;
+                }
+            }
+        });
+    }
+
+    private static void sendToSomePeersComputation(final JSONObject request) {
+        sendingService.submit(() -> {
+            final JSONStreamAware jsonRequest = JSON.prepareRequest(request);
+
+            int successful = 0;
+            List<Future<JSONObject>> expectedResponses = new ArrayList<>();
+            for (final Peer peer : peers.values()) {
+
+                if(peer.providesService(Peer.Service.COMPUTATION_REDIRECTOR)==false) continue;
 
                 if (Peers.enableHallmarkProtection && peer.getWeight() < Peers.pushThreshold) {
                     continue;

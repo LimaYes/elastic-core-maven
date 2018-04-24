@@ -992,51 +992,34 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
         try (Connection con = Db.db.getConnection()) {
             TemporaryComputationBlockDb.saveBlock(con, block);
             blockchain.setLastBlock(block);
+            Logger.logInfoMessage("Computationchain: highest block is now " + block.getStringId() + " @ height " + block.getHeight());
         } catch (SQLException e) {
             throw new RuntimeException(e.toString(), e);
         }
     }
 
     private boolean addGenesisBlock() {
-        if (TemporaryComputationBlockDb.hasBlock(Genesis.GENESIS_BLOCK_ID, 0)) {
-            Logger.logMessage("Genesis block already in database");
+        if (TemporaryComputationBlockDb.hasBlock(Genesis.GENESIS_BLOCK_ID_COMPUTATIONCHAIN, 0)) {
+            Logger.logMessage("Computationchain: Genesis block already in database");
             BlockImpl lastBlock = TemporaryComputationBlockDb.findLastBlock();
             blockchain.setLastBlock(lastBlock);
+
             popOffTo(lastBlock);
-            Logger.logMessage("Last block height: " + lastBlock.getHeight());
+            Logger.logMessage("Computationchain: Last block height: " + lastBlock.getHeight());
             return false;
         }
-        Logger.logMessage("Genesis block not in database, starting from scratch");
+        Logger.logMessage("Computationchain: Genesis block not in database, starting from scratch");
         try {
             List<TransactionImpl> transactions = new ArrayList<>();
-            for (int i = 0; i < Genesis.GENESIS_RECIPIENTS.length; i++) {
-                TransactionImpl transaction = new TransactionImpl.BuilderImpl((byte) 0, Genesis.CREATOR_PUBLIC_KEY,
-                        Genesis.GENESIS_AMOUNTS[i] * Constants.ONE_NXT, 0, (short) 0,
-                        Attachment.ORDINARY_PAYMENT)
-                        .timestamp(0)
-                        .recipientId(Genesis.GENESIS_RECIPIENTS[i])
-                        .signature(Genesis.GENESIS_SIGNATURES[i])
-                        .height(0)
-                        .ecBlockHeight(0)
-                        .ecBlockId(0)
-                        .build();
-
-                transactions.add(transaction);
-            }
-            Collections.sort(transactions, Comparator.comparingLong(Transaction::getId));
             MessageDigest digest = Crypto.sha256();
-            for (TransactionImpl transaction : transactions) {
-                digest.update(transaction.bytes());
-            }
-            BlockImpl genesisBlock = new BlockImpl(-1, 0, 0, Constants.MAX_BALANCE_NQT, 0, transactions.size() * 128, digest.digest(),
-                    Genesis.CREATOR_PUBLIC_KEY, new byte[64], Genesis.GENESIS_BLOCK_SIGNATURE, null, transactions);
-
-            Logger.logInfoMessage("Creating Genesisblock with ID = " + genesisBlock.getStringId() + " [signed representation = " + genesisBlock.getId() + "]");
+            BlockImpl genesisBlock = new BlockImpl(getBlockVersion(0), 0, 0, 0, 0, 0, digest.digest(),
+                    Genesis.CREATOR_PUBLIC_KEY, new byte[64],  new byte[32], new byte[32], transactions);
+            Logger.logInfoMessage("Computationchain: Creating Genesisblock with ID = " + genesisBlock.getStringId() + " [signed representation = " + genesisBlock.getId() + "]");
             System.out.println(genesisBlock.getJSONObject().toJSONString());
             genesisBlock.setPrevious(null);
             addBlock(genesisBlock);
             return true;
-        } catch (NxtException.ValidationException e) {
+        } catch (Exception e) {
             Logger.logMessage(e.getMessage());
             throw new RuntimeException(e.toString(), e);
         }
@@ -1096,7 +1079,7 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
         }
 
         if (block.getTimestamp() >= curTime - 600 || pushAnyway) {
-            Peers.sendToSomePeers(block);
+            Peers.sendToSomePeersComputation(block);
         }
 
         blockListeners.notify(block, Event.BLOCK_PUSHED_COMPUTATION);
@@ -1152,7 +1135,7 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
         if (block.getId() == 0L || TemporaryComputationBlockDb.hasBlock(block.getId(), previousLastBlock.getHeight())) {
             throw new BlockNotAcceptedException("Duplicate block or invalid id", block);
         }
-        if (!block.verifyGenerationSignature() && !Generator.allowsFakeForging(block.getGeneratorPublicKey())) {
+        if (!block.verifyGenerationSignatureParabolic()) {
             Account generatorAccount = Account.getAccount(block.getGeneratorId());
             long generatorBalance = generatorAccount == null ? 0 : generatorAccount.getEffectiveBalanceNXT();
             throw new BlockNotAcceptedException("Generation signature verification failed, effective balance " + generatorBalance, block);
@@ -1390,9 +1373,7 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
     }
 
     private int getBlockVersion(int previousBlockHeight) {
-        return previousBlockHeight < Constants.TRANSPARENT_FORGING_BLOCK ? 1
-                : previousBlockHeight < Constants.NQT_BLOCK ? 2
-                : 3;
+        return 100;
     }
 
     private int getTransactionVersion(int previousBlockHeight) {

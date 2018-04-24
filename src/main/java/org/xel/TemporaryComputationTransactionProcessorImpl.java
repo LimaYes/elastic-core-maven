@@ -211,7 +211,7 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
                 }
 
                 if (transactionList.size() > 0) {
-                    Peers.sendToSomePeers(transactionList);
+                    Peers.sendToSomePeersComputation(transactionList);
                 }
 
             } catch (Exception e) {
@@ -237,7 +237,7 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
                     return;
                 }
                 JSONObject request = new JSONObject();
-                request.put("requestType", "getUnconfirmedTransactions");
+                request.put("requestType", "getUnconfirmedTransactionsComputation");
                 JSONArray exclude = new JSONArray();
                 getAllUnconfirmedTransactionIds().forEach(transactionId -> exclude.add(Long.toUnsignedString(transactionId)));
                 Collections.sort(exclude);
@@ -420,7 +420,7 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
                 processTransaction(unconfirmedTransaction);
                 //Logger.logDebugMessage("Accepted new transaction " + transaction.getStringId());
                 List<Transaction> acceptedTransactions = Collections.singletonList(transaction);
-                Peers.sendToSomePeers(acceptedTransactions);
+                Peers.sendToSomePeersComputation(acceptedTransactions);
                 transactionListeners.notify(acceptedTransactions, Event.ADDED_UNCONFIRMED_TRANSACTIONS_COMPUTATION);
                 if (enableTransactionRebroadcasting) {
                     broadcastedTransactions.add((TransactionImpl) transaction);
@@ -646,7 +646,7 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
             }
         }
         if (sendToPeersTransactions.size() > 0) {
-            Peers.sendToSomePeers(sendToPeersTransactions);
+            Peers.sendToSomePeersComputation(sendToPeersTransactions);
         }
         if (addedUnconfirmedTransactions.size() > 0) {
             transactionListeners.notify(addedUnconfirmedTransactions, Event.ADDED_UNCONFIRMED_TRANSACTIONS_COMPUTATION);

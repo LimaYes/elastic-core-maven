@@ -41,7 +41,6 @@ public class ComputationConstants {
     public static final int MAX_CHAINED_TX_ACCEPTED = 10; // no more than 10 chained TX
     public static final int MAX_UNCOMPRESSED_WORK_SIZE = 4*1024*1024; // 4 MB is the maximum for now
     public static final short WORK_TRANSACTION_DEADLINE_VALUE = 48;
-    public static final int START_ENCODING_BLOCK = 1;
     public static final short MULTIPLIER_LENGTH = 32;
     public static final int POW_MIN = 10;
     public static final int POW_MAX = Integer.MAX_VALUE;

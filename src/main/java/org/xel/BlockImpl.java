@@ -144,10 +144,8 @@ final class BlockImpl implements Block {
 
     @Override
     public void setLocallyProcessed() {
-
         BlockDb.updateBlockLocallyProcessed(this);
         BlockDb.updateBlockPowTargets( this );
-
     }
 
     @Override
@@ -456,11 +454,7 @@ final class BlockImpl implements Block {
                 throw new BlockchainProcessor.BlockOutOfOrderException("Can't verify signature because previous block is missing", this);
             }
 
-            if(previousBlock.getHeight()<Constants.ALLOW_FAKE_FORGING_ON_REDEEM_UNTIL_BLOCK)
-                for (final Transaction t : this.blockTransactions) if (t.getType().getType() == TYPE_PAYMENT && t.getType().getSubtype() == SUBTYPE_PAYMENT_REDEEM) return true;
-
-
-            if (version == 1 && !Crypto.verify(generationSignature, previousBlock.generationSignature, getGeneratorPublicKey(), false)) {
+            if (!Crypto.verify(generationSignature, previousBlock.generationSignature, getGeneratorPublicKey(), false)) {
                 return false;
             }
 
@@ -484,8 +478,51 @@ final class BlockImpl implements Block {
 
             BigInteger hit = new BigInteger(1, new byte[]{generationSignatureHash[7], generationSignatureHash[6], generationSignatureHash[5], generationSignatureHash[4], generationSignatureHash[3], generationSignatureHash[2], generationSignatureHash[1], generationSignatureHash[0]});
 
-            return Generator.verifyHit(hit, BigInteger.valueOf(effectiveBalance), previousBlock, timestamp)
-                    || (this.height < Constants.TRANSPARENT_FORGING_BLOCK_5 && Arrays.binarySearch(badBlocks, this.getId()) >= 0);
+            return Generator.verifyHit(hit, BigInteger.valueOf(effectiveBalance), previousBlock, timestamp);
+
+        } catch (RuntimeException e) {
+
+            Logger.logMessage("Error verifying block generation signature", e);
+            return false;
+
+        }
+
+    }
+
+    boolean verifyGenerationSignatureParabolic() throws BlockchainProcessor.BlockOutOfOrderException {
+
+        try {
+
+            BlockImpl previousBlock = BlockchainImpl.getInstance().getBlock(getPreviousBlockId());
+            if (previousBlock == null) {
+                throw new BlockchainProcessor.BlockOutOfOrderException("Can't verify signature because previous block is missing", this);
+            }
+
+            if (!Crypto.verify(generationSignature, previousBlock.generationSignature, getGeneratorPublicKey(), false)) {
+                return false;
+            }
+
+            Account account = Account.getAccount(getGeneratorId());
+            long effectiveBalance = account == null ? 0 : account.getEffectiveBalanceNXT();
+            if (effectiveBalance <= 0) {
+                return false;
+            }
+
+            MessageDigest digest = Crypto.sha256();
+            byte[] generationSignatureHash;
+            if (version == 1) {
+                generationSignatureHash = digest.digest(generationSignature);
+            } else {
+                digest.update(previousBlock.generationSignature);
+                generationSignatureHash = digest.digest(getGeneratorPublicKey());
+                if (!Arrays.equals(generationSignature, generationSignatureHash)) {
+                    return false;
+                }
+            }
+
+            BigInteger hit = new BigInteger(1, new byte[]{generationSignatureHash[7], generationSignatureHash[6], generationSignatureHash[5], generationSignatureHash[4], generationSignatureHash[3], generationSignatureHash[2], generationSignatureHash[1], generationSignatureHash[0]});
+
+            return Generator.verifyHit(hit, BigInteger.valueOf(effectiveBalance), previousBlock, timestamp);
 
         } catch (RuntimeException e) {
 
@@ -506,31 +543,6 @@ final class BlockImpl implements Block {
     void apply() {
         Account generatorAccount = Account.addOrGetAccount(getGeneratorId());
         generatorAccount.apply(getGeneratorPublicKey());
-        long totalBackFees = 0;
-        if (this.height > Constants.SHUFFLING_BLOCK) {
-            long[] backFees = new long[3];
-            for (TransactionImpl transaction : getTransactions()) {
-                long[] fees = transaction.getBackFees();
-                for (int i = 0; i < fees.length; i++) {
-                    backFees[i] += fees[i];
-                }
-            }
-            for (int i = 0; i < backFees.length; i++) {
-                if (backFees[i] == 0) {
-                    break;
-                }
-                totalBackFees += backFees[i];
-                Account previousGeneratorAccount = Account.getAccount(BlockDb.findBlockAtHeight(this.height - i - 1).getGeneratorId());
-                Logger.logDebugMessage("Back fees %f XEL to forger at height %d", ((double)backFees[i])/Constants.ONE_NXT, this.height - i - 1);
-                previousGeneratorAccount.addToBalanceAndUnconfirmedBalanceNQT(LedgerEvent.BLOCK_GENERATED, getId(), backFees[i]);
-                previousGeneratorAccount.addToForgedBalanceNQT(backFees[i]);
-            }
-        }
-        if (totalBackFees != 0) {
-            Logger.logDebugMessage("Fee reduced by %f XEL at height %d", ((double)totalBackFees)/Constants.ONE_NXT, this.height);
-        }
-        generatorAccount.addToBalanceAndUnconfirmedBalanceNQT(LedgerEvent.BLOCK_GENERATED, getId(), totalFeeNQT - totalBackFees);
-        generatorAccount.addToForgedBalanceNQT(totalFeeNQT - totalBackFees);
     }
 
     void setPrevious(BlockImpl block) {
@@ -601,16 +613,6 @@ final class BlockImpl implements Block {
         cumulativeDifficulty = previousBlock.cumulativeDifficulty.add(Convert.two64.divide(BigInteger.valueOf(baseTarget)));
     }
 
-    byte[] integersToBytes(int[] values) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(baos);
-        for(int i=0; i < values.length; ++i)
-        {
-            dos.writeInt(values[i]);
-        }
-
-        return baos.toByteArray();
-    }
 
     public void calculatePowTarget(int powCounter, int minTxTime, int maxTxTime) {
 
@@ -620,7 +622,7 @@ final class BlockImpl implements Block {
         if(this.getPreviousBlockId()!=0)
             previousBlock = BlockDb.findBlock(this.getPreviousBlockId());
 
-        if(previousBlock == null || (this.getHeight() < ComputationConstants.START_ENCODING_BLOCK)){
+        if(previousBlock == null){
             // Do nothing
             powTarget = Long.MAX_VALUE/10000;
             return;
