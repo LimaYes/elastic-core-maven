@@ -294,8 +294,16 @@ public final class Nxt {
         return BlockchainImpl.getInstance();
     }
 
+    public static Blockchain getTemporaryComputationBlockchain() {
+        return BlockchainImpl.getInstance();
+    }
+
     public static BlockchainProcessor getBlockchainProcessor() {
         return BlockchainProcessorImpl.getInstance();
+    }
+
+    public static BlockchainProcessor getTemporaryComputationBlockchainProcessor() {
+        return TemporaryComputationBlockchainProcessorImpl.getInstance();
     }
 
     public static TransactionProcessor getTransactionProcessor() {
@@ -356,6 +364,7 @@ public final class Nxt {
         Users.shutdown();
         ThreadPool.shutdown();
         BlockchainProcessorImpl.getInstance().shutdown();
+        TemporaryComputationBlockchainProcessorImpl.getInstance().shutdown();
         Peers.shutdown();
         Db.shutdown();
         Logger.logShutdownMessage("Nxt server " + VERSION + " stopped.");
@@ -378,6 +387,8 @@ public final class Nxt {
                 setServerStatus(ServerStatus.BEFORE_DATABASE, null);
                 Db.init();
                 setServerStatus(ServerStatus.AFTER_DATABASE, null);
+                TemporaryComputationTransactionProcessorImpl.getInstance();
+                TemporaryComputationBlockchainProcessorImpl.getInstance();
                 TransactionProcessorImpl.getInstance();
                 BlockchainProcessorImpl.getInstance();
                 Account.init();

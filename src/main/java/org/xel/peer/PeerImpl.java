@@ -887,6 +887,11 @@ final class PeerImpl implements Peer {
     }
 
     @Override
+    public boolean isComputationRedirectorPeer() {
+        return providesService(Service.COMPUTATION_REDIRECTOR);
+    }
+
+    @Override
     public boolean isApiConnectable() {
         return isOpenAPI() && state == Peer.State.CONNECTED
                 && !Peers.isOldVersion(version, Constants.MIN_PROXY_VERSION)

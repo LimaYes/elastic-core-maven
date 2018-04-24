@@ -1225,8 +1225,69 @@ class NxtDbVersion extends DbVersion {
             case 498:
                 apply("CREATE INDEX IF NOT EXISTS pow_and_bountyD ON pow_and_bounty (height)");
             case 499:
-                return;
+                apply("CREATE TABLE IF NOT EXISTS block_comp (db_id IDENTITY, id BIGINT NOT NULL, version INT NOT NULL, "
+                        + "timestamp INT NOT NULL, previous_block_id BIGINT, "
+                        + "total_amount BIGINT NOT NULL, "
+                        + "total_fee BIGINT NOT NULL, payload_length INT NOT NULL, "
+                        + "previous_block_hash BINARY(32), cumulative_difficulty VARBINARY NOT NULL, base_target " +
+                        "BIGINT NOT NULL, pow_target BIGINT, pow_last_mass INT, pow_mass INT, target_last_mass BIGINT, target_mass BIGINT, " +
+                        "next_block_id BIGINT, "
+                        + "height INT NOT NULL, generation_signature BINARY(64) NOT NULL, "
+                        + "block_signature BINARY(64) NOT NULL, payload_hash BINARY(32) NOT NULL, generator_id BIGINT NOT NULL, locally_processed BOOLEAN NOT NULL DEFAULT FALSE)");
             case 500:
+                apply("CREATE TABLE IF NOT EXISTS transaction_comp (db_id IDENTITY, id BIGINT NOT NULL, "
+                        + "deadline SMALLINT NOT NULL, recipient_id BIGINT, "
+                        + "amount BIGINT NOT NULL, fee BIGINT NOT NULL, full_hash BINARY(32) NOT NULL, "
+                        + "height INT NOT NULL, block_id BIGINT NOT NULL, FOREIGN KEY (block_id) REFERENCES block_comp (id) ON DELETE CASCADE, "
+                        + "signature BINARY(64) NOT NULL, timestamp INT NOT NULL, type TINYINT NOT NULL, subtype TINYINT NOT NULL, "
+                        + "sender_id BIGINT NOT NULL, block_timestamp INT NOT NULL, referenced_transaction_full_hash BINARY(32), "
+                        + "transaction_index SMALLINT NOT NULL, phased BOOLEAN NOT NULL DEFAULT FALSE, "
+                        + "attachment_bytes VARBINARY, version TINYINT NOT NULL, has_message BOOLEAN NOT NULL DEFAULT FALSE, "
+                        + "has_encrypted_message BOOLEAN NOT NULL DEFAULT FALSE, has_public_key_announcement BOOLEAN NOT NULL DEFAULT FALSE, "
+                        + "has_prunable_message BOOLEAN NOT NULL DEFAULT FALSE, has_prunable_attachment BOOLEAN NOT NULL DEFAULT FALSE, "
+                        + "ec_block_height INT DEFAULT NULL, ec_block_id BIGINT DEFAULT NULL, has_encrypttoself_message BOOLEAN NOT NULL DEFAULT FALSE,has_prunable_encrypted_message BOOLEAN NOT NULL DEFAULT FALSE)");
+            case 501:
+                apply("CREATE TABLE IF NOT EXISTS unconfirmed_transaction_comp (db_id IDENTITY, id BIGINT NOT NULL, expiration INT NOT NULL, "
+                        + "transaction_height INT NOT NULL, fee_per_byte BIGINT NOT NULL, arrival_timestamp BIGINT NOT NULL, "
+                        + "transaction_bytes VARBINARY NOT NULL, height INT NOT NULL)");
+            case 502:
+                apply("CREATE TABLE IF NOT EXISTS referenced_transaction_comp (db_id IDENTITY, transaction_id BIGINT NOT NULL, "
+                        + "FOREIGN KEY (transaction_id) REFERENCES transaction_comp (id) ON DELETE CASCADE, "
+                        + "referenced_transaction_id BIGINT NOT NULL)");
+
+            case 503:
+                apply("CREATE INDEX IF NOT EXISTS comp_transaction_sender_id_idx ON transaction_comp (sender_id)");
+            case 504:
+                apply("CREATE INDEX IF NOT EXISTS comp_transaction_recipient_id_idx ON transaction_comp (recipient_id)");
+            case 505:
+                apply("CREATE INDEX IF NOT EXISTS comp_transaction_block_timestamp_idx ON transaction_comp (block_timestamp DESC)");
+            case 506:
+                apply("CREATE INDEX IF NOT EXISTS comp_unconfirmed_transaction_height_fee_timestamp_idx ON unconfirmed_transaction_comp "
+                        + "(transaction_height ASC, fee_per_byte DESC, arrival_timestamp ASC)");
+            case 507:
+                apply("CREATE INDEX IF NOT EXISTS comp_unconfirmed_transaction_expiration_idx ON unconfirmed_transaction_comp (expiration DESC)");
+            case 508:
+                apply("CREATE INDEX IF NOT EXISTS comp_referenced_transaction_referenced_transaction_id_idx ON referenced_transaction_comp (referenced_transaction_id)");
+            case 509:
+                apply("CREATE INDEX IF NOT EXISTS comp_block_generator_id_idx ON block_comp (generator_id)");
+            case 510:
+                apply("CREATE INDEX IF NOT EXISTS comp_transaction_block_timestamp_idx ON transaction_comp (block_timestamp DESC)");
+            case 511:
+                apply("CREATE UNIQUE INDEX IF NOT EXISTS comp_block_id_idx ON block_comp (id)");
+            case 512:
+                apply("CREATE UNIQUE INDEX IF NOT EXISTS comp_block_height_idx ON block_comp (height)");
+            case 513:
+                apply("CREATE UNIQUE INDEX IF NOT EXISTS comp_block_timestamp_idx ON block_comp (timestamp DESC)");
+            case 514:
+                apply("CREATE UNIQUE INDEX IF NOT EXISTS comp_transaction_id_idx ON transaction_comp (id)");
+            case 515:
+                apply("CREATE UNIQUE INDEX IF NOT EXISTS comp_unconfirmed_transaction_id_idx ON unconfirmed_transaction_comp (id)");
+            case 516:
+                apply("CREATE TABLE IF NOT EXISTS scan_comp (rescan BOOLEAN NOT NULL DEFAULT FALSE, height INT NOT NULL DEFAULT 0, "
+                        + "validate BOOLEAN NOT NULL DEFAULT FALSE)");
+            case 517:
+                apply("INSERT INTO scan_comp (rescan, height, validate) VALUES (false, 0, false)");
+            case 518:
                 return;
             default:
                 throw new RuntimeException("Blockchain database inconsistent with code, at update " + nextUpdate

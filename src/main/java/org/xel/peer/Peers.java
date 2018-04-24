@@ -267,9 +267,12 @@ public final class Peers {
             json.put("apiPort", API.openAPIPort);
             servicesList.add(Peer.Service.API);
         }
-        if (API.openAPISSLPort > 0) {
-            json.put("apiSSLPort", API.openAPISSLPort);
-            servicesList.add(Peer.Service.API_SSL);
+        if (API.openAPIPort > 0) {
+            json.put("apiPort", API.openAPIPort);
+            servicesList.add(Peer.Service.API);
+        }
+        if (Nxt.getBooleanProperty("nxt.enableComputationBlockchainRedirector") || Nxt.getBooleanProperty("nxt.enableComputationEngine")) {
+            servicesList.add(Peer.Service.COMPUTATION_REDIRECTOR);
         }
 
         if (API.openAPIPort > 0 || API.openAPISSLPort > 0) {

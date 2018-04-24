@@ -25,18 +25,16 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-public abstract class DerivedDbTable {
+public abstract class ComputationalDerivedDbTable{
 
     protected static final TransactionalDb db = Db.db;
 
     protected final String table;
 
-    protected DerivedDbTable(String table) {
+    protected ComputationalDerivedDbTable(String table) {
         this.table = table;
-        if(table!=null)
-            Nxt.getBlockchainProcessor().registerDerivedTable(this);
+        Nxt.getTemporaryComputationBlockchainProcessor().registerComputationalDerivedTable(this);
     }
-
     public void rollback(int height) {
         if (!db.isInTransaction()) {
             throw new IllegalStateException("Not in transaction");
@@ -80,5 +78,4 @@ public abstract class DerivedDbTable {
     public final String toString() {
         return table;
     }
-
 }

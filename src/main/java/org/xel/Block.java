@@ -57,6 +57,8 @@ public interface Block {
 
     List<? extends Transaction> getTransactions();
 
+    List<? extends Transaction> getTransactionsComputational();
+
     byte[] getGenerationSignature();
 
     byte[] getBlockSignature();

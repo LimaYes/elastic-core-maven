@@ -599,6 +599,13 @@ final class TransactionImpl implements Transaction {
         return dbKey;
     }
 
+    DbKey getDbKeyComputation() {
+        if (dbKey == null) {
+            dbKey = TemporaryComputationTransactionProcessorImpl.getInstance().unconfirmedTransactionDbKeyFactory.newKey(getId());
+        }
+        return dbKey;
+    }
+
     @Override
     public Appendix.Message getMessage() {
         return message;

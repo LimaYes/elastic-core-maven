@@ -102,7 +102,6 @@ public class WorkTest extends AbstractForgingTest {
         Assert.assertEquals(1, Work.getCount());
         Assert.assertEquals(0, Work.getActiveCount());
 
-        Assert.assertEquals(7,Nxt.getBlockchain().getLastLocallyProcessedHeight());
 
     }
 
@@ -129,7 +128,6 @@ public class WorkTest extends AbstractForgingTest {
         Assert.assertEquals(1, Work.getCount());
         Assert.assertEquals(0, Work.getActiveCount());
 
-        Assert.assertEquals(22,Nxt.getBlockchain().getLastLocallyProcessedHeight());
     }
 
     @Test

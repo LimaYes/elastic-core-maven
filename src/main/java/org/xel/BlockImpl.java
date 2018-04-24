@@ -221,6 +221,18 @@ final class BlockImpl implements Block {
     }
 
     @Override
+    public List<TransactionImpl> getTransactionsComputational() {
+        if (this.blockTransactions == null) {
+            List<TransactionImpl> transactions = Collections.unmodifiableList(TemporaryComputationTransactionDb.findBlockTransactions(getId()));
+            for (TransactionImpl transaction : transactions) {
+                transaction.setBlock(this);
+            }
+            this.blockTransactions = transactions;
+        }
+        return this.blockTransactions;
+    }
+
+    @Override
     public long getBaseTarget() {
         return baseTarget;
     }

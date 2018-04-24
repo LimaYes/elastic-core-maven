@@ -260,35 +260,17 @@ public class MessageEncoder {
     }
 
     static {
-        Nxt.getBlockchainProcessor().addListener(block -> {
+        Nxt.getTemporaryComputationBlockchainProcessor().addListener(block -> {
 
             GetLastBlockId.lastBlockId = block.getId();
             if (block.getHeight() < ComputationConstants.START_ENCODING_BLOCK || !useComputationEngine) {
                 return;
             }
             processBlockInternal(block);
-        }, BlockchainProcessor.Event.AFTER_BLOCK_APPLY);
+        }, TemporaryComputationBlockchainProcessorImpl.Event.AFTER_BLOCK_APPLY);
     }
 
     public static void init(){
-        // Here, we need to catch up if there are blocks remaining which have not been "work parsed" and the computation engine is started/active
-        int current_height = Nxt.getBlockchain().getHeight();
-        int last_processed_height = Nxt.getBlockchain().getLastLocallyProcessedHeight();
-
-        if(last_processed_height == current_height) return; // no need to do anything
-        if(last_processed_height > current_height) return; // this should never happen anyways, jetz keep it in here to avoid any chance of an infinite loop
-
-        // Catch up!
-        for(int i=last_processed_height + 1; i<=last_processed_height; ++i){
-
-            Block block = Nxt.getBlockchain().getBlockAtHeight(i);
-            if(block==null){
-                // This is bad!
-                throw new RuntimeException("Could not retrieve Block from BlockDB (height: " + i);
-            }
-            processBlockInternal(block);
-            Logger.logInfoMessage("Catching up work related information from past blocks - block " + i + " of " + last_processed_height);
-        }
     }
 
 

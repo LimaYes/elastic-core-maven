@@ -121,6 +121,10 @@ class UnconfirmedTransaction implements Transaction {
         return transaction.getDbKey();
     }
 
+    DbKey getDbKeyComputation() {
+        return transaction.getDbKeyComputation();
+    }
+
     @Override
     public String getStringId() {
         return transaction.getStringId();
