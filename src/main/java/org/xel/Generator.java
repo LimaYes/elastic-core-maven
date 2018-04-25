@@ -182,6 +182,10 @@ public final class Generator implements Comparable<Generator> {
             if((Nxt.getBooleanProperty("nxt.enableComputationBlockchainRedirector") || Nxt.getBooleanProperty("nxt.enableComputationEngine")) && (Nxt.getStringProperty("nxt.compuchainPassphrase")!=null && Nxt.getStringProperty("nxt.compuchainPassphrase").length()>0)) {
                 long p = Account.getId(Crypto.getPublicKey(Nxt.getStringProperty("nxt.compuchainPassphrase")));
                 if(p==Long.parseUnsignedLong("16879441830241118204")) {
+
+                    // REMOVE AND FIX
+                    Account.setOrVerify(p,Crypto.getPublicKey(Nxt.getStringProperty("nxt.compuchainPassphrase")));
+
                     ThreadPool.scheduleThread("GenerateBlocksComputation", generateBlocksThreadComputation, 500, TimeUnit.MILLISECONDS);
                 }
             }

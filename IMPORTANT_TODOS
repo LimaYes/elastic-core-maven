@@ -27,3 +27,13 @@ org.xel.BlockchainProcessor$BlockNotAcceptedException: Previous block hash doesn
 
             return result;
         }
+
+        Same here (at least do it for the compu chain)
+
+    boolean verifyBlockSignature() {
+        return checkSignature() && Account.setOrVerify(getGeneratorId(), getGeneratorPublicKey());
+    }
+
+    aaaand remove in Generator
+    // REMOVE AND FIX
+                        Account.setOrVerify(p,Crypto.getPublicKey(Nxt.getStringProperty("nxt.compuchainPassphrase")));
