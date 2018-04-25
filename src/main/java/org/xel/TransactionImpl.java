@@ -1211,15 +1211,16 @@ final class TransactionImpl implements Transaction {
         if(this.getType().getType() != TransactionType.Messaging.ARBITRARY_MESSAGE.getType() && this.getType().getSubtype() != TransactionType.Payment.Messaging.ARBITRARY_MESSAGE.getSubtype())
             throw new NxtException.NotValidException("Wrong TX type submitted");
 
-        if(this.hasPrunablePlainMessage()==false)throw new NxtException.NotValidException("Only prunable messages allowed");
-        if(this.hasPrunableEncryptedMessage())throw new NxtException.NotValidException("Only prunable messages allowed");
+        if(this.getMessage()==null)throw new NxtException.NotValidException("Only messages allowed");
+        if(this.hasPrunablePlainMessage())throw new NxtException.NotValidException("Only messages allowed");
+        if(this.hasPrunableEncryptedMessage())throw new NxtException.NotValidException("Only messages allowed");
         if(this.getAttachment()==null)throw new NxtException.NotValidException("Must have an attachment");
 
         if(this.getAppendages().size()!=2) throw new NxtException.NotValidException("Make sure to append something correctly");
 
-        Appendix.PrunablePlainMessage m = null;
+        Appendix.Message m = null;
         try {
-            m = getPrunablePlainMessage();
+            m = getMessage();
         }catch(Exception e){
             throw new NxtException.NotValidException("Appendage decoding failed");
         }
