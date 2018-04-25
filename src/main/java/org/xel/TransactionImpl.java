@@ -971,6 +971,14 @@ final class TransactionImpl implements Transaction {
         return transaction;
     }
 
+    static TransactionImpl parseTransactionComputation(JSONObject transactionData) throws NxtException.NotValidException {
+        TransactionImpl transaction = newTransactionBuilder(transactionData).buildComputation(0);
+        if (transaction.getSignature() != null && !transaction.checkSignature()) {
+            throw new NxtException.NotValidException("Invalid transaction signature for transaction " + transaction.getJSONObject().toJSONString());
+        }
+        return transaction;
+    }
+
     static BuilderImpl newTransactionBuilder(JSONObject transactionData) throws NxtException.NotValidException {
         try {
             byte type = ((Long) transactionData.get("type")).byteValue();

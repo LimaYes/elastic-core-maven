@@ -619,7 +619,7 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
             try {
                 int count = stop - start;
                 for (JSONObject blockData : nextBlocks) {
-                    blockList.add(BlockImpl.parseBlock(blockData));
+                    blockList.add(BlockImpl.parseBlockComputation(blockData));
                     if (--count <= 0)
                         break;
                 }

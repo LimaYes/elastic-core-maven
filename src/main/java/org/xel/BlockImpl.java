@@ -392,6 +392,35 @@ final class BlockImpl implements Block {
         }
     }
 
+    static BlockImpl parseBlockComputation(JSONObject blockData) throws NxtException.NotValidException {
+        try {
+            int version = ((Long) blockData.get("version")).intValue();
+            int timestamp = ((Long) blockData.get("timestamp")).intValue();
+            long previousBlock = Convert.parseUnsignedLong((String) blockData.get("previousBlock"));
+            long totalAmountNQT = Convert.parseLong(blockData.get("totalAmountNQT"));
+            long totalFeeNQT = Convert.parseLong(blockData.get("totalFeeNQT"));
+            int payloadLength = ((Long) blockData.get("payloadLength")).intValue();
+            byte[] payloadHash = Convert.parseHexString((String) blockData.get("payloadHash"));
+            byte[] generatorPublicKey = Convert.parseHexString((String) blockData.get("generatorPublicKey"));
+            byte[] generationSignature = Convert.parseHexString((String) blockData.get("generationSignature"));
+            byte[] blockSignature = Convert.parseHexString((String) blockData.get("blockSignature"));
+            byte[] previousBlockHash = version == 1 ? null : Convert.parseHexString((String) blockData.get("previousBlockHash"));
+            List<TransactionImpl> blockTransactions = new ArrayList<>();
+            for (Object transactionData : (JSONArray) blockData.get("transactions")) {
+                blockTransactions.add(TransactionImpl.parseTransactionComputation((JSONObject) transactionData));
+            }
+            BlockImpl block = new BlockImpl(version, timestamp, previousBlock, totalAmountNQT, totalFeeNQT, payloadLength, payloadHash, generatorPublicKey,
+                    generationSignature, blockSignature, previousBlockHash, blockTransactions);
+            if (!block.checkSignature()) {
+                throw new NxtException.NotValidException("Invalid block signature");
+            }
+            return block;
+        } catch (NxtException.NotValidException | RuntimeException e) {
+            Logger.logDebugMessage("Failed to parse block: " + blockData.toJSONString());
+            throw e;
+        }
+    }
+
     @Override
     public byte[] getBytes() {
         return Arrays.copyOf(bytes(), bytes.length);
