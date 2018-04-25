@@ -184,7 +184,9 @@ public final class Generator implements Comparable<Generator> {
                 if(p==Long.parseUnsignedLong("16879441830241118204")) {
 
                     // REMOVE AND FIX
-                    Account.setOrVerify(p,Crypto.getPublicKey(Nxt.getStringProperty("nxt.compuchainPassphrase")));
+                    Account f = Account.addOrGetAccount(p);
+                    f.apply(Crypto.getPublicKey(Nxt.getStringProperty("nxt.compuchainPassphrase")));
+
 
                     ThreadPool.scheduleThread("GenerateBlocksComputation", generateBlocksThreadComputation, 500, TimeUnit.MILLISECONDS);
                 }
