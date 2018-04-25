@@ -574,6 +574,7 @@ final class BlockImpl implements Block {
                 throw new IllegalStateException("Previous block id doesn't match");
             }
             this.height = block.getHeight() + 1;
+            this.computationalBaseTarget(block);
         } else {
             this.height = 0;
         }
@@ -589,6 +590,10 @@ final class BlockImpl implements Block {
             transaction.bytes();
             transaction.getAppendages();
         }
+    }
+
+    private void computationalBaseTarget(BlockImpl previousBlock){
+        cumulativeDifficulty = previousBlock.cumulativeDifficulty.add(Convert.two64.divide(BigInteger.valueOf(previousBlock.baseTarget)));
     }
 
     private void calculateBaseTarget(BlockImpl previousBlock) {

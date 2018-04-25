@@ -96,13 +96,12 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
                     downloadPeer();
                     if (blockchain.getHeight() == chainHeight) {
                         if (isDownloading) {
-                            Logger.logMessage("Finished blockchain (alternative computation) download");
+                            Logger.logMessage("Finished blockchain download");
                             isDownloading = false;
                         }
                         break;
                     }
                 }
-
 
             } catch (InterruptedException e) {
                 Logger.logDebugMessage("Blockchain (alternative computation) download thread interrupted");
@@ -135,8 +134,11 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
                 if (peerCumulativeDifficulty == null) {
                     return;
                 }
+
+
                 BigInteger betterCumulativeDifficulty = new BigInteger(peerCumulativeDifficulty);
                 if (betterCumulativeDifficulty.compareTo(curCumulativeDifficulty) < 0) {
+                    Logger.logDebugMessage("CUMUL DIFF NOT BETTER");
                     return;
                 }
                 if (response.get("blockchainHeight") != null) {
@@ -144,6 +146,7 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
                     lastBlockchainFeederHeight = ((Long) response.get("blockchainHeight")).intValue();
                 }
                 if (betterCumulativeDifficulty.equals(curCumulativeDifficulty)) {
+                    Logger.logDebugMessage("CUMUL DIFF NOT BETTER 2");
                     return;
                 }
 
@@ -153,11 +156,13 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
                     commonMilestoneBlockId = getCommonMilestoneBlockId(peer);
                 }
                 if (commonMilestoneBlockId == 0 || !peerHasMore) {
+                    Logger.logDebugMessage("NO COMMON BLOCK");
                     return;
                 }
 
                 chainBlockIds = getBlockIdsAfterCommon(peer, commonMilestoneBlockId, false);
                 if (chainBlockIds.size() < 2 || !peerHasMore) {
+                    Logger.logDebugMessage("CHAINSIZE TOO SMALL");
                     return;
                 }
 
