@@ -110,6 +110,8 @@ public class MessageEncoder {
     }
 
 
+    static List<Pair<Long,Long>> paid=new ArrayList<Pair<Long,Long>>();
+
     static void paymentProcessor(Block block){
         for(Transaction t : block.getTransactions()) {
             Appendix.Message m2 = t.getMessage();
@@ -135,10 +137,9 @@ public class MessageEncoder {
                                             if (bty != null) {
                                                 Work w = Work.getWorkById(bty.getWork_id());
                                                 if ((bty.is_pow && totalAttached >= w.getXel_per_pow()) || (!bty.is_pow && totalAttached >= w.getXel_per_bounty())) {
-                                                    bty.setWas_paid(true);
-                                                    bty.JustSave();
-                                                    totalAttached -= ((bty.is_pow) ? w.getXel_per_pow() : w.getXel_per_bounty());
+                                                    paid.add(new Pair<>(bty.getId(),bty.getWork_id()));
                                                 } else break;
+
                                             }
                                         }
                                     }
@@ -151,9 +152,8 @@ public class MessageEncoder {
                                     if (bty != null) {
                                         Work w = Work.getWorkById(bty.getWork_id());
                                         if ((bty.is_pow && t.getAmountNQT() >= w.getXel_per_pow()) || (!bty.is_pow && t.getAmountNQT() >= w.getXel_per_bounty())) {
-                                            bty.setWas_paid(true);
-                                            bty.JustSave();
-                                        }
+                                            paid.add(new Pair<>(bty.getId(),bty.getWork_id()));
+                                        } else break;
                                     }
                                 }
                             } catch (Exception e) {
@@ -171,6 +171,18 @@ public class MessageEncoder {
         int powCounter = 0;
         int mintime = Integer.MAX_VALUE;
         int maxtime = 0;
+
+        // Set all paid
+        for(Pair<Long, Long> l : paid){
+            PowAndBounty bty = PowAndBounty.getPowOrBountyById(l.getElement0());
+            Work w = Work.getWorkById(l.getElement1());
+            if (bty!=null) {
+                bty.setWas_paid(true);
+                Logger.logDebugMessage("BTY paid " + bty.getId());
+                bty.JustSave();
+            } else break;
+        }
+        paid.clear();
 
         // first all pow and else
         // in second round the bounties
