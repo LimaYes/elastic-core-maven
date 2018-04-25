@@ -636,7 +636,7 @@ final class BlockImpl implements Block {
         } else {
             baseTarget = prevBaseTarget;
         }
-        cumulativeDifficulty = previousBlock.cumulativeDifficulty.add(Convert.two64.divide(BigInteger.valueOf(baseTarget)));
+        cumulativeDifficulty = previousBlock.cumulativeDifficulty.add(BigInteger.ONE);
     }
 
 
