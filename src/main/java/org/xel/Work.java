@@ -552,7 +552,7 @@ public final class Work {
         if(storage_slot==-100) {
             JSONArray az = new JSONArray();
             // And also create the bounty m arrays here
-            try(DbIterator<PowAndBounty> it = PowAndBounty.getBounties(work.id)){
+            try(DbIterator<PowAndBounty> it = PowAndBounty.getBountiesLimited(work.id)){
                 while (it.hasNext()) {
                     PowAndBounty h = it.next();
                     az.add(h.getJSONInts());
@@ -574,7 +574,7 @@ public final class Work {
 
             int i = 0;
             pstmt.setLong(++i, accountId);
-            pstmt.setInt(++i, Nxt.getTemporaryComputationBlockchain().getHeight()-3);
+            pstmt.setInt(++i, Nxt.getTemporaryComputationBlockchain().getHeight()-5);
             try (DbIterator<Work> w_it = Work.workTable.getManyBy(con, pstmt, true)) {
                 while (w_it.hasNext()) ret.add(w_it.next());
             } catch (final Exception ignored) {

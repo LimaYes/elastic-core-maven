@@ -154,7 +154,7 @@ public final class Generator implements Comparable<Generator> {
                             return;
                         }
                         if (Nxt.getEpochTime() - lastBlock.getTimestamp() > 59 && delayCompUntil < Nxt.getEpochTime()) {
-                            TemporaryComputationBlockchainProcessorImpl.getInstance().generateBlock(Nxt.getStringProperty("nxt.compuchainPassphrase"), lastBlock.getTimestamp() + 60);
+                            TemporaryComputationBlockchainProcessorImpl.getInstance().generateBlock(Nxt.getStringProperty("nxt.compuchainPassphrase"), Nxt.getEpochTime());
                             delayCompUntil = Nxt.getEpochTime() + Constants.FORGING_DELAY;
                             return;
                         }

@@ -214,7 +214,11 @@ public final class PowAndBounty{
                         .and(new DbClause.BooleanClause("is_pow", false)).and(new DbClause.BooleanClause("latest", true)), 0,
                 -1, "");
     }
-
+    public static DbIterator<PowAndBounty> getBountiesLimited(final long wid) {
+        return PowAndBounty.powAndBountyTable.getManyBy(new DbClause.LongClause("work_id", wid)
+                        .and(new DbClause.BooleanClause("is_pow", false)).and(new DbClause.BooleanClause("latest", true)), 0,
+                20, " ORDER BY height DESC");
+    }
 
 
     public static int getUnpaidSubmissionCount(final long wid) {
