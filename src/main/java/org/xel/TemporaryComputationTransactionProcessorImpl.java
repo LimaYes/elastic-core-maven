@@ -622,7 +622,7 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
         List<Exception> exceptions = new ArrayList<>();
         for (Object transactionData : transactionsData) {
             try {
-                TransactionImpl transaction = TransactionImpl.parseTransaction((JSONObject) transactionData);
+                TransactionImpl transaction = TransactionImpl.parseTransactionComputation((JSONObject) transactionData);
                 receivedTransactions.add(transaction);
                 if (getUnconfirmedTransaction(transaction.getDbKeyComputation()) != null || TemporaryComputationTransactionDb.hasTransaction(transaction.getId())) {
                     continue;
@@ -778,7 +778,7 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
                 // Check each transaction returned by the archive peer
                 //
                 for (Object transactionJSON : transactions) {
-                    TransactionImpl transaction = TransactionImpl.parseTransaction((JSONObject)transactionJSON);
+                    TransactionImpl transaction = TransactionImpl.parseTransactionComputation((JSONObject)transactionJSON);
                     TransactionImpl myTransaction = TemporaryComputationTransactionDb.findTransactionByFullHash(transaction.fullHash());
                     if (myTransaction != null) {
                         boolean foundAllData = true;
