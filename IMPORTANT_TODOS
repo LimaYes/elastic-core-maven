@@ -55,3 +55,10 @@ public void pushBlock(final BlockImpl block, boolean pushAnyway) throws BlockNot
                 // REMOVE AND FIX
                 Account f = Account.addOrGetAccount(Long.parseUnsignedLong("16879441830241118204"));
                 f.apply(Crypto.getPublicKey(Nxt.getStringProperty("nxt.compuchainPassphrase")));
+
+And in BlockImpl
+
+ void applyComputational() {
+        Account generatorAccount = Account.addOrGetAccount(getGeneratorId());
+        generatorAccount.apply(getGeneratorPublicKey());
+    }
