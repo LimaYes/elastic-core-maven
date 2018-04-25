@@ -5,3 +5,4 @@
 -  void validateComputation(Transaction transaction) throws NxtException.ValidationException in Appendix.java needs check for message length
 - Increase blocksize for alt chain
 - Remove all traces of prunables in altchain, and disallow ALL kinds of prunable data in verification checks
+- make w.CloseNoPayment(block); more intelligent
