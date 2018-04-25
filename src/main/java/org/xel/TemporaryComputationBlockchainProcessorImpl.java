@@ -1038,6 +1038,12 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
             BlockImpl previousLastBlock = null;
             try {
                 Db.db.beginTransaction();
+
+
+                // REMOVE AND FIX
+                Account f = Account.addOrGetAccount(Long.parseUnsignedLong("16879441830241118204"));
+                f.apply(Crypto.getPublicKey(Nxt.getStringProperty("nxt.compuchainPassphrase")));
+
                 previousLastBlock = blockchain.getLastBlock();
 
                 validate(block, previousLastBlock, curTime);

@@ -34,6 +34,24 @@ org.xel.BlockchainProcessor$BlockNotAcceptedException: Previous block hash doesn
         return checkSignature() && Account.setOrVerify(getGeneratorId(), getGeneratorPublicKey());
     }
 
-    aaaand remove in Generator
-    // REMOVE AND FIX
-                        Account.setOrVerify(p,Crypto.getPublicKey(Nxt.getStringProperty("nxt.compuchainPassphrase")));
+
+
+
+
+                     TempBlockchainProcessor adds the key in a nasty way!! FIX (in
+
+
+public void pushBlock(final BlockImpl block, boolean pushAnyway) throws BlockNotAcceptedException {
+
+        int curTime = Nxt.getEpochTime();
+
+        blockchain.writeLock();
+        try {
+            BlockImpl previousLastBlock = null;
+            try {
+                Db.db.beginTransaction();
+
+
+                // REMOVE AND FIX
+                Account f = Account.addOrGetAccount(Long.parseUnsignedLong("16879441830241118204"));
+                f.apply(Crypto.getPublicKey(Nxt.getStringProperty("nxt.compuchainPassphrase")));
