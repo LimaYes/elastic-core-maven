@@ -48,11 +48,11 @@ public class MessageEncoder {
     public static Map<Long, Integer> stupidLimiterPow = new HashMap<Long, Integer>();
 
     public static synchronized CommandPowBty hasPowAndBountyContent(Transaction t){
-        Appendix.PrunablePlainMessage m = t.getPrunablePlainMessage();
-        if(m==null || !m.hasPrunableData()) return null;
+        Appendix.Message m = t.getMessage();
+        if(m==null ) return null;
 
         try {
-            Appendix.PrunablePlainMessage[] reconstructedChain = MessageEncoder.extractMessages(t);
+            Appendix.Message[] reconstructedChain = MessageEncoder.extractMessages(t);
 
             // Allow the decoding of the attachment
             IComputationAttachment att = MessageEncoder.decodeAttachment(reconstructedChain);
@@ -179,13 +179,13 @@ public class MessageEncoder {
 
 
 
-            Appendix.PrunablePlainMessage m = t.getPrunablePlainMessage();
+            Appendix.Message m = t.getMessage();
             if(m==null) continue;
 
 
             if(MessageEncoder.checkMessageForPiggyback(m, true, false)){
                 try {
-                    Appendix.PrunablePlainMessage[] reconstructedChain = MessageEncoder.extractMessages(t);
+                    Appendix.Message[] reconstructedChain = MessageEncoder.extractMessages(t);
 
                     // Allow the decoding of the attachment
                     IComputationAttachment att = MessageEncoder.decodeAttachment(reconstructedChain);
@@ -220,14 +220,14 @@ public class MessageEncoder {
         for(Transaction t : block.getTransactions()){
 
 
-            Appendix.PrunablePlainMessage m = t.getPrunablePlainMessage();
-            if(m==null || !m.hasPrunableData()) continue;
+            Appendix.Message m = t.getMessage();
+            if(m==null) continue;
 
 
 
             if(MessageEncoder.checkMessageForPiggyback(m, true, false)){
                 try {
-                    Appendix.PrunablePlainMessage[] reconstructedChain = MessageEncoder.extractMessages(t);
+                    Appendix.Message[] reconstructedChain = MessageEncoder.extractMessages(t);
 
                     // Allow the decoding of the attachment
                     IComputationAttachment att = MessageEncoder.decodeAttachment(reconstructedChain);
@@ -284,7 +284,7 @@ public class MessageEncoder {
 
 
     public static long push(IComputationAttachment work, String secretPhrase, int deadline) throws NxtException, IOException {
-        Appendix.PrunablePlainMessage[] messages = MessageEncoder.encodeAttachment(work);
+        Appendix.Message[] messages = MessageEncoder.encodeAttachment(work);
         JSONStreamAware[] individual_txs = MessageEncoder.encodeTransactions(messages, secretPhrase, deadline);
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
@@ -296,7 +296,7 @@ public class MessageEncoder {
     }
 
     public static JSONStreamAware[] encodeOnly(IComputationAttachment work, byte[] pubkey, int deadline) throws NxtException, IOException {
-        Appendix.PrunablePlainMessage[] messages = MessageEncoder.encodeAttachment(work);
+        Appendix.Message[] messages = MessageEncoder.encodeAttachment(work);
         JSONStreamAware[] individual_txs = MessageEncoder.encodeTransactions(messages, pubkey, deadline);
         for(int i=0; i<individual_txs.length;++i){
             JSONObject prunableMess = new JSONObject();
@@ -306,14 +306,14 @@ public class MessageEncoder {
         return individual_txs;
     }
 
-    public static Appendix.PrunablePlainMessage[] extractMessages(Transaction _t) throws NxtException.ValidationException {
+    public static Appendix.Message[] extractMessages(Transaction _t) throws NxtException.ValidationException {
 
         Transaction t = _t;
 
-        ArrayList<Appendix.PrunablePlainMessage> arl = new ArrayList<>();
+        ArrayList<Appendix.Message> arl = new ArrayList<>();
 
         if(t == null) throw new NxtException.NotValidException("This transaction is not a valid work-encoder");
-        Appendix.PrunablePlainMessage pm = t.getPrunablePlainMessage();
+        Appendix.Message pm = t.getMessage();
         if(pm == null) throw new NxtException.NotValidException("This transaction is not a valid work-encoder");
 
         if(!checkMessageForPiggyback(pm, true, false)){
@@ -329,7 +329,7 @@ public class MessageEncoder {
             t = Nxt.getTemporaryComputationBlockchain().getTransactionByFullHash(t.getReferencedTransactionFullHash());
 
             if(t == null) throw new NxtException.NotValidException("This transaction is not a valid work-encoder");
-            pm = t.getPrunablePlainMessage();
+            pm = t.getMessage();
             if(pm == null) throw new NxtException.NotValidException("This transaction is not a valid work-encoder");
 
             if(!checkMessageForPiggyback(pm, false, true)){
@@ -343,11 +343,11 @@ public class MessageEncoder {
                 throw new NxtException.NotValidException("This transaction references a chain which is too long");
         }
 
-        return arl.toArray(new Appendix.PrunablePlainMessage[arl.size()]);
+        return arl.toArray(new Appendix.Message[arl.size()]);
     }
 
 
-    public static JSONStreamAware[] encodeTransactions(Appendix.PrunablePlainMessage[] msgs, String passphraseOrPubkey, int deadline) throws NxtException {
+    public static JSONStreamAware[] encodeTransactions(Appendix.Message[] msgs, String passphraseOrPubkey, int deadline) throws NxtException {
         ArrayList<JSONStreamAware> array_tx = new ArrayList<>(msgs.length);
 
         // Transactions have to be created from "end to start" to get the "referenced tx hashes" chained up correctly
@@ -366,7 +366,7 @@ public class MessageEncoder {
         return array_tx.toArray(new JSONStreamAware[msgs.length]);
     }
 
-    public static JSONStreamAware[] encodeTransactions(Appendix.PrunablePlainMessage[] msgs, byte[] passphraseOrPubkey, int deadline) throws NxtException {
+    public static JSONStreamAware[] encodeTransactions(Appendix.Message[] msgs, byte[] passphraseOrPubkey, int deadline) throws NxtException {
         ArrayList<JSONStreamAware> array_tx = new ArrayList<>(msgs.length);
 
         // Transactions have to be created from "end to start" to get the "referenced tx hashes" chained up correctly
@@ -406,14 +406,14 @@ public class MessageEncoder {
         return lastPushed;
     }
 
-    public static Appendix.PrunablePlainMessage[] encodeAttachment(IComputationAttachment att){
+    public static Appendix.Message[] encodeAttachment(IComputationAttachment att){
         try {
-            ArrayList<Appendix.PrunablePlainMessage> preparation = new ArrayList<>();
+            ArrayList<Appendix.Message> preparation = new ArrayList<>();
             byte[] to_encode = att.getByteArray();
             int pos_counter=0;
 
             while(pos_counter<to_encode.length){
-                int maximum_read = Math.min(Constants.MAX_PRUNABLE_MESSAGE_LENGTH - MAGIC.length, to_encode.length - pos_counter);
+                int maximum_read = Math.min(Constants.MAX_COMPU_MESSAGE_LENGTH - MAGIC.length, to_encode.length - pos_counter);
                 byte[] msg = new byte[maximum_read + MAGIC.length];
                 pos_counter += maximum_read;
 
@@ -424,18 +424,18 @@ public class MessageEncoder {
                     System.arraycopy(MessageEncoder.MAGIC_INTERMEDIATE, 0, msg, 0, MessageEncoder.MAGIC_INTERMEDIATE.length);
 
                 System.arraycopy(to_encode, pos_counter-maximum_read, msg, MessageEncoder.MAGIC.length, maximum_read);
-                Appendix.PrunablePlainMessage pl = new Appendix.PrunablePlainMessage(msg);
+                Appendix.Message pl = new Appendix.Message(msg);
                 preparation.add(pl);
             }
 
-            return preparation.toArray(new Appendix.PrunablePlainMessage[preparation.size()]);
+            return preparation.toArray(new Appendix.Message[preparation.size()]);
         }catch(Exception e){
             e.printStackTrace();
             return null;
         }
     }
 
-    public static IComputationAttachment decodeAttachment(Appendix.PrunablePlainMessage[] m){
+    public static IComputationAttachment decodeAttachment(Appendix.Message[] m){
         try {
 
             int total_length = 0;
@@ -476,11 +476,11 @@ public class MessageEncoder {
         }
     }
 
-    public static boolean checkMessageForPiggyback(Appendix.PrunablePlainMessage plainMessage){
+    public static boolean checkMessageForPiggyback(Appendix.Message plainMessage){
         return checkMessageForPiggyback(plainMessage, false, false);
     }
 
-    public static boolean checkMessageForPiggyback(Appendix.PrunablePlainMessage plainMessage, boolean onlyFinalMessageOfChain, boolean onlyMidMessage){
+    public static boolean checkMessageForPiggyback(Appendix.Message plainMessage, boolean onlyFinalMessageOfChain, boolean onlyMidMessage){
 
         try {
             if (plainMessage.isText())

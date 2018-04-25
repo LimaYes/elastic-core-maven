@@ -71,6 +71,7 @@ public final class Constants {
     public static final int MAX_PRUNABLE_LIFETIME;
     public static final boolean ENABLE_PRUNING;
     public static final int ALLOW_FAKE_FORGING_ON_REDEEM_UNTIL_BLOCK = 5000;
+    public static final int MAX_COMPU_MESSAGE_LENGTH = 500*1024;
 
     static {
         int maxPrunableLifetime = Nxt.getIntProperty("nxt.maxPrunableLifetime");

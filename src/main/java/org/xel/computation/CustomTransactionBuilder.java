@@ -29,13 +29,13 @@ import static org.xel.http.JSONResponses.FEATURE_NOT_AVAILABLE;
 
 public class CustomTransactionBuilder {
 
-    public final static Pair<JSONStreamAware, String> createTransaction(Appendix.PrunablePlainMessage work_rel_message, String secretPhrase, int deadline) throws NxtException {
+    public final static Pair<JSONStreamAware, String> createTransaction(Appendix.Message work_rel_message, String secretPhrase, int deadline) throws NxtException {
         return CustomTransactionBuilder.createTransaction(work_rel_message, secretPhrase, null, deadline);
     }
 
-    public final static Pair<JSONStreamAware, String> createTransaction(Appendix.PrunablePlainMessage work_rel_message, String secretPhrase, String referencedTransactionFullHash, int deadline) throws NxtException {
+    public final static Pair<JSONStreamAware, String> createTransaction(Appendix.Message work_rel_message, String secretPhrase, String referencedTransactionFullHash, int deadline) throws NxtException {
 
-        Appendix.PrunablePlainMessage prunablePlainMessage = work_rel_message;
+        Appendix.Message prunablePlainMessage = work_rel_message;
 
         if (secretPhrase == null) {
             throw new NxtException.NotValidException("No passphrase given");
@@ -92,9 +92,9 @@ public class CustomTransactionBuilder {
         return new Pair<>(response, "");
     }
 
-    public final static Pair<JSONStreamAware, String> createTransactionPubkeyComputation(Appendix.PrunablePlainMessage work_rel_message, byte[] publicKey, String referencedTransactionFullHash, int deadline) throws NxtException {
+    public final static Pair<JSONStreamAware, String> createTransactionPubkeyComputation(Appendix.Message work_rel_message, byte[] publicKey, String referencedTransactionFullHash, int deadline) throws NxtException {
 
-        Appendix.PrunablePlainMessage prunablePlainMessage = work_rel_message;
+        Appendix.Message prunablePlainMessage = work_rel_message;
 
         if (publicKey == null) {
             throw new NxtException.NotValidException("No passphrase given");

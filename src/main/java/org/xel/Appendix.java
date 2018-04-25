@@ -225,7 +225,8 @@ public interface Appendix {
                 throw new NxtException.NotValidException("Message is not UTF-8 text");
             }
         }
-
+        void validateComputation(Transaction transaction) throws NxtException.ValidationException {
+        }
         Message(JSONObject attachmentData) {
             super(attachmentData);
             String messageString = (String)attachmentData.get("message");
@@ -267,7 +268,7 @@ public interface Appendix {
         }
 
         @Override
-        void putMyJSON(JSONObject json) {
+        public void putMyJSON(JSONObject json) {
             json.put("message", Convert.toString(message, isText));
             json.put("messageIsText", isText);
         }
@@ -424,8 +425,7 @@ public interface Appendix {
             }
         }
 
-        void validateComputation(Transaction transaction) throws NxtException.ValidationException {
-        }
+
         @Override
         void applyComputational(Transaction transaction) {}
 

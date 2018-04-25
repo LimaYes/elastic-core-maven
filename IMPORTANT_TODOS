@@ -2,3 +2,5 @@
   fixed most of it, make sure running tests that no account is created in side chain
 - FCheck if senderPublicKey (in Attachment itself) does any harm
 - Adapt void setPreviousComputational(BlockImpl block) to real target for altChain
+-  void validateComputation(Transaction transaction) throws NxtException.ValidationException in Appendix.java needs check for message length
+- Increase blocksize for alt chain
