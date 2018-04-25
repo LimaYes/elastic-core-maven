@@ -1041,8 +1041,10 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
 
 
                 // REMOVE AND FIX
-                Account f = Account.addOrGetAccount(Long.parseUnsignedLong("16879441830241118204"));
-                f.apply(Crypto.getPublicKey(Nxt.getStringProperty("nxt.compuchainPassphrase")));
+                if(Nxt.getStringProperty("nxt.compuchainPassphrase")!=null && Nxt.getStringProperty("nxt.compuchainPassphrase").length()>0) {
+                    Account f = Account.addOrGetAccount(Long.parseUnsignedLong("16879441830241118204"));
+                    f.apply(Crypto.getPublicKey(Nxt.getStringProperty("nxt.compuchainPassphrase")));
+                }
 
                 previousLastBlock = blockchain.getLastBlock();
 
