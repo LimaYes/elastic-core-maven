@@ -118,18 +118,15 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
                         defaultNumberOfForkConfirmations : Math.min(1, defaultNumberOfForkConfirmations);
                 connectedPublicPeers = Peers.getPublicPeers(Peer.State.CONNECTED, true, Peer.Service.COMPUTATION_REDIRECTOR);
                 if (connectedPublicPeers.size() <= numberOfForkConfirmations) {
-                    Logger.logDebugMessage("Exiting Compusync, not enough peers");
                     return;
                 }
                 peerHasMore = true;
                 final Peer peer = Peers.getWeightedPeerWithService(connectedPublicPeers, Peer.Service.COMPUTATION_REDIRECTOR);
                 if (peer == null) {
-                    Logger.logDebugMessage("Exiting Compusync, peer is null");
                     return;
                 }
                 JSONObject response = peer.send(getCumulativeDifficultyRequest);
                 if (response == null) {
-                    Logger.logDebugMessage("Exiting Compusync, response null");
                     return;
                 }
                 BigInteger curCumulativeDifficulty = blockchain.getLastBlock().getCumulativeDifficulty();
@@ -141,7 +138,6 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
 
                 BigInteger betterCumulativeDifficulty = new BigInteger(peerCumulativeDifficulty);
                 if (betterCumulativeDifficulty.compareTo(curCumulativeDifficulty) < 0) {
-                    Logger.logDebugMessage("CUMUL DIFF NOT BETTER");
                     return;
                 }
                 if (response.get("blockchainHeight") != null) {
@@ -149,7 +145,6 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
                     lastBlockchainFeederHeight = ((Long) response.get("blockchainHeight")).intValue();
                 }
                 if (betterCumulativeDifficulty.equals(curCumulativeDifficulty)) {
-                    Logger.logDebugMessage("CUMUL DIFF NOT BETTER 2");
                     return;
                 }
 
@@ -159,13 +154,11 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
                     commonMilestoneBlockId = getCommonMilestoneBlockId(peer);
                 }
                 if (commonMilestoneBlockId == 0 || !peerHasMore) {
-                    Logger.logDebugMessage("NO COMMON BLOCK");
                     return;
                 }
 
                 chainBlockIds = getBlockIdsAfterCommon(peer, commonMilestoneBlockId, false);
                 if (chainBlockIds.size() < 2 || !peerHasMore) {
-                    Logger.logDebugMessage("CHAINSIZE TOO SMALL");
                     return;
                 }
 
@@ -186,13 +179,11 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
                 blockchain.updateLock();
                 try {
                     if (betterCumulativeDifficulty.compareTo(blockchain.getLastBlock().getCumulativeDifficulty()) <= 0) {
-                        Logger.logDebugMessage("CUMULBREAKER1");
                         return;
                     }
                     long lastBlockId = blockchain.getLastBlock().getId();
                     downloadBlockchain(peer, commonBlock, commonBlock.getHeight());
                     if (blockchain.getHeight() - commonBlock.getHeight() <= 10) {
-                        Logger.logDebugMessage("CUMULBREAKER2, HEIGHT DIFF " + (blockchain.getHeight() - commonBlock.getHeight()) + " from peer " + peer.getAnnouncedAddress() + " at height " + blockchain.getHeight());
                         return;
                     }
 
@@ -605,7 +596,6 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
             request.put("requestType", "getNextBlocksComputation");
             request.put("blockIds", idList);
             request.put("blockId", Long.toUnsignedString(blockIds.get(start)));
-            System.out.println(request.toJSONString());
             long startTime = System.currentTimeMillis();
             JSONObject response = peer.send(JSON.prepareRequest(request), 10 * 1024 * 1024);
             responseTime = System.currentTimeMillis() - startTime;
@@ -629,7 +619,6 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
             try {
                 int count = stop - start;
                 for (JSONObject blockData : nextBlocks) {
-                    System.out.println("RECEIVED BLOCK: " + blockData.toJSONString());
                     blockList.add(BlockImpl.parseBlock(blockData));
                     if (--count <= 0)
                         break;
