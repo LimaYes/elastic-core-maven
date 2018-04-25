@@ -49,7 +49,7 @@ public class CustomTransactionBuilder {
 
         builder.appendix(prunablePlainMessage);
 
-        Transaction transaction = builder.build(secretPhrase);
+        Transaction transaction = builder.buildComputation(secretPhrase, 0);
 
         JSONObject transactionJSON = JSONData.unconfirmedTransaction(transaction);
         response.put("transactionJSON", transactionJSON);
@@ -58,8 +58,6 @@ public class CustomTransactionBuilder {
         response.put("fullHash", transactionJSON.get("fullHash"));
         response.put("transactionBytes", Convert.toHexString(transaction.getBytes()));
         response.put("signatureHash", transactionJSON.get("signatureHash"));
-
-        transaction.validate();
 
 
         return new Pair<>(transactionJSON, transaction.getFullHash());
@@ -85,6 +83,31 @@ public class CustomTransactionBuilder {
         builder.appendix(prunablePlainMessage);
 
         Transaction transaction = builder.build();
+
+        JSONObject transactionJSON = JSONData.unconfirmedTransaction(transaction);
+        JSONObject response = new JSONObject();
+        response.put("transactionJSON", transactionJSON);
+        response.put("unsignedTransactionBytes", Convert.toHexString(transaction.getUnsignedBytes()));
+
+        return new Pair<>(response, "");
+    }
+
+    public final static Pair<JSONStreamAware, String> createTransactionPubkeyComputation(Appendix.PrunablePlainMessage work_rel_message, byte[] publicKey, String referencedTransactionFullHash, int deadline) throws NxtException {
+
+        Appendix.PrunablePlainMessage prunablePlainMessage = work_rel_message;
+
+        if (publicKey == null) {
+            throw new NxtException.NotValidException("No passphrase given");
+        }
+
+
+
+        Transaction.Builder builder = Nxt.newTransactionBuilder(publicKey, 0, 0,
+                (short)deadline, Attachment.ARBITRARY_MESSAGE).referencedTransactionFullHash(referencedTransactionFullHash).recipientId(WORK_MESSAGE_RECEIVER_ACCOUNT);
+
+        builder.appendix(prunablePlainMessage);
+
+        Transaction transaction = builder.buildComputation(0);
 
         JSONObject transactionJSON = JSONData.unconfirmedTransaction(transaction);
         JSONObject response = new JSONObject();

@@ -12,11 +12,7 @@ import org.json.simple.JSONArray;
 import org.xel.computation.CommandNewWork;
 import org.xel.computation.ComputationConstants;
 import org.xel.computation.Scaler;
-import org.xel.db.DbClause;
-import org.xel.db.DbIterator;
-import org.xel.db.DbKey;
-import org.xel.db.DbUtils;
-import org.xel.db.VersionedEntityDbTable;
+import org.xel.db.*;
 import org.xel.util.*;
 import org.json.simple.JSONObject;
 
@@ -47,7 +43,7 @@ public final class Work {
         }
 
     };
-    private static final VersionedEntityDbTable<Work> workTable = new VersionedEntityDbTable<Work>("work",
+    private static final ComputationVersionedEntityDbTable<Work> workTable = new ComputationVersionedEntityDbTable<Work>("work",
             Work.workDbKeyFactory) {
 
         @Override
@@ -66,7 +62,7 @@ public final class Work {
     // Later, close work if users balance drops before the estimated remaning balances or if payouts are not
     // performed at all
     static {
-        Nxt.getBlockchainProcessor().addListener(block -> {
+        Nxt.getTemporaryComputationBlockchainProcessor().addListener(block -> {
             final List<Work> shufflings = new ArrayList<>();
             try (DbIterator<Work> iterator = Work.getActiveWork()) {
                 for (final Work shuffling : iterator) shufflings.add(shuffling);
@@ -74,7 +70,7 @@ public final class Work {
             shufflings.forEach(shuffling -> {
                 shuffling.CheckForAutoClose(block);
             });
-        }, BlockchainProcessor.Event.AFTER_BLOCK_APPLY);
+        }, BlockchainProcessor.Event.AFTER_BLOCK_APPLY_COMPUTATION);
     }
 
     public String getSource_code() {
@@ -402,7 +398,7 @@ public final class Work {
             pstmt.setInt(++i, this.received_pows);
             pstmt.setInt(++i, this.bounty_limit_per_iteration);
             pstmt.setInt(++i, this.originating_height);
-            pstmt.setInt(++i,Nxt.getBlockchain().getHeight());
+            pstmt.setInt(++i,Nxt.getTemporaryComputationBlockchain().getHeight());
             pstmt.setInt(++i, this.storage_size);
             pstmt.setString(++i, this.source_code);
             pstmt.executeUpdate();
@@ -469,7 +465,7 @@ public final class Work {
     public static JSONObject toJson(Work work) {
         final JSONObject response = new JSONObject();
         response.put("id", Long.toUnsignedString(work.id));
-        response.put("work_at_height",Nxt.getBlockchain().getHeight());
+        response.put("work_at_height",Nxt.getTemporaryComputationBlockchain().getHeight());
         response.put("block_id", Long.toUnsignedString(work.block_id));
         response.put("xel_per_pow", work.xel_per_pow);
         response.put("iterations", work.iterations);
@@ -489,7 +485,7 @@ public final class Work {
         response.put("storage_size", work.storage_size);
 
 
-        BigInteger myTarget = Scaler.get(Nxt.getBlockchain().getLastBlock().getPowTarget());
+        BigInteger myTarget = Scaler.get(Nxt.getTemporaryComputationBlockchain().getLastBlock().getPowTarget());
         response.put("target", String.format("%032x", myTarget));
 
 
@@ -578,7 +574,7 @@ public final class Work {
 
             int i = 0;
             pstmt.setLong(++i, accountId);
-            pstmt.setInt(++i, Nxt.getBlockchain().getHeight()-3);
+            pstmt.setInt(++i, Nxt.getTemporaryComputationBlockchain().getHeight()-3);
             try (DbIterator<Work> w_it = Work.workTable.getManyBy(con, pstmt, true)) {
                 while (w_it.hasNext()) ret.add(w_it.next());
             } catch (final Exception ignored) {

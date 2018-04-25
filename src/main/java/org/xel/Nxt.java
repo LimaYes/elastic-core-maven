@@ -295,7 +295,7 @@ public final class Nxt {
     }
 
     public static Blockchain getTemporaryComputationBlockchain() {
-        return BlockchainImpl.getInstance();
+        return TemporaryComputationBlockchainImpl.getInstance();
     }
 
     public static BlockchainProcessor getBlockchainProcessor() {

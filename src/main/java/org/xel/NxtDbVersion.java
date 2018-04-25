@@ -1208,7 +1208,7 @@ class NxtDbVersion extends DbVersion {
                                 "BOOLEAN NOT NULL DEFAULT FALSE, work_id BIGINT NOT NULL, hash BINARY(32), multiplier" +
                                 " VARBINARY, storage_bucket INT, submitted_storage VARBINARY, account_id BIGINT NOT NULL, " +
                                 "is_pow BOOLEAN NOT NULL DEFAULT TRUE, verificator_hash BINARY(32), pow_hash BINARY" +
-                                "(32), was_paid BOOLEAN NOT NULL DEFAULT FALSE, timestamp " +
+                                "(32), was_paid BOOLEAN NOT NULL DEFAULT FALSE, publickey VARBINARY, timestamp " +
                                 "INT NOT NULL, " +
                                 " " +
                                 "height " +
@@ -1249,7 +1249,7 @@ class NxtDbVersion extends DbVersion {
             case 501:
                 apply("CREATE TABLE IF NOT EXISTS unconfirmed_transaction_comp (db_id IDENTITY, id BIGINT NOT NULL, expiration INT NOT NULL, "
                         + "transaction_height INT NOT NULL, fee_per_byte BIGINT NOT NULL, arrival_timestamp BIGINT NOT NULL, "
-                        + "transaction_bytes VARBINARY NOT NULL, height INT NOT NULL)");
+                        + "transaction_bytes VARBINARY NOT NULL, height INT NOT NULL, prunable_json VARCHAR)");
             case 502:
                 apply("CREATE TABLE IF NOT EXISTS referenced_transaction_comp (db_id IDENTITY, transaction_id BIGINT NOT NULL, "
                         + "FOREIGN KEY (transaction_id) REFERENCES transaction_comp (id) ON DELETE CASCADE, "

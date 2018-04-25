@@ -10,11 +10,7 @@ import java.sql.SQLException;
 import org.json.simple.JSONArray;
 import org.xel.computation.CommandPowBty;
 
-import org.xel.db.DbClause;
-import org.xel.db.DbIterator;
-import org.xel.db.DbKey;
-import org.xel.db.DbUtils;
-import org.xel.db.VersionedEntityDbTable;
+import org.xel.db.*;
 import org.xel.util.Convert;
 import org.xel.util.Listener;
 import org.xel.util.Listeners;
@@ -107,7 +103,7 @@ public final class PowAndBounty{
 
     public JSONArray getJSONInts() {
         JSONArray arr = new JSONArray();
-        byte[] pbkey = Account.getPublicKey(this.accountId);
+        byte[] pbkey = this.publickey;
         try {
             int[] ints = personalizedIntStream(pbkey, Work.getWork(this.work_id).getBlock_id(), this.multiplier, this.work_id);
             for(int x : ints){
@@ -135,7 +131,7 @@ public final class PowAndBounty{
 
     };
 
-    private static final VersionedEntityDbTable<PowAndBounty> powAndBountyTable = new VersionedEntityDbTable<PowAndBounty>(
+    private static final ComputationVersionedEntityDbTable<PowAndBounty> powAndBountyTable = new ComputationVersionedEntityDbTable<PowAndBounty>(
             "pow_and_bounty", PowAndBounty.powAndBountyDbKeyFactory) {
 
         @Override
@@ -312,6 +308,7 @@ public final class PowAndBounty{
     private boolean was_paid;
     private final long work_id;
     private final long accountId;
+
     private final DbKey dbKey;
     private final byte[] hash;
     private final byte[] verificator_hash;
@@ -319,7 +316,7 @@ public final class PowAndBounty{
     private final byte[] pow_hash;
     private final int storage_bucket;
     private final byte[] submitted_storage;
-
+    private final byte[] publickey;
     private int timestampReceived = 0;
 
     public boolean isWas_paid() {
@@ -354,6 +351,7 @@ public final class PowAndBounty{
         this.submitted_storage = rs.getBytes("submitted_storage");
         this.storage_bucket = rs.getInt("storage_bucket");
         this.timestampReceived = rs.getInt("timestamp");
+        this.publickey = rs.getBytes("publickey");
     }
 
     public byte[] getSubmitted_storage() {
@@ -375,6 +373,7 @@ public final class PowAndBounty{
         this.too_late = false;
         this.storage_bucket = attachment.getStorage_bucket();
         this.timestampReceived = transaction.getTimestamp();
+        this.publickey = attachment.getPublickey();
     }
 
     public long getAccountId() {
@@ -386,8 +385,8 @@ public final class PowAndBounty{
         try (PreparedStatement pstmt = con.prepareStatement( /* removed storage between multiplier and submitted_storage in
         next line */
                 "MERGE INTO pow_and_bounty (id, too_late, work_id, hash, multiplier, storage_bucket, submitted_storage, " +
-                        "account_id, is_pow, verificator_hash, pow_hash, was_paid, timestamp, "
-                        + " height, latest) " + "KEY (id, height) " + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?," +
+                        "account_id, is_pow, verificator_hash, pow_hash, was_paid, publickey, timestamp, "
+                        + " height, latest) " + "KEY (id, height) " + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?," +
                         " TRUE)")) {
             int i = 0;
             pstmt.setLong(++i, this.id);
@@ -402,8 +401,9 @@ public final class PowAndBounty{
             DbUtils.setBytes(pstmt, ++i, this.verificator_hash);
             DbUtils.setBytes(pstmt, ++i, this.pow_hash);
             pstmt.setBoolean(++i, this.was_paid);
+            DbUtils.setBytes(pstmt, ++i, this.publickey);
             pstmt.setInt(++i, this.timestampReceived);
-            pstmt.setInt(++i, Nxt.getBlockchain().getHeight());
+            pstmt.setInt(++i, Nxt.getTemporaryComputationBlockchain().getHeight());
             pstmt.executeUpdate();
         }
     }

@@ -54,7 +54,11 @@ public interface Transaction {
 
         Transaction build() throws NxtException.NotValidException;
 
+        Transaction buildComputation(long overrideFees) throws NxtException.NotValidException;
+
         Transaction build(String secretPhrase) throws NxtException.NotValidException;
+
+        TransactionImpl buildComputation(String secretPhrase, long overrideFees) throws NxtException.NotValidException;
 
         Transaction buildTimestamped(String secretPhrase, final int unixTimestamp) throws NxtException.NotValidException;
 
@@ -106,7 +110,11 @@ public interface Transaction {
 
     boolean verifySignature();
 
+    boolean verifySignatureComputational();
+
     void validate() throws NxtException.ValidationException;
+
+    void validateComputational() throws NxtException.ValidationException;
 
     byte[] getBytes();
 

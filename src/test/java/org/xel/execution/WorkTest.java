@@ -5,6 +5,7 @@ import org.xel.computation.CommandCancelWork;
 import org.xel.computation.CommandNewWork;
 import org.xel.computation.CommandPowBty;
 import org.xel.computation.MessageEncoder;
+import org.xel.crypto.Crypto;
 import org.xel.db.DbIterator;
 import org.xel.helpers.RedeemFunctions;
 import org.xel.util.Convert;
@@ -58,7 +59,7 @@ public class WorkTest extends AbstractForgingTest {
     }
 
     public void redeemPubkeyhash(){
-        Nxt.getBlockchainProcessor().popOffTo(0);
+        Nxt.getTemporaryComputationBlockchainProcessor().popOffTo(0);
 
         String address = "1XELjH6JgPS48ZL7ew1Zz2xxczyzqit3h";
         String[] privkeys = new String[]{"5JDSuYmvAAF85XFQxPTkHGFrNfAk3mhtZKmXvsLJiFZ7tDrSBmp"};
@@ -96,7 +97,7 @@ public class WorkTest extends AbstractForgingTest {
         AbstractBlockchainTest.forgeNumberOfBlocks(5, AbstractForgingTest.testForgingSecretPhrase);
 
         System.out.println("LAST BLOCK:");
-        System.out.println(Nxt.getBlockchain().getLastBlock().getJSONObject().toJSONString());
+        System.out.println(Nxt.getTemporaryComputationBlockchain().getLastBlock().getJSONObject().toJSONString());
 
         // Test work db table
         Assert.assertEquals(1, Work.getCount());
@@ -158,10 +159,10 @@ public class WorkTest extends AbstractForgingTest {
         byte[] testarray = new byte[32*4];
         for(int i=0;i<25; ++i) {
             m[0]=(byte)(m[0]+1);
-            CommandPowBty pow = new CommandPowBty(id, true, m, new byte[16], testarray, 0, w.getCurrentRound());
+            CommandPowBty pow = new CommandPowBty(id, true, m, new byte[16], testarray, 0, w.getCurrentRound(), Crypto.getPublicKey(AbstractForgingTest.testForgingSecretPhrase));
             m2[0]=(byte)(m2[0]+2);
             m2[1]=1;
-            CommandPowBty pow2 = new CommandPowBty(id, true, m2, new byte[16], testarray, 0, w.getCurrentRound());
+            CommandPowBty pow2 = new CommandPowBty(id, true, m2, new byte[16], testarray, 0, w.getCurrentRound(),  Crypto.getPublicKey(AbstractForgingTest.testForgingSecretPhrase));
 
             try {
                 MessageEncoder.push(pow, AbstractForgingTest.testForgingSecretPhrase, 1);

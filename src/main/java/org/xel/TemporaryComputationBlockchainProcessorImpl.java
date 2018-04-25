@@ -117,12 +117,12 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
                 long startTime = System.currentTimeMillis();
                 int numberOfForkConfirmations = blockchain.getHeight() > Constants.LAST_CHECKSUM_BLOCK - 720 ?
                         defaultNumberOfForkConfirmations : Math.min(1, defaultNumberOfForkConfirmations);
-                connectedPublicPeers = Peers.getPublicPeers(Peer.State.CONNECTED, true);
+                connectedPublicPeers = Peers.getPublicPeers(Peer.State.CONNECTED, true, Peer.Service.COMPUTATION_REDIRECTOR);
                 if (connectedPublicPeers.size() <= numberOfForkConfirmations) {
                     return;
                 }
                 peerHasMore = true;
-                final Peer peer = Peers.getWeightedPeer(connectedPublicPeers);
+                final Peer peer = Peers.getWeightedPeerWithService(connectedPublicPeers, Peer.Service.COMPUTATION_REDIRECTOR);
                 if (peer == null) {
                     return;
                 }
@@ -147,9 +147,9 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
                     return;
                 }
 
-                long commonMilestoneBlockId = Genesis.GENESIS_BLOCK_ID;
+                long commonMilestoneBlockId = Genesis.GENESIS_BLOCK_ID_COMPUTATIONCHAIN;
 
-                if (blockchain.getLastBlock().getId() != Genesis.GENESIS_BLOCK_ID) {
+                if (blockchain.getLastBlock().getId() != Genesis.GENESIS_BLOCK_ID_COMPUTATIONCHAIN) {
                     commonMilestoneBlockId = getCommonMilestoneBlockId(peer);
                 }
                 if (commonMilestoneBlockId == 0 || !peerHasMore) {
@@ -265,7 +265,7 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
                     return 0;
                 }
                 if (milestoneBlockIds.isEmpty()) {
-                    return Genesis.GENESIS_BLOCK_ID;
+                    return Genesis.GENESIS_BLOCK_ID_COMPUTATIONCHAIN;
                 }
                 // prevent overloading with blockIds
                 if (milestoneBlockIds.size() > 20) {
@@ -965,7 +965,7 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
             try {
                 setGetMoreBlocks(false);
                 scheduleScan(0, false);
-                //BlockDb.deleteBlock(Genesis.GENESIS_BLOCK_ID); // fails with stack overflow in H2
+                //BlockDb.deleteBlock(Genesis.GENESIS_BLOCK_ID_COMPUTATIONCHAIN); // fails with stack overflow in H2
                 TemporaryComputationBlockDb.deleteAll();
                 if (addGenesisBlock()) {
                     scan(0, false);
@@ -1012,9 +1012,9 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
         try {
             List<TransactionImpl> transactions = new ArrayList<>();
             MessageDigest digest = Crypto.sha256();
-            BlockImpl genesisBlock = new BlockImpl(getBlockVersion(0), 0, 0, 0, 0, 0, digest.digest(),
+            BlockImpl genesisBlock = new BlockImpl(getBlockVersion(0), 139341884, 0, 0, 0, 0, digest.digest(),
                     Genesis.CREATOR_PUBLIC_KEY, new byte[64], new byte[32], new byte[32], transactions);
-            Logger.logInfoMessage("Computationchain: Creating Genesisblock with ID = " + genesisBlock.getStringId() + " [signed representation = " + genesisBlock.getId() + "]");
+            Logger.logInfoMessage("Computationchain: Creating Genesisblock with ID = " + genesisBlock.getStringId() + " [signed representation = " + genesisBlock.getId() + ", t = " + genesisBlock.getTimestamp() + "]");
             System.out.println(genesisBlock.getJSONObject().toJSONString());
             genesisBlock.setPrevious(null);
             addBlock(genesisBlock);
@@ -1041,27 +1041,14 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
 
                 validate(block, previousLastBlock, curTime);
 
-                long nextHitTime = Generator.getNextHitTime(previousLastBlock.getId(), curTime);
-                if (nextHitTime > 0 && block.getTimestamp() > nextHitTime + 1) {
-                    String msg = "Rejecting block " + block.getStringId() + " at height " + previousLastBlock.getHeight()
-                            + " block timestamp " + block.getTimestamp() + " next hit time " + nextHitTime
-                            + " current time " + curTime;
-                    Logger.logDebugMessage(msg);
-                    Generator.setDelay(-Constants.FORGING_SPEEDUP);
-                    throw new BlockOutOfOrderException(msg, block);
-                }
-
                 Map<TransactionType, Map<String, Integer>> duplicates = new HashMap<>();
-                List<TransactionImpl> validPhasedTransactions = new ArrayList<>();
-                List<TransactionImpl> invalidPhasedTransactions = new ArrayList<>();
-                validatePhasedTransactions(previousLastBlock.getHeight(), validPhasedTransactions, invalidPhasedTransactions, duplicates);
                 validateTransactions(block, previousLastBlock, curTime, duplicates);
 
                 block.setPrevious(previousLastBlock);
                 blockListeners.notify(block, Event.BEFORE_BLOCK_ACCEPT_COMPUTATION);
                 TemporaryComputationTransactionProcessorImpl.getInstance().requeueAllUnconfirmedTransactions();
                 addBlock(block);
-                accept(block, validPhasedTransactions, invalidPhasedTransactions, duplicates);
+                accept(block, duplicates);
 
                 Db.db.commitTransaction();
             } catch (Exception e) {
@@ -1086,31 +1073,7 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
 
     }
 
-    private void validatePhasedTransactions(int height, List<TransactionImpl> validPhasedTransactions, List<TransactionImpl> invalidPhasedTransactions,
-                                            Map<TransactionType, Map<String, Integer>> duplicates) {
-        if (height >= Constants.PHASING_BLOCK) {
-            try (DbIterator<TransactionImpl> phasedTransactions = PhasingPoll.getFinishingTransactions(height + 1)) {
-                for (TransactionImpl phasedTransaction : phasedTransactions) {
-                    if (height > Constants.SHUFFLING_BLOCK && PhasingPoll.getResult(phasedTransaction.getId()) != null) {
-                        continue;
-                    }
-                    try {
-                        phasedTransaction.validate();
-                        if (!phasedTransaction.attachmentIsDuplicate(duplicates, false)) {
-                            validPhasedTransactions.add(phasedTransaction);
-                        } else {
-                            Logger.logDebugMessage("At height " + height + " phased transaction " + phasedTransaction.getStringId() + " is duplicate, will not apply");
-                            invalidPhasedTransactions.add(phasedTransaction);
-                        }
-                    } catch (NxtException.ValidationException e) {
-                        Logger.logDebugMessage("At height " + height + " phased transaction " + phasedTransaction.getStringId() + " no longer passes validation: "
-                                + e.getMessage() + ", will not apply");
-                        invalidPhasedTransactions.add(phasedTransaction);
-                    }
-                }
-            }
-        }
-    }
+
 
     private void validate(BlockImpl block, BlockImpl previousLastBlock, int curTime) throws BlockNotAcceptedException {
         if (previousLastBlock.getId() != block.getPreviousBlockId()) {
@@ -1126,7 +1089,7 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
                     + " current time is " + curTime, block);
         }
         if (block.getTimestamp() <= previousLastBlock.getTimestamp()) {
-            throw new BlockNotAcceptedException("Block timestamp " + block.getTimestamp() + " is before previous block timestamp "
+            throw new BlockNotAcceptedException("Block (" + block.getId() + ") timestamp " + block.getTimestamp() + " is before previous block (" + previousLastBlock.getId() + ") stimestamp "
                     + previousLastBlock.getTimestamp(), block);
         }
         if (block.getVersion() != 1 && !Arrays.equals(Crypto.sha256().digest(previousLastBlock.bytes()), block.getPreviousBlockHash())) {
@@ -1155,37 +1118,37 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
         long calculatedTotalFee = 0;
         MessageDigest digest = Crypto.sha256();
         for (TransactionImpl transaction : block.getTransactions()) {
-            if (!transaction.verifySignature()) {
-                throw new TransactionNotAcceptedException("Transaction signature verification failed at height " + previousLastBlock.getHeight(), transaction);
+            if (!transaction.verifySignatureComputational()) {
+                throw new TransactionNotAcceptedException("Transaction signature verification (computational) failed at height " + previousLastBlock.getHeight(), transaction);
             }
             if (true) {
                 if (TemporaryComputationTransactionDb.hasTransaction(transaction.getId(), previousLastBlock.getHeight())) {
-                    throw new TransactionNotAcceptedException("Transaction is already in the blockchain", transaction);
+                    throw new TransactionNotAcceptedException("Transaction is already in the blockchain (computational)", transaction);
                 }
                 if (transaction.referencedTransactionFullHash() != null) {
                     if ((previousLastBlock.getHeight() < Constants.REFERENCED_TRANSACTION_FULL_HASH_BLOCK
                             && !TemporaryComputationTransactionDb.hasTransaction(Convert.fullHashToId(transaction.referencedTransactionFullHash()), previousLastBlock.getHeight()))
                             || (previousLastBlock.getHeight() >= Constants.REFERENCED_TRANSACTION_FULL_HASH_BLOCK
                             && !hasAllReferencedTransactions(transaction, transaction.getTimestamp(), 0))) {
-                        throw new TransactionNotAcceptedException("Missing or invalid referenced transaction "
+                        throw new TransactionNotAcceptedException("Missing or invalid referenced transaction (computational) "
                                 + transaction.getReferencedTransactionFullHash(), transaction);
                     }
                 }
                 if (transaction.getVersion() != getTransactionVersion(previousLastBlock.getHeight())) {
-                    throw new TransactionNotAcceptedException("Invalid transaction version " + transaction.getVersion()
+                    throw new TransactionNotAcceptedException("Invalid transaction (computational) version " + transaction.getVersion()
                             + " at height " + previousLastBlock.getHeight(), transaction);
                 }
                 if (transaction.getId() == 0L) {
-                    throw new TransactionNotAcceptedException("Invalid transaction id 0", transaction);
+                    throw new TransactionNotAcceptedException("Invalid transaction (computational) id 0", transaction);
                 }
                 try {
-                    transaction.validate();
+                    transaction.validateComputational();
                 } catch (NxtException.ValidationException e) {
                     throw new TransactionNotAcceptedException(e.getMessage(), transaction);
                 }
             }
-            if (transaction.attachmentIsDuplicate(duplicates, true)) {
-                throw new TransactionNotAcceptedException("Transaction is a duplicate", transaction);
+            if (transaction.attachmentIsDuplicateComputational(duplicates, true)) {
+                throw new TransactionNotAcceptedException("Transaction (computational) is a duplicate", transaction);
             }
 
             calculatedTotalAmount += transaction.getAmountNQT();
@@ -1201,79 +1164,23 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
         }
     }
 
-    private void accept(BlockImpl block, List<TransactionImpl> validPhasedTransactions, List<TransactionImpl> invalidPhasedTransactions,
-                        Map<TransactionType, Map<String, Integer>> duplicates) throws TransactionNotAcceptedException {
+    private void accept(BlockImpl block,  Map<TransactionType, Map<String, Integer>> duplicates) throws TransactionNotAcceptedException {
         try {
             isProcessingBlock = true;
             for (TransactionImpl transaction : block.getTransactions()) {
-                if (! transaction.applyUnconfirmed()) {
+                if (! transaction.applyUnconfirmedComputational()) {
                     throw new TransactionNotAcceptedException("Double spending", transaction);
                 }
             }
             blockListeners.notify(block, Event.BEFORE_BLOCK_APPLY_COMPUTATION);
-            block.apply();
-            validPhasedTransactions.forEach(transaction -> transaction.getPhasing().countVotes(transaction));
-            invalidPhasedTransactions.forEach(transaction -> transaction.getPhasing().reject(transaction));
-            int fromTimestamp = Nxt.getEpochTime() - Constants.MAX_PRUNABLE_LIFETIME;
+            block.applyComputational();
             for (TransactionImpl transaction : block.getTransactions()) {
                 try {
-                    transaction.apply();
-                    if (transaction.getTimestamp() > fromTimestamp) {
-                        for (Appendix.AbstractAppendix appendage : transaction.getAppendages(true)) {
-                            if ((appendage instanceof Appendix.Prunable) &&
-                                        !((Appendix.Prunable)appendage).hasPrunableData()) {
-                                break;
-                            }
-                        }
-                    }
+                    transaction.applyComputational();
                 } catch (RuntimeException e) {
                     Logger.logErrorMessage(e.toString(), e);
-                    throw new TransactionNotAcceptedException(e, transaction);
+                    throw new BlockchainProcessor.TransactionNotAcceptedException(e, transaction);
                 }
-            }
-            if (block.getHeight() > Constants.SHUFFLING_BLOCK) {
-                SortedSet<TransactionImpl> possiblyApprovedTransactions = new TreeSet<>(finishingTransactionsComparator);
-                block.getTransactions().forEach(transaction -> {
-                    PhasingPoll.getLinkedPhasedTransactions(transaction.fullHash()).forEach(phasedTransaction -> {
-                        if (phasedTransaction.getPhasing().getFinishHeight() > block.getHeight()) {
-                            possiblyApprovedTransactions.add((TransactionImpl)phasedTransaction);
-                        }
-                    });
-                    if (transaction.getType() == TransactionType.Messaging.PHASING_VOTE_CASTING && !transaction.attachmentIsPhased()) {
-                        Attachment.MessagingPhasingVoteCasting voteCasting = (Attachment.MessagingPhasingVoteCasting)transaction.getAttachment();
-                        voteCasting.getTransactionFullHashes().forEach(hash -> {
-                            PhasingPoll phasingPoll = PhasingPoll.getPoll(Convert.fullHashToId(hash));
-                            if (phasingPoll.allowEarlyFinish() && phasingPoll.getFinishHeight() > block.getHeight()) {
-                                possiblyApprovedTransactions.add(TemporaryComputationTransactionDb.findTransaction(phasingPoll.getId()));
-                            }
-                        });
-                    }
-                });
-                validPhasedTransactions.forEach(phasedTransaction -> {
-                    if (phasedTransaction.getType() == TransactionType.Messaging.PHASING_VOTE_CASTING) {
-                        PhasingPoll.PhasingPollResult result = PhasingPoll.getResult(phasedTransaction.getId());
-                        if (result != null && result.isApproved()) {
-                            Attachment.MessagingPhasingVoteCasting phasingVoteCasting = (Attachment.MessagingPhasingVoteCasting) phasedTransaction.getAttachment();
-                            phasingVoteCasting.getTransactionFullHashes().forEach(hash -> {
-                                PhasingPoll phasingPoll = PhasingPoll.getPoll(Convert.fullHashToId(hash));
-                                if (phasingPoll.allowEarlyFinish() && phasingPoll.getFinishHeight() > block.getHeight()) {
-                                    possiblyApprovedTransactions.add(TemporaryComputationTransactionDb.findTransaction(phasingPoll.getId()));
-                                }
-                            });
-                        }
-                    }
-                });
-                possiblyApprovedTransactions.forEach(transaction -> {
-                    if (PhasingPoll.getResult(transaction.getId()) == null) {
-                        try {
-                            transaction.validate();
-                            transaction.getPhasing().tryCountVotes(transaction, duplicates);
-                        } catch (NxtException.ValidationException e) {
-                            Logger.logDebugMessage("At height " + block.getHeight() + " phased transaction " + transaction.getStringId()
-                                    + " no longer passes validation: " + e.getMessage() + ", cannot finish early");
-                        }
-                    }
-                });
             }
 
             blockListeners.notify(block, Event.AFTER_BLOCK_APPLY_COMPUTATION);
@@ -1319,7 +1226,7 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
                 block.loadTransactions();
                 Logger.logDebugMessage("Rollback (computational) from block " + block.getStringId() + " at height " + block.getHeight()
                         + " to " + commonBlock.getStringId() + " at " + commonBlock.getHeight());
-                while (block.getId() != commonBlock.getId() && block.getId() != Genesis.GENESIS_BLOCK_ID) {
+                while (block.getId() != commonBlock.getId() && block.getId() != Genesis.GENESIS_BLOCK_ID_COMPUTATIONCHAIN) {
                     poppedOffBlocks.add(block);
                     block = popLastBlock();
                 }
@@ -1344,7 +1251,7 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
 
     private BlockImpl popLastBlock() {
         BlockImpl block = blockchain.getLastBlock();
-        if (block.getId() == Genesis.GENESIS_BLOCK_ID) {
+        if (block.getId() == Genesis.GENESIS_BLOCK_ID_COMPUTATIONCHAIN) {
             throw new RuntimeException("Cannot pop off genesis block (computational)");
         }
         BlockImpl previousBlock = TemporaryComputationBlockDb.deleteBlocksFrom(block.getId());
@@ -1379,7 +1286,9 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
     }
 
 
-    SortedSet<UnconfirmedTransaction> selectUnconfirmedTransactions(Map<TransactionType, Map<String, Integer>> duplicates, Block previousBlock, int blockTimestamp) {
+    SortedSet<UnconfirmedTransaction> selectUnconfirmedTransactions(Block previousBlock, int blockTimestamp) {
+        Map<TransactionType, Map<String, Integer>> duplicates = new HashMap<>();
+
         List<UnconfirmedTransaction> orderedUnconfirmedTransactions = new ArrayList<>();
         try (FilteringIterator<UnconfirmedTransaction> unconfirmedTransactions = new FilteringIterator<>(
                 TemporaryComputationTransactionProcessorImpl.getInstance().getAllUnconfirmedTransactions(),
@@ -1401,11 +1310,11 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
                     continue;
                 }
                 try {
-                    unconfirmedTransaction.getTransaction().validate();
+                    unconfirmedTransaction.getTransaction().validateComputational();
                 } catch (NxtException.ValidationException e) {
                     continue;
                 }
-                if (unconfirmedTransaction.getTransaction().attachmentIsDuplicate(duplicates, true)) {
+                if (unconfirmedTransaction.getTransaction().attachmentIsDuplicateComputational(duplicates, true)) {
                     continue;
                 }
                 sortedTransactions.add(unconfirmedTransaction);
@@ -1426,22 +1335,12 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
 
     public void generateBlock(String secretPhrase, int blockTimestamp) throws BlockNotAcceptedException {
 
-        Map<TransactionType, Map<String, Integer>> duplicates = new HashMap<>();
-        if (blockchain.getHeight() >= Constants.PHASING_BLOCK) {
-            try (DbIterator<TransactionImpl> phasedTransactions = PhasingPoll.getFinishingTransactions(blockchain.getHeight() + 1)) {
-                for (TransactionImpl phasedTransaction : phasedTransactions) {
-                    try {
-                        phasedTransaction.validate();
-                        phasedTransaction.attachmentIsDuplicate(duplicates, false); // pre-populate duplicates map
-                    } catch (NxtException.ValidationException ignore) {
-                    }
-                }
-            }
-        }
+
 
         BlockImpl previousBlock = blockchain.getLastBlock();
+
         TemporaryComputationTransactionProcessorImpl.getInstance().processWaitingTransactions();
-        SortedSet<UnconfirmedTransaction> sortedTransactions = selectUnconfirmedTransactions(duplicates, previousBlock, blockTimestamp);
+        SortedSet<UnconfirmedTransaction> sortedTransactions = selectUnconfirmedTransactions(previousBlock, blockTimestamp);
         List<TransactionImpl> blockTransactions = new ArrayList<>();
         MessageDigest digest = Crypto.sha256();
         long totalAmountNQT = 0;
@@ -1467,13 +1366,13 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
         try {
             pushBlock(block, true);
             blockListeners.notify(block, Event.BLOCK_GENERATED_COMPUTATION);
-            Logger.logDebugMessage("Account " + Long.toUnsignedString(block.getGeneratorId()) + " generated block " + block.getStringId()
-                    + " at height " + block.getHeight() + " timestamp " + block.getTimestamp() + " fee " + ((float)block.getTotalFeeNQT())/Constants.ONE_NXT);
+            Logger.logDebugMessage("Account " + Long.toUnsignedString(block.getGeneratorId()) + " generated block (computational) " + block.getStringId()
+                    + " at height " + block.getHeight() + " timestamp " + block.getTimestamp() + " tx count " + block.getTransactions().size());
         } catch (TransactionNotAcceptedException e) {
-            Logger.logDebugMessage("Generate block failed: " + e.getMessage());
+            Logger.logDebugMessage("Generate block (Computational) failed: " + e.getMessage());
             TemporaryComputationTransactionProcessorImpl.getInstance().processWaitingTransactions();
             TransactionImpl transaction = e.getTransaction();
-            Logger.logDebugMessage("Removing invalid transaction: " + transaction.getStringId());
+            Logger.logDebugMessage("Removing invalid transaction (Computational) : " + transaction.getStringId());
             blockchain.writeLock();
             try {
                 TemporaryComputationTransactionProcessorImpl.getInstance().removeUnconfirmedTransaction(transaction);
@@ -1482,7 +1381,7 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
             }
             throw e;
         } catch (BlockNotAcceptedException e) {
-            Logger.logDebugMessage("Generate block failed: " + e.getMessage());
+            Logger.logDebugMessage("Generate block (Computational) failed: " + e.getMessage());
             throw e;
         }
     }
@@ -1607,10 +1506,8 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
                                     throw new NxtException.NotValidException("Database blocks_comp in the wrong order!");
                                 }
                                 Map<TransactionType, Map<String, Integer>> duplicates = new HashMap<>();
-                                List<TransactionImpl> validPhasedTransactions = new ArrayList<>();
-                                List<TransactionImpl> invalidPhasedTransactions = new ArrayList<>();
-                                validatePhasedTransactions(blockchain.getHeight(), validPhasedTransactions, invalidPhasedTransactions, duplicates);
-                                if (validate && currentBlockId != Genesis.GENESIS_BLOCK_ID) {
+
+                                if (validate && currentBlockId != Genesis.GENESIS_BLOCK_ID_COMPUTATIONCHAIN) {
                                     int curTime = Nxt.getEpochTime();
                                     validate(currentBlock, blockchain.getLastBlock(), curTime);
                                     byte[] blockBytes = currentBlock.bytes();
@@ -1635,7 +1532,7 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
                                 }
                                 blockListeners.notify(currentBlock, Event.BEFORE_BLOCK_ACCEPT_COMPUTATION);
                                 blockchain.setLastBlock(currentBlock);
-                                accept(currentBlock, validPhasedTransactions, invalidPhasedTransactions, duplicates);
+                                accept(currentBlock, duplicates);
                                 currentBlockId = currentBlock.getNextBlockId();
                                 Db.db.clearCache();
                                 Db.db.commitTransaction();

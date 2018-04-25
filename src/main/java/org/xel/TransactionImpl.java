@@ -36,6 +36,10 @@ import java.util.*;
 
 final class TransactionImpl implements Transaction {
 
+    public boolean applyUnconfirmedComputational() {
+        return true;
+    }
+
     static final class BuilderImpl implements Builder {
 
         private final short deadline;
@@ -93,6 +97,19 @@ final class TransactionImpl implements Transaction {
         }
 
         @Override
+        public TransactionImpl buildComputation(String secretPhrase, long overrideFees) throws NxtException.NotValidException {
+            if (timestamp == Integer.MAX_VALUE) {
+                timestamp = Nxt.getEpochTime();
+            }
+            if (!ecBlockSet) {
+                Block ecBlock = TemporaryComputationBlockchainImpl.getInstance().getECBlock(timestamp);
+                this.ecBlockHeight = ecBlock.getHeight();
+                this.ecBlockId = ecBlock.getId();
+            }
+            return new TransactionImpl(this, secretPhrase, overrideFees);
+        }
+
+        @Override
         public TransactionImpl buildTimestamped(final String secretPhrase, final int unixTimestamp) throws NxtException.NotValidException {
             if (this.timestamp == Integer.MAX_VALUE)
                 this.timestamp = Convert.toEpochTime(unixTimestamp * 1000L);
@@ -108,6 +125,11 @@ final class TransactionImpl implements Transaction {
         @Override
         public TransactionImpl build() throws NxtException.NotValidException {
             return build(null);
+        }
+
+        @Override
+        public TransactionImpl buildComputation(long overrideFees) throws NxtException.NotValidException {
+            return buildComputation(null, overrideFees);
         }
 
         public BuilderImpl recipientId(long recipientId) {
@@ -276,7 +298,86 @@ final class TransactionImpl implements Transaction {
 
     private boolean wasAPow = false;
 
+    private TransactionImpl(BuilderImpl builder, String secretPhrase, long overrideFees) throws NxtException.NotValidException {
 
+        this.timestamp = builder.timestamp;
+        this.pseudo_creation_timestamp = Nxt.getEpochTime();
+        this.deadline = builder.deadline;
+        this.senderPublicKey = builder.senderPublicKey;
+        this.recipientId = builder.recipientId;
+        this.amountNQT = builder.amountNQT;
+        this.referencedTransactionFullHash = builder.referencedTransactionFullHash;
+        this.type = builder.type;
+        this.version = builder.version;
+        this.blockId = builder.blockId;
+        this.height = builder.height;
+        this.index = builder.index;
+        this.id = builder.id;
+        this.senderId = builder.senderId;
+        this.blockTimestamp = builder.blockTimestamp;
+        this.fullHash = builder.fullHash;
+        this.ecBlockHeight = builder.ecBlockHeight;
+        this.ecBlockId = builder.ecBlockId;
+
+        List<Appendix.AbstractAppendix> list = new ArrayList<>();
+        if ((this.attachment = builder.attachment) != null) {
+            list.add(this.attachment);
+        }
+        if ((this.message  = builder.message) != null) {
+            list.add(this.message);
+        }
+        if ((this.encryptedMessage = builder.encryptedMessage) != null) {
+            list.add(this.encryptedMessage);
+        }
+        if ((this.publicKeyAnnouncement = builder.publicKeyAnnouncement) != null) {
+            list.add(this.publicKeyAnnouncement);
+        }
+        if ((this.encryptToSelfMessage = builder.encryptToSelfMessage) != null) {
+            list.add(this.encryptToSelfMessage);
+        }
+        if ((this.phasing = builder.phasing) != null) {
+            list.add(this.phasing);
+        }
+        if ((this.prunablePlainMessage = builder.prunablePlainMessage) != null) {
+            list.add(this.prunablePlainMessage);
+        }
+        if ((this.prunableEncryptedMessage = builder.prunableEncryptedMessage) != null) {
+            list.add(this.prunableEncryptedMessage);
+        }
+        this.appendages = Collections.unmodifiableList(list);
+        int appendagesSize = 0;
+        for (Appendix appendage : appendages) {
+            if (secretPhrase != null && appendage instanceof Appendix.Encryptable) {
+                ((Appendix.Encryptable)appendage).encrypt(secretPhrase);
+            }
+            appendagesSize += appendage.getSize();
+        }
+        this.appendagesSize = appendagesSize;
+        feeNQT = overrideFees;
+
+
+        if (builder.signature != null && secretPhrase != null) {
+            throw new NxtException.NotValidException("Transaction is already signed");
+        } else if (builder.signature != null) {
+            this.signature = builder.signature;
+        } else if (secretPhrase != null) {
+
+            if ((this.getAttachment() instanceof Attachment.RedeemAttachment) && (this.getSenderPublicKey() == null))
+                throw new NxtException.NotValidException("This transaction must be bound to REDEEM_ID public key");
+            if (!(this.getAttachment() instanceof Attachment.RedeemAttachment) && (this.getSenderPublicKey() != null)
+                    && !Arrays.equals(this.senderPublicKey, Crypto.getPublicKey(secretPhrase)))
+                throw new NxtException.NotValidException("Secret phrase doesn't match transaction sender public key");
+            if ((this.getAttachment() instanceof Attachment.RedeemAttachment) && (this.getSenderPublicKey() != null)
+                    && !Arrays.equals(this.senderPublicKey, Convert.parseHexString(Genesis.REDEEM_ID_PUBKEY)))
+                throw new NxtException.NotValidException("Secret phrase doesn't match REDEEM_ID public key");
+
+            signature = Crypto.sign(bytes(), secretPhrase);
+            bytes = null;
+        } else {
+            signature = null;
+        }
+
+    }
     private TransactionImpl(BuilderImpl builder, String secretPhrase) throws NxtException.NotValidException {
 
         this.timestamp = builder.timestamp;
@@ -955,6 +1056,13 @@ final class TransactionImpl implements Transaction {
         return result;
     }
 
+    public boolean verifySignatureComputational() {
+        boolean result;
+        result = this.checkSignatureComputational();
+
+        return result;
+    }
+
     private volatile boolean hasValidSignature = false;
 
     private boolean checkSignature() {
@@ -982,6 +1090,17 @@ final class TransactionImpl implements Transaction {
                 this.hasValidSignature = (this.signature != null) && Crypto.verify(this.signature,
                         this.zeroSignature(toVerifyBytes), this.getSenderPublicKey(), useNQT());
             }
+        }
+        return this.hasValidSignature;
+    }
+
+    private boolean checkSignatureComputational() {
+
+        byte[] toVerifyBytes = this.getBytes();
+
+        if (!this.hasValidSignature) {
+                this.hasValidSignature = (this.signature != null) && Crypto.verify(this.signature,
+                        this.zeroSignature(toVerifyBytes), this.getSenderPublicKey(), useNQT()) && Account.getId(this.senderPublicKey)==this.getSenderId();
         }
         return this.hasValidSignature;
     }
@@ -1055,6 +1174,81 @@ final class TransactionImpl implements Transaction {
         }else{
             return feeNQT > 0;
         }
+    }
+
+
+
+    @Override
+    public void validateComputational() throws NxtException.ValidationException {
+        if (timestamp == 0 ? (deadline != 0 || feeNQT != 0) : (deadline < 1)
+                || feeNQT > Constants.MAX_BALANCE_NQT
+                || amountNQT < 0
+                || amountNQT > Constants.MAX_BALANCE_NQT
+                || type == null) {
+            throw new NxtException.NotValidException("Invalid (computational) transaction parameters:\n type: " + type + ", timestamp: " + timestamp
+                    + ", deadline: " + deadline + ", fee: " + feeNQT + ", amount: " + amountNQT);
+        }
+
+        // Other than that, we force 0 NQT and 0 fee
+        if(feeNQT!=0 || amountNQT!=0)
+            throw new NxtException.NotValidException("Invalid (computational) transaction parameters:\n type: " + type + ", timestamp: " + timestamp
+                    + ", deadline: " + deadline + ", fee: " + feeNQT + ", amount: " + amountNQT);
+
+        // Just a safety precaution
+        if ((this.getSenderId() == Genesis.REDEEM_ID))
+            throw new NxtException.NotValidException("Invalid (computational) transaction parameters: wrong sender");
+        if (this.getRecipientId() == Genesis.REDEEM_ID)
+            throw new NxtException.NotValidException("Redeem Account is not allowed to do receive anything.");
+
+        if(this.getType().getType() != TransactionType.Messaging.ARBITRARY_MESSAGE.getType() && this.getType().getSubtype() != TransactionType.Payment.Messaging.ARBITRARY_MESSAGE.getSubtype())
+            throw new NxtException.NotValidException("Wrong TX type submitted");
+
+        if(this.hasPrunablePlainMessage()==false)throw new NxtException.NotValidException("Only prunable messages allowed");
+        if(this.hasPrunableEncryptedMessage())throw new NxtException.NotValidException("Only prunable messages allowed");
+        if(this.getAttachment()==null)throw new NxtException.NotValidException("Must have an attachment");
+
+        if(this.getAppendages().size()!=2) throw new NxtException.NotValidException("Make sure to append something correctly");
+
+        Appendix.PrunablePlainMessage m = null;
+        try {
+            m = getPrunablePlainMessage();
+        }catch(Exception e){
+            throw new NxtException.NotValidException("Appendage decoding failed");
+        }
+        if(m==null) throw new NxtException.NotValidException("Appendage decoding failed");
+        if(type != attachment.getTransactionType()) throw new NxtException.NotValidException("Transactiontype is just totally off");
+        if (referencedTransactionFullHash != null && referencedTransactionFullHash.length != 32) {
+            throw new NxtException.NotValidException("Invalid referenced transaction full hash " + Convert.toHexString(referencedTransactionFullHash));
+        }
+
+        if (! type.canHaveRecipient()) {
+            if (recipientId != 0) {
+                throw new NxtException.NotValidException("Transactions of this type must have recipient == 0, amount == 0");
+            }
+        }
+
+        if (type.mustHaveRecipient() && version > 0) {
+            if (recipientId == 0) {
+                throw new NxtException.NotValidException("Transactions of this type must have a valid recipient");
+            }
+        }
+
+        for (Appendix.AbstractAppendix appendage : appendages) {
+            appendage.loadPrunable(this);
+            if (! appendage.verifyVersion(this.version)) {
+                throw new NxtException.NotValidException("Invalid attachment version " + appendage.getVersion()
+                        + " for transaction version " + this.version);
+            }
+
+            appendage.validateComputation(this);
+
+        }
+
+        if (getFullSize() > Constants.MAX_PAYLOAD_LENGTH) {
+            throw new NxtException.NotValidException("Transaction size " + getFullSize() + " exceeds maximum payload size");
+        }
+
+
     }
 
     @Override
@@ -1173,6 +1367,7 @@ final class TransactionImpl implements Transaction {
         AccountRestrictions.checkTransaction(this, validatingAtFinish);
     }
 
+
     // returns false iff double spending
     boolean applyUnconfirmed() {
         Account senderAccount = Account.getAccount(getSenderId());
@@ -1205,9 +1400,23 @@ final class TransactionImpl implements Transaction {
         }
     }
 
+    void applyComputational() {
+        for (Appendix.AbstractAppendix appendage : appendages) {
+            if (!appendage.isPhased(this)) {
+                appendage.loadPrunable(this);
+                appendage.applyComputational(this);
+            }
+        }
+    }
+
     void undoUnconfirmed() {
         Account senderAccount = Account.getAccount(getSenderId());
         type.undoUnconfirmed(this, senderAccount);
+    }
+
+    void undoUnconfirmedComputational() {
+        Account senderAccount = Account.getAccount(getSenderId());
+        type.undoUnconfirmedComputational(this, senderAccount);
     }
 
     boolean attachmentIsDuplicate(Map<TransactionType, Map<String, Integer>> duplicates, boolean atAcceptanceHeight) {
@@ -1228,6 +1437,16 @@ final class TransactionImpl implements Transaction {
                 return false;
             }
         }
+        // non-phased at acceptance height, and phased at execution height
+        return type.isDuplicate(this, duplicates);
+    }
+
+    boolean attachmentIsDuplicateComputational(Map<TransactionType, Map<String, Integer>> duplicates, boolean atAcceptanceHeight) {
+        if (!attachmentIsPhased() && !atAcceptanceHeight) {
+            // can happen for phased transactions having non-phasable attachment
+            return false;
+        }
+
         // non-phased at acceptance height, and phased at execution height
         return type.isDuplicate(this, duplicates);
     }

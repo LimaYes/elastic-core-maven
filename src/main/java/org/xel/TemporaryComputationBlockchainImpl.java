@@ -77,6 +77,7 @@ final class TemporaryComputationBlockchainImpl implements Blockchain {
     }
 
     void setLastBlock(BlockImpl block) {
+
         lastBlock.set(block);
     }
 
@@ -542,7 +543,7 @@ final class TemporaryComputationBlockchainImpl implements Blockchain {
     @Override
     public List<TransactionImpl> getExpectedTransactions(Filter<Transaction> filter) {
         Map<TransactionType, Map<String, Integer>> duplicates = new HashMap<>();
-        BlockchainProcessorImpl blockchainProcessor = BlockchainProcessorImpl.getInstance();
+        TemporaryComputationBlockchainProcessorImpl blockchainProcessor = TemporaryComputationBlockchainProcessorImpl.getInstance();
         List<TransactionImpl> result = new ArrayList<>();
         readLock();
         try {
@@ -551,7 +552,7 @@ final class TemporaryComputationBlockchainImpl implements Blockchain {
                     for (TransactionImpl phasedTransaction : phasedTransactions) {
                         try {
                             phasedTransaction.validate();
-                            if (!phasedTransaction.attachmentIsDuplicate(duplicates, false) && filter.ok(phasedTransaction)) {
+                            if (!phasedTransaction.attachmentIsDuplicateComputational(duplicates, false) && filter.ok(phasedTransaction)) {
                                 result.add(phasedTransaction);
                             }
                         } catch (NxtException.ValidationException ignore) {
@@ -559,7 +560,7 @@ final class TemporaryComputationBlockchainImpl implements Blockchain {
                     }
                 }
             }
-            blockchainProcessor.selectUnconfirmedTransactions(duplicates, getLastBlock(), -1).forEach(
+            blockchainProcessor.selectUnconfirmedTransactions(getLastBlock(), -1).forEach(
                     unconfirmedTransaction -> {
                         TransactionImpl transaction = unconfirmedTransaction.getTransaction();
                         if (transaction.getPhasing() == null && filter.ok(transaction)) {

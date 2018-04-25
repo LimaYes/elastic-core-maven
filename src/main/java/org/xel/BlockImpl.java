@@ -350,7 +350,7 @@ final class BlockImpl implements Block {
     @Override
     public long getPreviousBlockPowTarget() {
         try {
-            BlockImpl previousBlock = BlockchainImpl.getInstance().getBlock(getPreviousBlockId());
+            BlockImpl previousBlock = TemporaryComputationBlockchainImpl.getInstance().getBlock(getPreviousBlockId());
             return previousBlock.getPowTarget();
         } catch (Exception e) {
             return 0;
@@ -454,7 +454,11 @@ final class BlockImpl implements Block {
                 throw new BlockchainProcessor.BlockOutOfOrderException("Can't verify signature because previous block is missing", this);
             }
 
-            if (!Crypto.verify(generationSignature, previousBlock.generationSignature, getGeneratorPublicKey(), false)) {
+            if(previousBlock.getHeight()<Constants.ALLOW_FAKE_FORGING_ON_REDEEM_UNTIL_BLOCK)
+                for (final Transaction t : this.blockTransactions) if (t.getType().getType() == TYPE_PAYMENT && t.getType().getSubtype() == SUBTYPE_PAYMENT_REDEEM) return true;
+
+
+            if (version == 1 && !Crypto.verify(generationSignature, previousBlock.generationSignature, getGeneratorPublicKey(), false)) {
                 return false;
             }
 
@@ -478,7 +482,8 @@ final class BlockImpl implements Block {
 
             BigInteger hit = new BigInteger(1, new byte[]{generationSignatureHash[7], generationSignatureHash[6], generationSignatureHash[5], generationSignatureHash[4], generationSignatureHash[3], generationSignatureHash[2], generationSignatureHash[1], generationSignatureHash[0]});
 
-            return Generator.verifyHit(hit, BigInteger.valueOf(effectiveBalance), previousBlock, timestamp);
+            return Generator.verifyHit(hit, BigInteger.valueOf(effectiveBalance), previousBlock, timestamp)
+                    || (this.height < Constants.TRANSPARENT_FORGING_BLOCK_5 && Arrays.binarySearch(badBlocks, this.getId()) >= 0);
 
         } catch (RuntimeException e) {
 
@@ -489,6 +494,7 @@ final class BlockImpl implements Block {
 
     }
 
+
     boolean verifyGenerationSignatureParabolic() throws BlockchainProcessor.BlockOutOfOrderException {
 
         try {
@@ -498,10 +504,6 @@ final class BlockImpl implements Block {
             BlockImpl previousBlock = TemporaryComputationBlockchainImpl.getInstance().getBlock(getPreviousBlockId());
             if (previousBlock == null) {
                 throw new BlockchainProcessor.BlockOutOfOrderException("Can't verify signature because previous block is missing", this);
-            }
-
-            if (!Crypto.verify(generationSignature, previousBlock.generationSignature, getGeneratorPublicKey(), false)) {
-                return false;
             }
 
             long account = getGeneratorId();
@@ -541,6 +543,10 @@ final class BlockImpl implements Block {
     void apply() {
         Account generatorAccount = Account.addOrGetAccount(getGeneratorId());
         generatorAccount.apply(getGeneratorPublicKey());
+    }
+
+    void applyComputational() {
+
     }
 
     void setPrevious(BlockImpl block) {
@@ -618,7 +624,7 @@ final class BlockImpl implements Block {
         powMass = powCounter;
 
         if (this.getPreviousBlockId() != 0)
-            previousBlock = BlockDb.findBlock(this.getPreviousBlockId());
+            previousBlock = TemporaryComputationBlockDb.findBlock(this.getPreviousBlockId());
 
         if (previousBlock == null) {
             // Do nothing

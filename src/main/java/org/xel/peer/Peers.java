@@ -1042,7 +1042,7 @@ public final class Peers {
             }
             request.put("requestType", "processTransactionsComputation");
             request.put("transactions", transactionsData);
-            sendToSomePeers(request);
+            sendToSomePeersComputation(request);
             nextBatchStart += sendTransactionsBatchSize;
         }
     }
@@ -1133,8 +1133,17 @@ public final class Peers {
         return getWeightedPeer(getPublicPeers(state, applyPullThreshold));
     }
 
+    public static Peer getAnyPeerWithService(final Peer.State state, final boolean applyPullThreshold, Peer.Service s) {
+        return getWeightedPeerWithService(getPublicPeers(state, applyPullThreshold,s), s);
+    }
+
     public static List<Peer> getPublicPeers(final Peer.State state, final boolean applyPullThreshold) {
         return getPeers(peer -> !peer.isBlacklisted() && peer.getState() == state && peer.getAnnouncedAddress() != null
+                && (!applyPullThreshold || !Peers.enableHallmarkProtection || peer.getWeight() >= Peers.pullThreshold));
+    }
+
+    public static List<Peer> getPublicPeers(final Peer.State state, final boolean applyPullThreshold, Peer.Service s) {
+        return getPeers(peer -> !peer.isBlacklisted() && peer.getState() == state && peer.providesService(s) && peer.getAnnouncedAddress() != null
                 && (!applyPullThreshold || !Peers.enableHallmarkProtection || peer.getWeight() >= Peers.pullThreshold));
     }
 
@@ -1155,6 +1164,35 @@ public final class Peers {
         }
         long hit = ThreadLocalRandom.current().nextLong(totalWeight);
         for (Peer peer : selectedPeers) {
+            long weight = peer.getWeight();
+            if (weight == 0) {
+                weight = 1;
+            }
+            if ((hit -= weight) < 0) {
+                return peer;
+            }
+        }
+        return null;
+    }
+
+    public static Peer getWeightedPeerWithService(List<Peer> selectedPeers, Peer.Service s) {
+        if (selectedPeers.isEmpty()) {
+            return null;
+        }
+        if (! Peers.enableHallmarkProtection || ThreadLocalRandom.current().nextInt(3) == 0) {
+            return selectedPeers.get(ThreadLocalRandom.current().nextInt(selectedPeers.size()));
+        }
+        long totalWeight = 0;
+        for (Peer peer : selectedPeers) {
+            long weight = peer.getWeight();
+            if (weight == 0) {
+                weight = 1;
+            }
+            totalWeight += weight;
+        }
+        long hit = ThreadLocalRandom.current().nextLong(totalWeight);
+        for (Peer peer : selectedPeers) {
+            if(peer.providesService(s)==false) continue;
             long weight = peer.getWeight();
             if (weight == 0) {
                 weight = 1;

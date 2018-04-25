@@ -149,6 +149,7 @@ public final class Generator implements Comparable<Generator> {
                     try {
 
                         Block lastBlock = Nxt.getTemporaryComputationBlockchain().getLastBlock();
+
                         if (lastBlock == null || lastBlock.getHeight() < Constants.LAST_KNOWN_BLOCK) {
                             return;
                         }

@@ -94,6 +94,7 @@ public interface Attachment extends Appendix {
             return isPhased(transaction) ? transaction.getPhasing().getFinishHeight() - 1 : Nxt.getBlockchain().getHeight();
         }
 
+
     }
 
     abstract class EmptyAttachment extends AbstractAttachment {
@@ -139,6 +140,9 @@ public interface Attachment extends Appendix {
             return TransactionType.Messaging.ARBITRARY_MESSAGE;
         }
 
+        void validateComputation(Transaction transaction) throws NxtException.ValidationException {
+        }
+
     };
 
     public final static class RedeemAttachment extends AbstractAttachment {
@@ -147,6 +151,7 @@ public interface Attachment extends Appendix {
         private final short secp_length;
         private final String address;
         private final String secp_signatures;
+
 
         RedeemAttachment(final ByteBuffer buffer, final byte transactionVersion) throws NxtException.NotValidException {
             super(buffer, transactionVersion);
@@ -212,6 +217,8 @@ public interface Attachment extends Appendix {
             attachment.put("address", this.address);
             attachment.put("secp_signatures", this.secp_signatures);
         }
+
+
     }
 
 
@@ -417,6 +424,8 @@ public interface Attachment extends Appendix {
             attachment.put("minBalanceModel", this.voteWeighting.getMinBalanceModel().getCode());
             attachment.put("holding", Long.toUnsignedString(this.voteWeighting.getHoldingId()));
         }
+
+
 
         @Override
         public TransactionType getTransactionType() {

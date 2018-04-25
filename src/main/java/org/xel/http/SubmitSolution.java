@@ -22,6 +22,7 @@ import org.xel.Work;
 import org.xel.computation.CommandCancelWork;
 import org.xel.computation.CommandPowBty;
 import org.xel.computation.MessageEncoder;
+import org.xel.crypto.Crypto;
 import org.xel.util.Convert;
 import org.json.simple.JSONStreamAware;
 import org.spongycastle.crypto.digests.SkeinEngine;
@@ -59,7 +60,7 @@ public final class SubmitSolution extends CreateTransaction {
             return JSONResponses.ERROR_WORK_INCORRECT;
         }
 
-        CommandPowBty work = new CommandPowBty(workId, is_pow, multiplicator, hash, data, storageId, w.getCurrentRound());
+        CommandPowBty work = new CommandPowBty(workId, is_pow, multiplicator, hash, data, storageId, w.getCurrentRound(), Crypto.getPublicKey(ParameterParser.getSecretPhrase(req, true)));
 
         try {
             MessageEncoder.push(work, ParameterParser.getSecretPhrase(req, true), deadlineInt);

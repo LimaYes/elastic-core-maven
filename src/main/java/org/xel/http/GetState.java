@@ -197,13 +197,13 @@ public final class GetState extends APIServlet.APIRequestHandler {
         if(includeLastTargets){
             JSONArray arr = new JSONArray();
             int counter = 0;
-            Block bl = Nxt.getBlockchain().getLastBlock();
+            Block bl = Nxt.getTemporaryComputationBlockchain().getLastBlock();
             for(counter=0; counter < 6; counter++){
                 if(bl==null) break;
                 JSONObject obj = new JSONObject();
                 obj.put(bl.getHeight(), bl.getPowTarget());
                 arr.add(obj);
-                bl=Nxt.getBlockchain().getBlock(bl.getPreviousBlockId());
+                bl=Nxt.getTemporaryComputationBlockchain().getBlock(bl.getPreviousBlockId());
             }
             response.put("lastTargets", arr);
         }

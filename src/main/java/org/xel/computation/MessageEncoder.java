@@ -110,21 +110,11 @@ public class MessageEncoder {
     }
 
 
-    static void processBlockInternal(Block block){
-        // Check all TX for relevant stuff
-
-        int powCounter = 0;
-        int mintime = Integer.MAX_VALUE;
-        int maxtime = 0;
-
-        // first all pow and else
-        // in second round the bounties
-
-        for(Transaction t : block.getTransactions()){
-
+    static void paymentProcessor(Block block){
+        for(Transaction t : block.getTransactions()) {
             Appendix.Message m2 = t.getMessage();
 
-            if(m2!=null) {
+            if (m2 != null) {
 
                 // Here process all payments
                 if (m2.isText()) {
@@ -132,27 +122,27 @@ public class MessageEncoder {
                     if (str.length() > 4 && str.length() < Constants.MAX_ARBITRARY_MESSAGE_LENGTH) {
                         if (str.startsWith("/!")) {
                             try {
-                                if(str.indexOf(",")>0){
+                                if (str.indexOf(",") > 0) {
                                     String[] sp = str.split(",");
                                     long totalAttached = t.getAmountNQT();
-                                    for(String x : sp){
-                                        if(x.startsWith("/!") && x.length()>4){
-                                            x=x.substring(2);
+                                    for (String x : sp) {
+                                        if (x.startsWith("/!") && x.length() > 4) {
+                                            x = x.substring(2);
                                             long p = 0;
                                             p = Long.parseLong(x);
                                             PowAndBounty bty = PowAndBounty.getPowOrBountyById(p);
 
                                             if (bty != null) {
                                                 Work w = Work.getWorkById(bty.getWork_id());
-                                                if((bty.is_pow && totalAttached>=w.getXel_per_pow()) || (!bty.is_pow && totalAttached>=w.getXel_per_bounty())){
+                                                if ((bty.is_pow && totalAttached >= w.getXel_per_pow()) || (!bty.is_pow && totalAttached >= w.getXel_per_bounty())) {
                                                     bty.setWas_paid(true);
                                                     bty.JustSave();
-                                                    totalAttached -= ((bty.is_pow)?w.getXel_per_pow():w.getXel_per_bounty());
-                                                }else break;
+                                                    totalAttached -= ((bty.is_pow) ? w.getXel_per_pow() : w.getXel_per_bounty());
+                                                } else break;
                                             }
                                         }
                                     }
-                                }else {
+                                } else {
                                     str = str.substring(2);
                                     long p = 0;
                                     p = Long.parseLong(str);
@@ -160,7 +150,7 @@ public class MessageEncoder {
 
                                     if (bty != null) {
                                         Work w = Work.getWorkById(bty.getWork_id());
-                                        if((bty.is_pow && t.getAmountNQT()>=w.getXel_per_pow()) || (!bty.is_pow && t.getAmountNQT()>=w.getXel_per_bounty())){
+                                        if ((bty.is_pow && t.getAmountNQT() >= w.getXel_per_pow()) || (!bty.is_pow && t.getAmountNQT() >= w.getXel_per_bounty())) {
                                             bty.setWas_paid(true);
                                             bty.JustSave();
                                         }
@@ -173,7 +163,24 @@ public class MessageEncoder {
 
                 }
             }
+        }
+    }
+    static void processBlockInternal(Block block){
+        // Check all TX for relevant stuff
+
+        int powCounter = 0;
+        int mintime = Integer.MAX_VALUE;
+        int maxtime = 0;
+
+        // first all pow and else
+        // in second round the bounties
+
+        for(Transaction t : block.getTransactions()){
+
+
+
             Appendix.PrunablePlainMessage m = t.getPrunablePlainMessage();
+            if(m==null) continue;
 
 
             if(MessageEncoder.checkMessageForPiggyback(m, true, false)){
@@ -261,8 +268,13 @@ public class MessageEncoder {
 
     static {
         Nxt.getTemporaryComputationBlockchainProcessor().addListener(block -> {
-
             GetLastBlockId.lastBlockId = block.getId();
+            paymentProcessor(block);
+        }, TemporaryComputationBlockchainProcessorImpl.Event.AFTER_BLOCK_APPLY);
+    }
+    static {
+        Nxt.getTemporaryComputationBlockchainProcessor().addListener(block -> {
+            GetLastBlockId.lastBlockIdComp = block.getId();
             processBlockInternal(block);
         }, TemporaryComputationBlockchainProcessorImpl.Event.AFTER_BLOCK_APPLY_COMPUTATION);
     }
@@ -314,7 +326,7 @@ public class MessageEncoder {
 
         // now, that we have the original transaction we have to fetch (possible) referenced transactions
         while(t.getReferencedTransactionFullHash() != null){
-            t = Nxt.getBlockchain().getTransactionByFullHash(t.getReferencedTransactionFullHash());
+            t = Nxt.getTemporaryComputationBlockchain().getTransactionByFullHash(t.getReferencedTransactionFullHash());
 
             if(t == null) throw new NxtException.NotValidException("This transaction is not a valid work-encoder");
             pm = t.getPrunablePlainMessage();
@@ -362,11 +374,11 @@ public class MessageEncoder {
         for(int i=msgs.length-1; i>=0; --i){
             Pair<JSONStreamAware, String> t = null;
             if(previousHash.length()==0) {
-                t = CustomTransactionBuilder.createTransactionPubkey(msgs[i], passphraseOrPubkey, deadline);
+                t = CustomTransactionBuilder.createTransactionPubkeyComputation(msgs[i], passphraseOrPubkey, null, deadline);
                 previousHash = t.getElement1();
             }
             else
-                t = CustomTransactionBuilder.createTransactionPubkey(msgs[i], passphraseOrPubkey, previousHash, deadline);
+                t = CustomTransactionBuilder.createTransactionPubkeyComputation(msgs[i], passphraseOrPubkey, previousHash, deadline);
             array_tx.add(t.getElement0());
         }
 
@@ -379,8 +391,7 @@ public class MessageEncoder {
         for(int i=0;i<aw.length;++i)
         {
             Transaction.Builder builder = ParameterParser.parseTransaction(aw[i].toString(), null, null);
-            Transaction transaction = builder.build();
-            transaction.validate(); // safe guard, so it cannot happen that tx1 goes through and tx2 fails validation
+            Transaction transaction = builder.buildComputation(0);
 
             // As a safeguard for ourselves, check if we should postpone that TX
             transaction.getType().postponeForNow(transaction);
@@ -389,7 +400,7 @@ public class MessageEncoder {
         }
 
         for(Transaction t : toPush){
-            Nxt.getTransactionProcessor().broadcast(t);
+            Nxt.getTemporaryComputationTransactionProcessor().broadcast(t);
             lastPushed = t.getId();
         }
         return lastPushed;

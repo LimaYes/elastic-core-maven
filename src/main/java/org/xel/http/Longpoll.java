@@ -97,33 +97,27 @@ public final class Longpoll extends APIServlet.APIRequestHandler {
 
 	private Longpoll() {
 		super(new APITag[] { APITag.AE }, "nil");
-		BlockchainProcessorImpl.getInstance().blockListeners.addListener(block -> {
+		TemporaryComputationBlockchainProcessorImpl.getInstance().blockListeners.addListener(block -> {
 			final String event = "block " + block.getHeight();
 			final ArrayList<String> list = new ArrayList<>();
 			list.add(event);
 			Longpoll.instance.addEvents(list);
-		}, org.xel.BlockchainProcessor.Event.BLOCK_SCANNED);
+		}, BlockchainProcessor.Event.BLOCK_SCANNED_COMPUTATION);
 
-		BlockchainProcessorImpl.getInstance().blockListeners.addListener(block -> {
+		TemporaryComputationBlockchainProcessorImpl.getInstance().blockListeners.addListener(block -> {
 			final String event = "new block (" + block.getHeight() + ")";
 			final ArrayList<String> list = new ArrayList<>();
 			list.add(event);
 			Longpoll.instance.addEvents(list);
-		}, org.xel.BlockchainProcessor.Event.BLOCK_PUSHED);
+		}, BlockchainProcessor.Event.BLOCK_PUSHED_COMPUTATION);
 
-		Generator.addListener(t -> {
-			final String event = "generator updated";
-			final ArrayList<String> list = new ArrayList<>();
-			list.add(event);
-			Longpoll.instance.addEvents(list);
-		}, Generator.Event.GENERATION_DEADLINE);
 
 		TransactionProcessorImpl.getInstance().addListener(t -> {
 			final String event = "broadcast transaction";
 			final ArrayList<String> list = new ArrayList<>();
 			list.add(event);
 			Longpoll.instance.addEvents(list);
-		}, TransactionProcessor.Event.ADDED_UNCONFIRMED_TRANSACTIONS);
+		}, TransactionProcessor.Event.ADDED_UNCONFIRMED_TRANSACTIONS_COMPUTATION);
 	}
 
 	private synchronized void addEvents(final List<String> l) {

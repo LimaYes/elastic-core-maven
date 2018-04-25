@@ -36,6 +36,7 @@ public class CommandPowBty extends IComputationAttachment {
     private boolean is_proof_of_work;
     private byte[] multiplier;
     private byte[] hash;
+    private byte[] publickey;
     private byte[] submitted_storage;
     private boolean validated = false;
     private boolean isValid = false;
@@ -45,7 +46,7 @@ public class CommandPowBty extends IComputationAttachment {
     public static TimedCacheList validationCache = new TimedCacheList();
 
     public CommandPowBty(long work_id, boolean is_proof_of_work, byte[] multiplier, byte[] hash,
-                         byte[] submitted_storage, int storage_bucket, int current_round) {
+                         byte[] submitted_storage, int storage_bucket, int current_round, byte[] publickey) {
         super();
         this.work_id = work_id;
         this.is_proof_of_work = is_proof_of_work;
@@ -55,6 +56,7 @@ public class CommandPowBty extends IComputationAttachment {
         this.submitted_storage = submitted_storage;
         if(this.submitted_storage==null)this.submitted_storage=new byte[0];
         this.current_round = current_round;
+        this.publickey = publickey;
     }
 
     CommandPowBty(ByteBuffer buffer) {
@@ -101,6 +103,16 @@ public class CommandPowBty extends IComputationAttachment {
             submitted_storage = new byte[readsize];
             buffer.get(submitted_storage);
             current_round = buffer.getInt();
+
+            // First read in the multiplicator
+            readsize = buffer.getShort();
+            if (readsize >64 || readsize < 32) {
+                throw new NxtException.NotValidException("Wrong Parameters, your pbk was " + readsize + " but " +
+                        "should be smaller");
+            }
+            publickey = new byte[readsize];
+            buffer.get(publickey);
+
             //System.out.println("POWBTY - About to decode " + this.storage_bucket + ", round " + current_round);
         } catch (Exception e) {
             // pass through any error
@@ -111,6 +123,7 @@ public class CommandPowBty extends IComputationAttachment {
             this.hash = new byte[0];
             this.storage_bucket = 0;
             this.current_round = 0;
+            this.publickey = new byte[0];
         }
     }
 
@@ -130,7 +143,7 @@ public class CommandPowBty extends IComputationAttachment {
 
     @Override
     int getMySize() {
-        return 8 + 1 + 2 + 2 + 2 + this.multiplier.length + this.submitted_storage.length  + this.hash.length  + 4 /*storage bucket in t */ + 4 /* current round */;
+        return 8 + 1 + 2 + 2 + 2 + this.multiplier.length + this.submitted_storage.length  + this.hash.length  + 4 /*storage bucket in t */ + 4 /* current round */ + 4 + publickey.length;
     }
 
     public int getCurrent_round() {
@@ -160,7 +173,13 @@ public class CommandPowBty extends IComputationAttachment {
         buffer.putShort((short)this.submitted_storage.length);
         buffer.put(this.submitted_storage);
         buffer.putInt(this.current_round);
+        buffer.putShort((short)this.publickey.length);
+        buffer.put(this.publickey);
 
+    }
+
+    public byte[] getPublickey() {
+        return publickey;
     }
 
     public byte[] getMultiplier() {
@@ -293,8 +312,8 @@ public class CommandPowBty extends IComputationAttachment {
         long lastBlockId = 0;
         long lastBlocksTarget = 0;
         if(lightMode) {
-            lastBlockId = Nxt.getBlockchain().getLastBlock().getId();
-            lastBlocksTarget = Nxt.getBlockchain().getLastBlock().getPowTarget(); // light mode validates unconfirmed TX based on the current blocks difficulty
+            lastBlockId = Nxt.getTemporaryComputationBlockchain().getLastBlock().getId();
+            lastBlocksTarget = Nxt.getTemporaryComputationBlockchain().getLastBlock().getPowTarget(); // light mode validates unconfirmed TX based on the current blocks difficulty
         }
         else {
             lastBlockId = transaction.getBlock().getPreviousBlockId();
@@ -331,12 +350,12 @@ public class CommandPowBty extends IComputationAttachment {
         }else {
 
             // Validate code-level
-            if (this.is_proof_of_work && !validatePow(transaction.getSenderPublicKey(), w.getBlock_id(),
+            if (this.is_proof_of_work && !validatePow(this.publickey, w.getBlock_id(),
                     work_id, tgt)) {
                 Logger.logDebugMessage("Work " + String.valueOf(w.getId()) + " verification failed: proof of work checks in code execution failed.");
                 return false;
             }
-            if (!this.is_proof_of_work && !validateBty(transaction.getSenderPublicKey(), w.getBlock_id(),
+            if (!this.is_proof_of_work && !validateBty(this.publickey, w.getBlock_id(),
                     work_id, tgt)) {
                 Logger.logDebugMessage("Work " + String.valueOf(w.getId()) + " verification failed: bounty checks in code execution failed.");
                 return false;

@@ -34,6 +34,7 @@ public final class GetLastBlockId extends APIServlet.APIRequestHandler {
 
     static final GetLastBlockId instance = new GetLastBlockId();
     public static long lastBlockId = 0;
+    public static long lastBlockIdComp = 0;
 
     private GetLastBlockId() {
         super(new APITag[] {APITag.INFO}, "none");
@@ -44,7 +45,7 @@ public final class GetLastBlockId extends APIServlet.APIRequestHandler {
 
         JSONObject o = new JSONObject();
         o.put("lastBlock", getLastBlock());
-
+        o.put("lastBlockComputation", getLastBlockComputational());
         Account account = null;
         try {
             account = ParameterParser.getAccount(req, false);
@@ -71,5 +72,12 @@ public final class GetLastBlockId extends APIServlet.APIRequestHandler {
             lastBlockId = Nxt.getBlockchain().getLastBlock().getId();
         }
         return lastBlockId;
+    }
+
+    public static long getLastBlockComputational() {
+        if(lastBlockIdComp==0){
+            lastBlockIdComp = Nxt.getTemporaryComputationBlockchain().getLastBlock().getId();
+        }
+        return lastBlockIdComp;
     }
 }

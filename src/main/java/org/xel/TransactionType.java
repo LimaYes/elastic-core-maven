@@ -269,6 +269,9 @@ public abstract class TransactionType {
         return getName() + " type: " + getType() + ", subtype: " + getSubtype();
     }
 
+    public void undoUnconfirmedComputational(TransactionImpl transaction, Account senderAccount) {
+    }
+
     public static abstract class Payment extends TransactionType {
 
         private Payment() {

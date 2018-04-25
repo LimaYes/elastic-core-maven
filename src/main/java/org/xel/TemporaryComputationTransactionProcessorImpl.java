@@ -65,12 +65,12 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
 
         @Override
         protected UnconfirmedTransaction load(Connection con, ResultSet rs, DbKey dbKey) throws SQLException {
-            return new UnconfirmedTransaction(rs);
+            return new UnconfirmedTransaction(rs, 0);
         }
 
         @Override
         protected void save(Connection con, UnconfirmedTransaction unconfirmedTransaction) throws SQLException {
-            unconfirmedTransaction.save(con);
+            unconfirmedTransaction.saveComputation(con);
             if (transactionCache.size() < maxUnconfirmedTransactions) {
                 transactionCache.put(unconfirmedTransaction.getDbKeyComputation(), unconfirmedTransaction);
             }
@@ -152,7 +152,7 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
 
         try {
             try {
-                if (Nxt.getBlockchainProcessor().isDownloading() && ! testUnconfirmedTransactions) {
+                if (Nxt.getTemporaryComputationBlockchainProcessor().isDownloading() && ! testUnconfirmedTransactions) {
                     return;
                 }
                 List<UnconfirmedTransaction> expiredTransactions = new ArrayList<>();
@@ -163,7 +163,7 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
                     }
                 }
                 if (expiredTransactions.size() > 0) {
-                    BlockchainImpl.getInstance().writeLock();
+                    TemporaryComputationBlockchainImpl.getInstance().writeLock();
                     try {
                         try {
                             Db.db.beginTransaction();
@@ -179,7 +179,7 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
                             Db.db.endTransaction();
                         }
                     } finally {
-                        BlockchainImpl.getInstance().writeUnlock();
+                        TemporaryComputationBlockchainImpl.getInstance().writeUnlock();
                     }
                 }
             } catch (Exception e) {
@@ -197,7 +197,7 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
 
         try {
             try {
-                if (Nxt.getBlockchainProcessor().isDownloading() && ! testUnconfirmedTransactions) {
+                if (Nxt.getTemporaryComputationBlockchainProcessor().isDownloading() && ! testUnconfirmedTransactions) {
                     return;
                 }
                 List<Transaction> transactionList = new ArrayList<>();
@@ -229,10 +229,10 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
 
         try {
             try {
-                if (Nxt.getBlockchainProcessor().isDownloading() && ! testUnconfirmedTransactions) {
+                if (Nxt.getTemporaryComputationBlockchainProcessor().isDownloading() && ! testUnconfirmedTransactions) {
                     return;
                 }
-                Peer peer = Peers.getAnyPeer(Peer.State.CONNECTED, true);
+                Peer peer = Peers.getAnyPeerWithService(Peer.State.CONNECTED, true, Peer.Service.COMPUTATION_REDIRECTOR);
                 if (peer == null) {
                     return;
                 }
@@ -270,7 +270,7 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
 
         try {
             try {
-                if (Nxt.getBlockchainProcessor().isDownloading() && ! testUnconfirmedTransactions) {
+                if (Nxt.getTemporaryComputationBlockchainProcessor().isDownloading() && ! testUnconfirmedTransactions) {
                     return;
                 }
                 processWaitingTransactions();
@@ -339,14 +339,14 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
     }
 
     Transaction getUnconfirmedTransaction(DbKey dbKey) {
-        Nxt.getBlockchain().readLock();
+        Nxt.getTemporaryComputationBlockchain().readLock();
         try {
             Transaction transaction = transactionCache.get(dbKey);
             if (transaction != null) {
                 return transaction;
             }
         } finally {
-            Nxt.getBlockchain().readUnlock();
+            Nxt.getTemporaryComputationBlockchain().readUnlock();
         }
         return unconfirmedTransactionTable.get(dbKey);
     }
@@ -368,11 +368,11 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
     @Override
     public UnconfirmedTransaction[] getAllWaitingTransactions() {
         UnconfirmedTransaction[] transactions;
-        BlockchainImpl.getInstance().readLock();
+        TemporaryComputationBlockchainImpl.getInstance().readLock();
         try {
             transactions = waitingTransactions.toArray(new UnconfirmedTransaction[waitingTransactions.size()]);
         } finally {
-            BlockchainImpl.getInstance().readUnlock();
+            TemporaryComputationBlockchainImpl.getInstance().readUnlock();
         }
         Arrays.sort(transactions, waitingTransactions.comparator());
         return transactions;
@@ -384,17 +384,17 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
 
     @Override
     public TransactionImpl[] getAllBroadcastedTransactions() {
-        BlockchainImpl.getInstance().readLock();
+        TemporaryComputationBlockchainImpl.getInstance().readLock();
         try {
             return broadcastedTransactions.toArray(new TransactionImpl[broadcastedTransactions.size()]);
         } finally {
-            BlockchainImpl.getInstance().readUnlock();
+            TemporaryComputationBlockchainImpl.getInstance().readUnlock();
         }
     }
 
     @Override
     public void broadcast(Transaction transaction) throws NxtException.ValidationException {
-        BlockchainImpl.getInstance().writeLock();
+        TemporaryComputationBlockchainImpl.getInstance().writeLock();
         try {
             if (TemporaryComputationTransactionDb.hasTransaction(transaction.getId())) {
                 Logger.logMessage("Transaction (computational) " + transaction.getStringId() + " already in blockchain, will not broadcast again");
@@ -409,9 +409,9 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
                 }
                 return;
             }
-            transaction.validate();
+            transaction.validateComputational();
             UnconfirmedTransaction unconfirmedTransaction = new UnconfirmedTransaction((TransactionImpl) transaction, System.currentTimeMillis());
-            boolean broadcastLater = BlockchainProcessorImpl.getInstance().isProcessingBlock();
+            boolean broadcastLater = TemporaryComputationBlockchainProcessorImpl.getInstance().isProcessingBlock();
             if (broadcastLater) {
                 waitingTransactions.add(unconfirmedTransaction);
                 broadcastedTransactions.add((TransactionImpl) transaction);
@@ -428,7 +428,7 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
             }
 
         }finally {
-            BlockchainImpl.getInstance().writeUnlock();
+            TemporaryComputationBlockchainImpl.getInstance().writeUnlock();
         }
     }
 
@@ -440,14 +440,14 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
 
     @Override
     public void clearUnconfirmedTransactions() {
-        BlockchainImpl.getInstance().writeLock();
+        TemporaryComputationBlockchainImpl.getInstance().writeLock();
         try {
             List<Transaction> removed = new ArrayList<>();
             try {
                 Db.db.beginTransaction();
                 try (DbIterator<UnconfirmedTransaction> unconfirmedTransactions = getAllUnconfirmedTransactions()) {
                     for (UnconfirmedTransaction unconfirmedTransaction : unconfirmedTransactions) {
-                        unconfirmedTransaction.getTransaction().undoUnconfirmed();
+                        unconfirmedTransaction.getTransaction().undoUnconfirmedComputational();
                         removed.add(unconfirmedTransaction.getTransaction());
                     }
                 }
@@ -466,13 +466,13 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
             transactionCache.clear();
             transactionListeners.notify(removed, Event.REMOVED_UNCONFIRMED_TRANSACTIONS_COMPUTATION);
         } finally {
-            BlockchainImpl.getInstance().writeUnlock();
+            TemporaryComputationBlockchainImpl.getInstance().writeUnlock();
         }
     }
 
     @Override
     public void requeueAllUnconfirmedTransactions() {
-        BlockchainImpl.getInstance().writeLock();
+        TemporaryComputationBlockchainImpl.getInstance().writeLock();
         try {
             if (!Db.db.isInTransaction()) {
                 try {
@@ -491,7 +491,7 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
             List<Transaction> removed = new ArrayList<>();
             try (DbIterator<UnconfirmedTransaction> unconfirmedTransactions = getAllUnconfirmedTransactions()) {
                 for (UnconfirmedTransaction unconfirmedTransaction : unconfirmedTransactions) {
-                    unconfirmedTransaction.getTransaction().undoUnconfirmed();
+                    unconfirmedTransaction.getTransaction().undoUnconfirmedComputational();
                     if (removed.size() < maxUnconfirmedTransactions) {
                         removed.add(unconfirmedTransaction.getTransaction());
                     }
@@ -503,13 +503,13 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
             transactionCache.clear();
             transactionListeners.notify(removed, Event.REMOVED_UNCONFIRMED_TRANSACTIONS_COMPUTATION);
         } finally {
-            BlockchainImpl.getInstance().writeUnlock();
+            TemporaryComputationBlockchainImpl.getInstance().writeUnlock();
         }
     }
 
     @Override
     public void rebroadcastAllUnconfirmedTransactions() {
-        BlockchainImpl.getInstance().writeLock();
+        TemporaryComputationBlockchainImpl.getInstance().writeLock();
         try {
             try (DbIterator<UnconfirmedTransaction> oldNonBroadcastedTransactions = getAllUnconfirmedTransactions()) {
                 for (UnconfirmedTransaction unconfirmedTransaction : oldNonBroadcastedTransactions) {
@@ -521,7 +521,7 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
                 }
             }
         } finally {
-            BlockchainImpl.getInstance().writeUnlock();
+            TemporaryComputationBlockchainImpl.getInstance().writeUnlock();
         }
     }
 
@@ -545,7 +545,7 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
             pstmt.setLong(1, transaction.getId());
             int deleted = pstmt.executeUpdate();
             if (deleted > 0) {
-                transaction.undoUnconfirmed();
+                transaction.undoUnconfirmedComputational();
                 transactionCache.remove(transaction.getDbKeyComputation());
                 transactionListeners.notify(Collections.singletonList(transaction), Event.REMOVED_UNCONFIRMED_TRANSACTIONS_COMPUTATION);
             }
@@ -558,7 +558,7 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
     @Override
     public void processLater(Collection<? extends Transaction> transactions) {
         long currentTime = System.currentTimeMillis();
-        BlockchainImpl.getInstance().writeLock();
+        TemporaryComputationBlockchainImpl.getInstance().writeLock();
         try {
             for (Transaction transaction : transactions) {
                 TemporaryComputationBlockDb.transactionCache.remove(transaction.getId());
@@ -569,12 +569,13 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
                 waitingTransactions.add(new UnconfirmedTransaction((TransactionImpl)transaction, Math.min(currentTime, Convert.fromEpochTime(transaction.getTimestamp()))));
             }
         } finally {
-            BlockchainImpl.getInstance().writeUnlock();
+            TemporaryComputationBlockchainImpl.getInstance().writeUnlock();
+            Logger.logDebugMessage("Computational Later-Processor: size = " + waitingTransactions.size());
         }
     }
 
     void processWaitingTransactions() {
-        BlockchainImpl.getInstance().writeLock();
+        TemporaryComputationBlockchainImpl.getInstance().writeLock();
         try {
             if (waitingTransactions.size() > 0) {
                 int currentTime = Nxt.getEpochTime();
@@ -583,7 +584,7 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
                 while (iterator.hasNext()) {
                     UnconfirmedTransaction unconfirmedTransaction = iterator.next();
                     try {
-                        unconfirmedTransaction.validate();
+                        unconfirmedTransaction.validateComputational();
                         processTransaction(unconfirmedTransaction);
                         iterator.remove();
                         addedUnconfirmedTransactions.add(unconfirmedTransaction.getTransaction());
@@ -603,12 +604,12 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
                 }
             }
         } finally {
-            BlockchainImpl.getInstance().writeUnlock();
+            TemporaryComputationBlockchainImpl.getInstance().writeUnlock();
         }
     }
 
     private void processPeerTransactions(JSONArray transactionsData) throws NxtException.NotValidException {
-        if (Nxt.getBlockchain().getHeight() < Constants.LAST_KNOWN_BLOCK && !testUnconfirmedTransactions) {
+        if (Nxt.getTemporaryComputationBlockchain().getHeight() < Constants.LAST_KNOWN_BLOCK && !testUnconfirmedTransactions) {
             return;
         }
         if (transactionsData == null || transactionsData.isEmpty()) {
@@ -626,7 +627,7 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
                 if (getUnconfirmedTransaction(transaction.getDbKeyComputation()) != null || TemporaryComputationTransactionDb.hasTransaction(transaction.getId())) {
                     continue;
                 }
-                transaction.validate();
+                transaction.validateComputational();
                 UnconfirmedTransaction unconfirmedTransaction = new UnconfirmedTransaction(transaction, arrivalTimestamp);
                 processTransaction(unconfirmedTransaction);
                 if (broadcastedTransactions.contains(transaction)) {
@@ -682,16 +683,8 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
                     throw new NxtException.ExistingTransactionException("Transaction (computational) already processed");
                 }
 
-                if (! transaction.verifySignature()) {
-                    if (Account.getAccount(transaction.getSenderId()) != null) {
+                if (! transaction.verifySignatureComputational()) {
                         throw new NxtException.NotValidException("Transaction (computational) signature verification failed");
-                    } else {
-                        throw new NxtException.NotCurrentlyValidException("Unknown transaction (computational) sender");
-                    }
-                }
-
-                if (! transaction.applyUnconfirmed()) {
-                    throw new NxtException.InsufficientBalanceException("Insufficient balance");
                 }
 
                 if (transaction.isUnconfirmedDuplicate(unconfirmedDuplicates)) {
@@ -738,7 +731,7 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
     @Override
     public SortedSet<? extends Transaction> getCachedUnconfirmedTransactions(List<String> exclude) {
         SortedSet<UnconfirmedTransaction> transactionSet = new TreeSet<>(cachedUnconfirmedTransactionComparator);
-        Nxt.getBlockchain().readLock();
+        Nxt.getTemporaryComputationBlockchain().readLock();
         try {
             //
             // Initialize the unconfirmed transaction cache if it hasn't been done yet
@@ -762,7 +755,7 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
                 }
             });
         } finally {
-            Nxt.getBlockchain().readUnlock();
+            Nxt.getTemporaryComputationBlockchain().readUnlock();
         }
         return transactionSet;
     }
@@ -777,7 +770,7 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
     @Override
     public List<Transaction> restorePrunableData(JSONArray transactions) throws NxtException.NotValidException {
         List<Transaction> processed = new ArrayList<>();
-        Nxt.getBlockchain().readLock();
+        Nxt.getTemporaryComputationBlockchain().readLock();
         try {
             Db.db.beginTransaction();
             try {
@@ -836,7 +829,7 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
                 Db.db.endTransaction();
             }
         } finally {
-            Nxt.getBlockchain().readUnlock();
+            Nxt.getTemporaryComputationBlockchain().readUnlock();
         }
         return processed;
     }

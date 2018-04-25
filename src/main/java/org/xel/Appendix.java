@@ -155,6 +155,9 @@ public interface Appendix {
 
         abstract void validate(Transaction transaction) throws NxtException.ValidationException;
 
+        void validateComputation(Transaction transaction) throws NxtException.ValidationException {
+            throw new NxtException.NotValidException("Not valid for computational chain");
+        }
         void validateAtFinish(Transaction transaction) throws NxtException.ValidationException {
             if (!isPhased(transaction)) {
                 return;
@@ -163,6 +166,8 @@ public interface Appendix {
         }
 
         abstract void apply(Transaction transaction, Account senderAccount, Account recipientAccount);
+
+        void applyComputational(Transaction transaction){};
 
         final void loadPrunable(Transaction transaction) {
             loadPrunable(transaction, false);
@@ -279,8 +284,15 @@ public interface Appendix {
             }
         }
 
+
+
         @Override
         void apply(Transaction transaction, Account senderAccount, Account recipientAccount) {}
+
+        @Override
+        void applyComputational(Transaction transaction) {
+
+        }
 
         public byte[] getMessage() {
             return message;
@@ -411,6 +423,11 @@ public interface Appendix {
                 throw new NxtException.NotCurrentlyValidException("Message has been pruned prematurely");
             }
         }
+
+        void validateComputation(Transaction transaction) throws NxtException.ValidationException {
+        }
+        @Override
+        void applyComputational(Transaction transaction) {}
 
         @Override
         void apply(Transaction transaction, Account senderAccount, Account recipientAccount) {
@@ -623,7 +640,8 @@ public interface Appendix {
             this.isText = false;
             this.isCompressed = false;
         }
-
+        @Override
+        void applyComputational(Transaction transaction) {}
         private PrunableEncryptedMessage(JSONObject attachmentJSON) {
             super(attachmentJSON);
             String hashString = Convert.emptyToNull((String) attachmentJSON.get("encryptedMessageHash"));
@@ -877,7 +895,8 @@ public interface Appendix {
     }
 
     class EncryptedMessage extends AbstractEncryptedMessage {
-
+        @Override
+        void applyComputational(Transaction transaction) {}
         private static final String appendixName = "EncryptedMessage";
 
         static EncryptedMessage parse(JSONObject attachmentData) {
@@ -937,7 +956,8 @@ public interface Appendix {
             messageToEncrypt = isText() ? Convert.toBytes(messageToEncryptString) : Convert.parseHexString(messageToEncryptString);
             recipientPublicKey = Convert.parseHexString((String)attachmentData.get("recipientPublicKey"));
         }
-
+        @Override
+        void applyComputational(Transaction transaction) {}
         public UnencryptedEncryptedMessage(byte[] messageToEncrypt, boolean isText, boolean isCompressed, byte[] recipientPublicKey) {
             super(null, isText, isCompressed);
             this.messageToEncrypt = messageToEncrypt;
@@ -999,7 +1019,8 @@ public interface Appendix {
     }
 
     class EncryptToSelfMessage extends AbstractEncryptedMessage {
-
+        @Override
+        void applyComputational(Transaction transaction) {}
         private static final String appendixName = "EncryptToSelfMessage";
 
         static EncryptToSelfMessage parse(JSONObject attachmentData) {
@@ -1109,7 +1130,8 @@ public interface Appendix {
     }
 
     final class PublicKeyAnnouncement extends AbstractAppendix {
-
+        @Override
+        void applyComputational(Transaction transaction) {}
         private static final String appendixName = "PublicKeyAnnouncement";
 
         static PublicKeyAnnouncement parse(JSONObject attachmentData) {
@@ -1193,7 +1215,8 @@ public interface Appendix {
     }
 
     final class Phasing extends AbstractAppendix {
-
+        @Override
+        void applyComputational(Transaction transaction) {}
         private static final String appendixName = "Phasing";
 
         private static final Fee PHASING_FEE = (transaction, appendage) -> {

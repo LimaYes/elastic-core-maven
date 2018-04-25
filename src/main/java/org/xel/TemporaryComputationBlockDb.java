@@ -32,7 +32,7 @@ final class TemporaryComputationBlockDb {
     static final Map<Long, TransactionImpl> transactionCache = new HashMap<>();
     static final Blockchain blockchain = Nxt.getBlockchain();
     static {
-        Nxt.getBlockchainProcessor().addListener((block) -> {
+        Nxt.getTemporaryComputationBlockchainProcessor().addListener((block) -> {
             synchronized (blockCache) {
                 int height = block.getHeight();
                 Iterator<BlockImpl> it = blockCache.values().iterator();
@@ -49,7 +49,7 @@ final class TemporaryComputationBlockDb {
                 heightMap.put(height, (BlockImpl)block);
                 blockCache.put(block.getId(), (BlockImpl)block);
             }
-        }, BlockchainProcessor.Event.BLOCK_PUSHED);
+        }, BlockchainProcessor.Event.BLOCK_PUSHED_COMPUTATION);
     }
 
     static private void clearBlockCache() {
@@ -418,7 +418,7 @@ final class TemporaryComputationBlockDb {
                 stmt.executeUpdate("SET REFERENTIAL_INTEGRITY FALSE");
                 stmt.executeUpdate("TRUNCATE TABLE transaction");
                 stmt.executeUpdate("TRUNCATE TABLE block");
-                BlockchainProcessorImpl.getInstance().getDerivedTables().forEach(table -> {
+                TemporaryComputationBlockchainProcessorImpl.getInstance().getDerivedTables().forEach(table -> {
                     if (table.isPersistent()) {
                         try {
                             stmt.executeUpdate("TRUNCATE TABLE " + table.toString());
