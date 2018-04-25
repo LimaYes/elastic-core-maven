@@ -259,7 +259,7 @@ public class MessageEncoder {
             while (it.hasNext()){
                 Work w = it.next();
                 int unpaid = PowAndBounty.getUnpaidSubmissionCount(w.getId());
-                if(unpaid > 55){
+                if(unpaid > 200){
                     w.CloseNoPayment(block);
                 }
             }
