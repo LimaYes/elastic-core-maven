@@ -575,7 +575,8 @@ final class BlockImpl implements Block {
     }
 
     void applyComputational() {
-
+        Account generatorAccount = Account.addOrGetAccount(getGeneratorId());
+        generatorAccount.apply(getGeneratorPublicKey());
     }
 
     void setPrevious(BlockImpl block) {

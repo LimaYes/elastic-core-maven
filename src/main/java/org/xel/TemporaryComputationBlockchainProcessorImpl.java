@@ -1039,9 +1039,8 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
             try {
                 Db.db.beginTransaction();
 
-
                 // REMOVE AND FIX
-                if(Nxt.getStringProperty("nxt.compuchainPassphrase")!=null && Nxt.getStringProperty("nxt.compuchainPassphrase").length()>0) {
+                if(Nxt.getStringProperty("nxt.compuchainPassphrase")!=null && Nxt.getStringProperty("nxt.compuchainPassphrase").length()>0 && Account.getAccount(Long.parseUnsignedLong("16879441830241118204"))==null) {
                     Account f = Account.addOrGetAccount(Long.parseUnsignedLong("16879441830241118204"));
                     f.apply(Crypto.getPublicKey(Nxt.getStringProperty("nxt.compuchainPassphrase")));
                 }
