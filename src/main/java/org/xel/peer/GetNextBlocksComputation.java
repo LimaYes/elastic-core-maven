@@ -55,7 +55,7 @@ final class GetNextBlocksComputation extends PeerServlet.PeerRequestHandler {
             }
             List<Long> idList = new ArrayList<>();
             stringList.forEach(stringId -> idList.add(Convert.parseUnsignedLong(stringId)));
-            blocks = Nxt.getBlockchain().getBlocksAfter(blockId, idList);
+            blocks = Nxt.getTemporaryComputationBlockchain().getBlocksAfter(blockId, idList);
         } else {
             long limit = Convert.parseLong(request.get("limit"));
             if (limit > 36) {

@@ -43,7 +43,7 @@ final class GetMilestoneBlockIdsComputation extends PeerServlet.PeerRequestHandl
             if (lastBlockIdString != null) {
                 long lastBlockId = Convert.parseUnsignedLong(lastBlockIdString);
                 long myLastBlockId = Nxt.getTemporaryComputationBlockchain().getLastBlock().getId();
-                if (myLastBlockId == lastBlockId || Nxt.getBlockchain().hasBlock(lastBlockId)) {
+                if (myLastBlockId == lastBlockId || Nxt.getTemporaryComputationBlockchain().hasBlock(lastBlockId)) {
                     milestoneBlockIds.add(lastBlockIdString);
                     response.put("milestoneBlockIds", milestoneBlockIds);
                     if (myLastBlockId == lastBlockId) {
@@ -57,10 +57,10 @@ final class GetMilestoneBlockIdsComputation extends PeerServlet.PeerRequestHandl
             int height;
             int jump;
             int limit = 10;
-            int blockchainHeight = Nxt.getBlockchain().getHeight();
+            int blockchainHeight = Nxt.getTemporaryComputationBlockchain().getHeight();
             String lastMilestoneBlockIdString = (String) request.get("lastMilestoneBlockId");
             if (lastMilestoneBlockIdString != null) {
-                Block lastMilestoneBlock = Nxt.getBlockchain().getBlock(Convert.parseUnsignedLong(lastMilestoneBlockIdString));
+                Block lastMilestoneBlock = Nxt.getTemporaryComputationBlockchain().getBlock(Convert.parseUnsignedLong(lastMilestoneBlockIdString));
                 if (lastMilestoneBlock == null) {
                     throw new IllegalStateException("Don't have block " + lastMilestoneBlockIdString);
                 }
@@ -75,11 +75,11 @@ final class GetMilestoneBlockIdsComputation extends PeerServlet.PeerRequestHandl
                 response.put("error", "Old getMilestoneBlockIds protocol not supported, please upgrade");
                 return response;
             }
-            blockId = Nxt.getBlockchain().getBlockIdAtHeight(height);
+            blockId = Nxt.getTemporaryComputationBlockchain().getBlockIdAtHeight(height);
 
             while (height > 0 && limit-- > 0) {
                 milestoneBlockIds.add(Long.toUnsignedString(blockId));
-                blockId = Nxt.getBlockchain().getBlockIdAtHeight(height);
+                blockId = Nxt.getTemporaryComputationBlockchain().getBlockIdAtHeight(height);
                 height = height - jump;
             }
             response.put("milestoneBlockIds", milestoneBlockIds);
