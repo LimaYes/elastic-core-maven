@@ -1016,7 +1016,7 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
                     Genesis.CREATOR_PUBLIC_KEY, new byte[64], new byte[32], new byte[32], transactions);
             Logger.logInfoMessage("Computationchain: Creating Genesisblock with ID = " + genesisBlock.getStringId() + " [signed representation = " + genesisBlock.getId() + ", t = " + genesisBlock.getTimestamp() + "]");
             System.out.println(genesisBlock.getJSONObject().toJSONString());
-            genesisBlock.setPrevious(null);
+            genesisBlock.setPreviousComputational(null);
             addBlock(genesisBlock);
             return true;
         } catch (Exception e) {
@@ -1044,7 +1044,7 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
                 Map<TransactionType, Map<String, Integer>> duplicates = new HashMap<>();
                 validateTransactions(block, previousLastBlock, curTime, duplicates);
 
-                block.setPrevious(previousLastBlock);
+                block.setPreviousComputational(previousLastBlock);
                 blockListeners.notify(block, Event.BEFORE_BLOCK_ACCEPT_COMPUTATION);
                 TemporaryComputationTransactionProcessorImpl.getInstance().requeueAllUnconfirmedTransactions();
                 addBlock(block);

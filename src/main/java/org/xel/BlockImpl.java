@@ -567,6 +567,23 @@ final class BlockImpl implements Block {
         }
     }
 
+    void setPreviousComputational(BlockImpl block) {
+        if (block != null) {
+            if (block.getId() != getPreviousBlockId()) {
+                // shouldn't happen as previous id is already verified, but just in case
+                throw new IllegalStateException("Previous block id doesn't match");
+            }
+            this.height = block.getHeight() + 1;
+        } else {
+            this.height = 0;
+        }
+        short index = 0;
+        for (TransactionImpl transaction : getTransactions()) {
+            transaction.setBlock(this);
+            transaction.setIndex(index++);
+        }
+    }
+
     void loadTransactions() {
         for (TransactionImpl transaction : getTransactions()) {
             transaction.bytes();
