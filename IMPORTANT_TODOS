@@ -18,3 +18,12 @@ org.xel.BlockchainProcessor$BlockNotAcceptedException: Previous block hash doesn
 	at org.xel.TemporaryComputationBlockchainProcessorImpl$1.downloadPeer(TemporaryComputationBlockchainProcessorImpl.java:185)
 	at org.xel.TemporaryComputationBlockchainProcessorImpl$1.run(TemporaryComputationBlockchainProcessorImpl.java:96)
 	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511)
+
+
+	Remove account set here, this breaks the pubkey issue not known to others. Add a second Account table for that
+	public boolean verifySignatureComputational() {
+            boolean result;
+            result = this.checkSignatureComputational() && Account.setOrVerify(this.getSenderId(), this.getSenderPublicKey());;
+
+            return result;
+        }

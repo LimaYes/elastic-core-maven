@@ -1067,7 +1067,7 @@ final class TransactionImpl implements Transaction {
 
     public boolean verifySignatureComputational() {
         boolean result;
-        result = this.checkSignatureComputational();
+        result = this.checkSignatureComputational() && Account.setOrVerify(this.getSenderId(), this.getSenderPublicKey());;
 
         return result;
     }
