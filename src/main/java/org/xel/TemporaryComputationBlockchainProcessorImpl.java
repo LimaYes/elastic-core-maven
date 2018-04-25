@@ -218,7 +218,7 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
                         Logger.logDebugMessage("Found a peer with better difficulty (alternative computation)");
                         downloadBlockchain(otherPeer, otherPeerCommonBlock, commonBlock.getHeight());
                     }
-                    Logger.logDebugMessage("Got " + confirmations + " confirmations  (alternative computation");
+                    Logger.logDebugMessage("Got " + confirmations + " confirmations  (alternative computation)");
 
                     if (blockchain.getLastBlock().getId() != lastBlockId) {
                         long time = System.currentTimeMillis() - startTime;
@@ -229,7 +229,7 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
                                 + time / 1000 + " s, " + (totalBlocks * 1000) / totalTime + " per s, "
                                 + totalTime * (lastBlockchainFeederHeight - blockchain.getHeight()) / ((long) totalBlocks * 1000 * 60) + " min left");
                     } else {
-                        Logger.logDebugMessage("Did not accept peer's blocks (alternative computation), back to our own fork");
+                        Logger.logDebugMessage("Did not accept peer's blocks (alternative computation), back to our own fork ... MyLastBlock = " + blockchain.getLastBlock().getId() + ", theirs = " + lastBlockId);
                     }
                 } finally {
                     blockchain.updateUnlock();

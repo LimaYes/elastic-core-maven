@@ -1143,8 +1143,9 @@ public final class Peers {
     }
 
     public static List<Peer> getPublicPeers(final Peer.State state, final boolean applyPullThreshold, Peer.Service s) {
-        return getPeers(peer -> !peer.isBlacklisted() && peer.getState() == state && peer.providesService(s) && peer.getAnnouncedAddress() != null
-                && (!applyPullThreshold || !Peers.enableHallmarkProtection || peer.getWeight() >= Peers.pullThreshold));
+        return getPublicPeers(state,applyPullThreshold);
+        //return getPeers(peer -> !peer.isBlacklisted() && peer.getState() == state && peer.providesService(s) && peer.getAnnouncedAddress() != null
+        //        && (!applyPullThreshold || !Peers.enableHallmarkProtection || peer.getWeight() >= Peers.pullThreshold));
     }
 
     public static Peer getWeightedPeer(List<Peer> selectedPeers) {
@@ -1192,7 +1193,7 @@ public final class Peers {
         }
         long hit = ThreadLocalRandom.current().nextLong(totalWeight);
         for (Peer peer : selectedPeers) {
-            if(peer.providesService(s)==false) continue;
+            // if(peer.providesService(s)==false) continue;
             long weight = peer.getWeight();
             if (weight == 0) {
                 weight = 1;
