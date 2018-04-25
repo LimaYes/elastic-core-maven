@@ -78,14 +78,14 @@ public class BlockTxVerifyTest extends AbstractForgingTest {
         }*/
 
         for(Transaction t : b.getTransactions()){
-            Appendix.PrunablePlainMessage m = t.getPrunablePlainMessage();
-            if(m==null || !m.hasPrunableData()) {
+            Appendix.Message m = t.getMessage();
+            if(m==null) {
                 System.out.println("Skipping tx " + t.getStringId());
                 continue;
             }
             if(MessageEncoder.checkMessageForPiggyback(m, true, false)){
                 try {
-                    Appendix.PrunablePlainMessage[] reconstructedChain = MessageEncoder.extractMessages(t);
+                    Appendix.Message[] reconstructedChain = MessageEncoder.extractMessages(t);
 
                     // Allow the decoding of the attachment
                     IComputationAttachment att = MessageEncoder.decodeAttachment(reconstructedChain);
