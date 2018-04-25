@@ -62,3 +62,5 @@ And in BlockImpl
         Account generatorAccount = Account.addOrGetAccount(getGeneratorId());
         generatorAccount.apply(getGeneratorPublicKey());
     }
+
+(Make sure to adjust getSenderPublicKey and getGeneratorId to use the new Acct table when finished)
