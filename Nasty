@@ -1,0 +1,13 @@
+NULL
+	at java.nio.ByteBuffer.put(ByteBuffer.java:859)
+	at org.xel.TransactionImpl.bytes(TransactionImpl.java:775)
+	at org.xel.TransactionImpl.getBytes(TransactionImpl.java:763)
+	at org.xel.TransactionImpl.checkSignature(TransactionImpl.java:1079)
+	at org.xel.TransactionImpl.parseTransactionComputation(TransactionImpl.java:977)
+	at org.xel.BlockImpl.parseBlockComputation(BlockImpl.java:410)
+	at org.xel.TemporaryComputationBlockchainProcessorImpl$GetNextBlocks.call(TemporaryComputationBlockchainProcessorImpl.java:622)
+	at org.xel.TemporaryComputationBlockchainProcessorImpl$GetNextBlocks.call(TemporaryComputationBlockchainProcessorImpl.java:543)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:266)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at java.lang.Thread.run(Thread.java:748)
