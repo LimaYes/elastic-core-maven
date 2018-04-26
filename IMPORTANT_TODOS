@@ -39,4 +39,8 @@ org.xel.BlockchainProcessor$BlockNotAcceptedException: Previous block hash doesn
 
 
 
+We add pubKey of forger altchain acc to init of AlternateChainPubkeyDb!
+Take it out, but make sure to check that only acc with known pubkey can forge
+or find another solution
+
 
