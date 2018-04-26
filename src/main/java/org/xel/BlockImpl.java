@@ -570,6 +570,9 @@ final class BlockImpl implements Block {
             if(this.getId()==Genesis.GENESIS_BLOCK_ID_COMPUTATIONCHAIN) return true; // special treatment for genesis
 
             BlockImpl previousBlock = TemporaryComputationBlockchainImpl.getInstance().getBlock(getPreviousBlockId());
+            // make sure were up to date
+            previousBlock.getGeneratorPubkeyComputational();
+
             if (previousBlock == null) {
                 throw new BlockchainProcessor.BlockOutOfOrderException("Can't verify signature because previous block is missing", this);
             }
