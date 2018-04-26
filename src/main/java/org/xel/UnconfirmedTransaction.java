@@ -103,6 +103,7 @@ class UnconfirmedTransaction implements Transaction {
                 + "fee_per_byte, expiration, transaction_bytes, prunable_json, arrival_timestamp, height) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)")) {
             int i = 0;
+            transaction.getSenderPublicKeyComputational(); // safety precaution
             pstmt.setLong(++i, transaction.getId());
             pstmt.setInt(++i, transaction.getHeight());
             pstmt.setLong(++i, feePerByte);

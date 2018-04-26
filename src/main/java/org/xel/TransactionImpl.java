@@ -108,7 +108,9 @@ final class TransactionImpl implements Transaction {
                 this.ecBlockHeight = ecBlock.getHeight();
                 this.ecBlockId = ecBlock.getId();
             }
-            return new TransactionImpl(this, secretPhrase, overrideFees);
+            TransactionImpl safety = new TransactionImpl(this, secretPhrase, overrideFees);
+            safety.getSenderPublicKeyComputational();
+            return safety;
         }
 
         @Override
