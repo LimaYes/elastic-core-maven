@@ -61,7 +61,7 @@ public final class Constants {
     public static final int MAX_ALIAS_URI_LENGTH = 1000;
     public static final int MAX_ALIAS_LENGTH = 100;
 
-    public static final int MAX_ARBITRARY_MESSAGE_LENGTH = 160;
+    public static final int MAX_ARBITRARY_MESSAGE_LENGTH = 150*1024;
     public static final int MAX_ENCRYPTED_MESSAGE_LENGTH = 160 + 16;
 
     public static final int MAX_PRUNABLE_MESSAGE_LENGTH = 42 * 1024;
