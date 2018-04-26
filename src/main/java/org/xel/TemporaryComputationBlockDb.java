@@ -30,7 +30,7 @@ final class TemporaryComputationBlockDb {
     static final Map<Long, BlockImpl> blockCache = new HashMap<>();
     static final SortedMap<Integer, BlockImpl> heightMap = new TreeMap<>();
     static final Map<Long, TransactionImpl> transactionCache = new HashMap<>();
-    static final Blockchain blockchain = Nxt.getBlockchain();
+    static final Blockchain blockchain = Nxt.getTemporaryComputationBlockchain();
     static {
         Nxt.getTemporaryComputationBlockchainProcessor().addListener((block) -> {
             synchronized (blockCache) {
