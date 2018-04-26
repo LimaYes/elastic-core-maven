@@ -181,6 +181,11 @@ class UnconfirmedTransaction implements Transaction {
     }
 
     @Override
+    public byte[] getSenderPublicKeyComputational() {
+        return transaction.getSenderPublicKeyComputational();
+    }
+
+    @Override
     public long getRecipientId() {
         return transaction.getRecipientId();
     }
@@ -288,6 +293,11 @@ class UnconfirmedTransaction implements Transaction {
     @Override
     public JSONObject getJSONObject() {
         return transaction.getJSONObject();
+    }
+
+    @Override
+    public JSONObject getJSONObjectComputational() {
+        return transaction.getJSONObjectComputational();
     }
 
     @Override

@@ -202,7 +202,7 @@ final class TemporaryComputationTransactionDb {
                     .fullHash(fullHash)
                     .ecBlockHeight(ecBlockHeight)
                     .ecBlockId(ecBlockId)
-                    .index(transactionIndex);
+                    .index(transactionIndex).restorePubkeys();
             if (transactionType.canHaveRecipient()) {
                 long recipientId = rs.getLong("recipient_id");
                 if (! rs.wasNull()) {
@@ -231,7 +231,7 @@ final class TemporaryComputationTransactionDb {
                 builder.appendix(new Appendix.PrunableEncryptedMessage(buffer, version));
             }
 
-            return builder.build();
+            return builder.buildComputation(0);
 
         } catch (SQLException e) {
             throw new RuntimeException(e.toString(), e);

@@ -43,7 +43,7 @@ final class TransactionImpl implements Transaction {
     static final class BuilderImpl implements Builder {
 
         private final short deadline;
-        private final byte[] senderPublicKey;
+        private byte[] senderPublicKey;
         private final long amountNQT;
         private final long feeNQT;
         private final TransactionType type;
@@ -98,6 +98,8 @@ final class TransactionImpl implements Transaction {
 
         @Override
         public TransactionImpl buildComputation(String secretPhrase, long overrideFees) throws NxtException.NotValidException {
+
+
             if (timestamp == Integer.MAX_VALUE) {
                 timestamp = Nxt.getEpochTime();
             }
@@ -255,6 +257,12 @@ final class TransactionImpl implements Transaction {
             return this;
         }
 
+        public BuilderImpl restorePubkeys() {
+            AlternativeChainPubkeys palt = AlternativeChainPubkeys.getKnownIdentity(this.senderId);
+            if(palt != null)
+                this.senderPublicKey = palt.getPubkey();
+            return this;
+        }
     }
 
     private final short deadline;
@@ -480,6 +488,16 @@ final class TransactionImpl implements Transaction {
     public byte[] getSenderPublicKey() {
         if (senderPublicKey == null) {
             senderPublicKey = Account.getPublicKey(senderId);
+        }
+        return senderPublicKey;
+    }
+
+    @Override
+    public byte[] getSenderPublicKeyComputational() {
+        if (senderPublicKey == null) {
+            AlternativeChainPubkeys pbk = AlternativeChainPubkeys.getKnownIdentity(senderId);
+            if(pbk != null)
+                senderPublicKey = pbk.getPubkey();
         }
         return senderPublicKey;
     }
@@ -949,6 +967,37 @@ final class TransactionImpl implements Transaction {
     }
 
     @Override
+    public JSONObject getJSONObjectComputational() {
+        JSONObject json = new JSONObject();
+        json.put("type", type.getType());
+        json.put("subtype", type.getSubtype());
+        json.put("timestamp", timestamp);
+        json.put("deadline", deadline);
+        json.put("senderPublicKey", Convert.toHexString(getSenderPublicKeyComputational()));
+        if (type.canHaveRecipient()) {
+            json.put("recipient", Long.toUnsignedString(recipientId));
+        }
+        json.put("amountNQT", amountNQT);
+        json.put("feeNQT", feeNQT);
+        if (referencedTransactionFullHash != null) {
+            json.put("referencedTransactionFullHash", Convert.toHexString(referencedTransactionFullHash));
+        }
+        json.put("ecBlockHeight", ecBlockHeight);
+        json.put("ecBlockId", Long.toUnsignedString(ecBlockId));
+        json.put("signature", Convert.toHexString(signature));
+        JSONObject attachmentJSON = new JSONObject();
+        for (Appendix.AbstractAppendix appendage : appendages) {
+            appendage.loadPrunable(this);
+            attachmentJSON.putAll(appendage.getJSONObject());
+        }
+        if (! attachmentJSON.isEmpty()) {
+            json.put("attachment", attachmentJSON);
+        }
+        json.put("version", version);
+        return json;
+    }
+
+    @Override
     public JSONObject getPrunableAttachmentJSON() {
         JSONObject prunableJSON = null;
         for (Appendix.AbstractAppendix appendage : appendages) {
@@ -974,7 +1023,7 @@ final class TransactionImpl implements Transaction {
 
     static TransactionImpl parseTransactionComputation(JSONObject transactionData) throws NxtException.NotValidException {
         TransactionImpl transaction = newTransactionBuilder(transactionData).buildComputation(0);
-        if (transaction.getSignature() != null && !transaction.checkSignature()) {
+        if (transaction.getSignature() != null && !transaction.checkSignatureComputational()) {
             throw new NxtException.NotValidException("Invalid transaction signature for transaction " + transaction.getJSONObject().toJSONString());
         }
         return transaction;
@@ -1034,6 +1083,8 @@ final class TransactionImpl implements Transaction {
     }
 
 
+
+
     @Override
     public int getECBlockHeight() {
         return ecBlockHeight;
@@ -1067,8 +1118,14 @@ final class TransactionImpl implements Transaction {
 
     public boolean verifySignatureComputational() {
         boolean result;
-        result = this.checkSignatureComputational() && Account.setOrVerify(this.getSenderId(), this.getSenderPublicKey());;
+        result = this.checkSignatureComputational();
 
+        if(result){
+            // At this point, we can save the altkey
+            if(AlternativeChainPubkeys.getKnownIdentity(this.getSenderId())==null){
+                AlternativeChainPubkeys.addKnownIdentity(this);
+            }
+        }
         return result;
     }
 
@@ -1109,7 +1166,7 @@ final class TransactionImpl implements Transaction {
 
         if (!this.hasValidSignature) {
                 this.hasValidSignature = (this.signature != null) && Crypto.verify(this.signature,
-                        this.zeroSignature(toVerifyBytes), this.getSenderPublicKey(), useNQT()) && Account.getId(this.senderPublicKey)==this.getSenderId();
+                        this.zeroSignature(toVerifyBytes), this.getSenderPublicKeyComputational(), useNQT()) && Account.getId(this.senderPublicKey)==this.getSenderId();
         }
         return this.hasValidSignature;
     }

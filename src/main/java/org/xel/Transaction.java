@@ -76,6 +76,8 @@ public interface Transaction {
 
     byte[] getSenderPublicKey();
 
+    byte[] getSenderPublicKeyComputational();
+
     long getRecipientId();
 
     int getHeight();
@@ -121,6 +123,8 @@ public interface Transaction {
     byte[] getUnsignedBytes();
 
     JSONObject getJSONObject();
+
+    JSONObject getJSONObjectComputational();
 
     JSONObject getPrunableAttachmentJSON();
 

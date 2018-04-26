@@ -53,7 +53,7 @@ public abstract class ComputationVersionedEntityDbTable<T> extends Computational
              PreparedStatement pstmtCount = con.prepareStatement("SELECT 1 FROM " + table
                      + dbKeyFactory.getPKClause() + " AND height < ? LIMIT 1")) {
             int i = dbKey.setPK(pstmtCount);
-            pstmtCount.setInt(i, Nxt.getBlockchain().getHeight());
+            pstmtCount.setInt(i, Nxt.getTemporaryComputationBlockchain().getHeight());
             try (ResultSet rs = pstmtCount.executeQuery()) {
                 if (rs.next()) {
                     try (PreparedStatement pstmt = con.prepareStatement("UPDATE " + table

@@ -6,6 +6,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.xel.computation.IComputationAttachment;
 import org.xel.computation.MessageEncoder;
+import org.xel.crypto.Crypto;
 import org.xel.db.DbIterator;
 import org.xel.util.Convert;
 
@@ -29,6 +30,15 @@ public class GetBlockRaw extends AbstractForgingTest {
         }
     }
 
+    @Test
+    public void testACP(){
+        byte[] pb = Crypto.getPublicKey("tester");
+        long id = Account.getId(pb);
+        AlternativeChainPubkeys.addKnownIdentity(id,pb);
+        AlternativeChainPubkeys ret = AlternativeChainPubkeys.getKnownIdentity(id);
+        System.out.println(Convert.toHexString(pb));
+        System.out.println(Convert.toHexString(ret.getPubkey()));
+    }
     @Test
     public void getRawBlock(){
         Work w = Work.getWorkById(Long.parseUnsignedLong("16396654591714241603"));

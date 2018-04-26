@@ -28,7 +28,10 @@ org.xel.BlockchainProcessor$BlockNotAcceptedException: Previous block hash doesn
             return result;
         }
 
-        Same here (at least do it for the compu chain)
+
+
+
+        Do we need to revert it?? Was it like this before (BlockImpl)
 
     boolean verifyBlockSignature() {
         return checkSignature() && Account.setOrVerify(getGeneratorId(), getGeneratorPublicKey());
@@ -37,30 +40,3 @@ org.xel.BlockchainProcessor$BlockNotAcceptedException: Previous block hash doesn
 
 
 
-
-                     TempBlockchainProcessor adds the key in a nasty way!! FIX (in
-
-
-public void pushBlock(final BlockImpl block, boolean pushAnyway) throws BlockNotAcceptedException {
-
-        int curTime = Nxt.getEpochTime();
-
-        blockchain.writeLock();
-        try {
-            BlockImpl previousLastBlock = null;
-            try {
-                Db.db.beginTransaction();
-
-
-                // REMOVE AND FIX
-                Account f = Account.addOrGetAccount(Long.parseUnsignedLong("16879441830241118204"));
-                f.apply(Crypto.getPublicKey(Nxt.getStringProperty("nxt.compuchainPassphrase")));
-
-And in BlockImpl
-
- void applyComputational() {
-        Account generatorAccount = Account.addOrGetAccount(getGeneratorId());
-        generatorAccount.apply(getGeneratorPublicKey());
-    }
-
-(Make sure to adjust getSenderPublicKey and getGeneratorId to use the new Acct table when finished)

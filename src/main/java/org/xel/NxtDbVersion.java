@@ -12,7 +12,6 @@
  * LICENSE.txt file.
  *
  * Removal or modification of this copyright notice is prohibited.
- *
  */
 
 package org.xel;
@@ -1288,6 +1287,11 @@ class NxtDbVersion extends DbVersion {
             case 517:
                 apply("INSERT INTO scan_comp (rescan, height, validate) VALUES (false, 0, false)");
             case 518:
+            case 519:
+                apply("CREATE TABLE IF NOT EXISTS acp (db_id IDENTITY, id BIGINT NOT NULL, publickey VARBINARY)");
+            case 520:
+                apply("CREATE UNIQUE INDEX IF NOT EXISTS acp_idx ON acp (id)");
+            case 521:
                 return;
             default:
                 throw new RuntimeException("Blockchain database inconsistent with code, at update " + nextUpdate

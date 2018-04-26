@@ -47,7 +47,11 @@ final class GetUnconfirmedTransactionsComputation extends PeerServlet.PeerReques
             if (transactionsData.size() >= 100) {
                 break;
             }
-            transactionsData.add(transaction.getJSONObject());
+
+            // preload pubkeys
+            transaction.getSenderPublicKeyComputational();
+
+            transactionsData.add(transaction.getJSONObjectComputational());
         }
         JSONObject response = new JSONObject();
         response.put("unconfirmedTransactions", transactionsData);

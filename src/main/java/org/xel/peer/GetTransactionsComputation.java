@@ -51,7 +51,11 @@ public class GetTransactionsComputation extends PeerServlet.PeerRequestHandler {
                 Transaction transaction = blockchain.getTransaction(id);
                 if (transaction != null) {
                     transaction.getAppendages(true);
-                    JSONObject transactionJSON = transaction.getJSONObject();
+
+                    // preload pubkeys
+                    transaction.getSenderPublicKeyComputational();
+
+                    JSONObject transactionJSON = transaction.getJSONObjectComputational();
                     transactionArray.add(transactionJSON);
                 }
             });

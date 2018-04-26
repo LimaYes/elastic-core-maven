@@ -63,7 +63,11 @@ final class GetNextBlocksComputation extends PeerServlet.PeerRequestHandler {
             }
             blocks = Nxt.getTemporaryComputationBlockchain().getBlocksAfter(blockId, limit > 0 ? (int)limit : 36);
         }
-        blocks.forEach(block -> nextBlocksArray.add(block.getJSONObject()));
+        // preload pubkeys
+        blocks.forEach(block -> block.getGeneratorPubkeyComputational());
+
+
+        blocks.forEach(block -> nextBlocksArray.add(block.getJSONObjectComputational()));
         response.put("nextBlocks", nextBlocksArray);
 
         return response;

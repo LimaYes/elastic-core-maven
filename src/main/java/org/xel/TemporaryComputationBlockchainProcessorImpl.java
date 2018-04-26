@@ -28,6 +28,7 @@ import org.xel.peer.Peers;
 import org.xel.util.*;
 
 import java.math.BigInteger;
+import java.nio.channels.AcceptPendingException;
 import java.security.MessageDigest;
 import java.sql.*;
 import java.util.*;
@@ -1039,18 +1040,17 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
             try {
                 Db.db.beginTransaction();
 
-                // REMOVE AND FIX
-                if(Nxt.getStringProperty("nxt.compuchainPassphrase")!=null && Nxt.getStringProperty("nxt.compuchainPassphrase").length()>0 && Account.getAccount(Long.parseUnsignedLong("16879441830241118204"))==null) {
-                    Account f = Account.addOrGetAccount(Long.parseUnsignedLong("16879441830241118204"));
-                    f.apply(Crypto.getPublicKey(Nxt.getStringProperty("nxt.compuchainPassphrase")));
-                }
 
                 previousLastBlock = blockchain.getLastBlock();
-
                 validate(block, previousLastBlock, curTime);
 
                 Map<TransactionType, Map<String, Integer>> duplicates = new HashMap<>();
                 validateTransactions(block, previousLastBlock, curTime, duplicates);
+
+                // At this point, we can save the altkey
+                if(AlternativeChainPubkeys.getKnownIdentity(block.getGeneratorId())==null){
+                    AlternativeChainPubkeys.addKnownIdentity(block);
+                }
 
                 block.setPreviousComputational(previousLastBlock);
                 blockListeners.notify(block, Event.BEFORE_BLOCK_ACCEPT_COMPUTATION);
@@ -1109,7 +1109,7 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
         if (!block.verifyGenerationSignatureParabolic()) {
             throw new BlockNotAcceptedException("Generation signature verification failed", block);
         }
-        if (!block.verifyBlockSignature()) {
+        if (!block.verifyBlockSignatureComputational()) {
             throw new BlockNotAcceptedException("Block signature verification failed", block);
         }
         if (block.getTransactions().size() > Constants.MAX_NUMBER_OF_TRANSACTIONS) {
@@ -1527,12 +1527,12 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
                                     for (TransactionImpl transaction : currentBlock.getTransactions()) {
                                         byte[] transactionBytes = transaction.bytes();
                                         if (currentBlock.getHeight() > Constants.NQT_BLOCK
-                                                && !Arrays.equals(transactionBytes, TransactionImpl.newTransactionBuilder(transactionBytes).build().bytes())) {
+                                                && !Arrays.equals(transactionBytes, TransactionImpl.newTransactionBuilder(transactionBytes).buildComputation(0).bytes())) {
                                             throw new NxtException.NotValidException("Transaction bytes cannot be parsed back to the same transaction: "
                                                     + transaction.getJSONObject().toJSONString());
                                         }
                                         JSONObject transactionJSON = (JSONObject) JSONValue.parse(transaction.getJSONObject().toJSONString());
-                                        if (!Arrays.equals(transactionBytes, TransactionImpl.newTransactionBuilder(transactionJSON).build().bytes())) {
+                                        if (!Arrays.equals(transactionBytes, TransactionImpl.newTransactionBuilder(transactionJSON).buildComputation(0).bytes())) {
                                             throw new NxtException.NotValidException("Transaction JSON cannot be parsed back to the same transaction: "
                                                     + transaction.getJSONObject().toJSONString());
                                         }

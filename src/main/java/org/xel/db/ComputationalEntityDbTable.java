@@ -62,15 +62,15 @@ public abstract class ComputationalEntityDbTable<T> extends ComputationalDerived
 
     public void checkAvailable(int height) {
         if (multiversion) {
-            int minRollBackHeight = isPersistent() && Nxt.getBlockchainProcessor().isScanning() ?
-                    Math.max(Nxt.getBlockchainProcessor().getInitialScanHeight() - Constants.MAX_ROLLBACK, 0)
-                    : Nxt.getBlockchainProcessor().getMinRollbackHeight();
+            int minRollBackHeight = isPersistent() && Nxt.getTemporaryComputationBlockchainProcessor().isScanning() ?
+                    Math.max(Nxt.getTemporaryComputationBlockchainProcessor().getInitialScanHeight() - Constants.MAX_ROLLBACK, 0)
+                    : Nxt.getTemporaryComputationBlockchainProcessor().getMinRollbackHeight();
             if (height < minRollBackHeight) {
                 throw new IllegalArgumentException("Historical data as of height " + height + " not available.");
             }
         }
-        if (height > Nxt.getBlockchain().getHeight()) {
-            throw new IllegalArgumentException("Height " + height + " exceeds blockchain height " + Nxt.getBlockchain().getHeight());
+        if (height > Nxt.getTemporaryComputationBlockchain().getHeight()) {
+            throw new IllegalArgumentException("Height " + height + " exceeds blockchain height " + Nxt.getTemporaryComputationBlockchain().getHeight());
         }
     }
 
@@ -461,7 +461,7 @@ public abstract class ComputationalEntityDbTable<T> extends ComputationalDerived
     }
 
     private boolean doesNotExceed(int height) {
-        return Nxt.getBlockchain().getHeight() <= height && ! (isPersistent() && Nxt.getBlockchainProcessor().isScanning());
+        return Nxt.getTemporaryComputationBlockchain().getHeight() <= height && ! (isPersistent() && Nxt.getTemporaryComputationBlockchainProcessor().isScanning());
     }
 
 }

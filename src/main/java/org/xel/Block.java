@@ -81,8 +81,10 @@ public interface Block {
 
     byte[] getBytes();
 
-    JSONObject getJSONObject();
+    byte[] getGeneratorPubkeyComputational();
 
+    JSONObject getJSONObject();
+    JSONObject getJSONObjectComputational();
     long getPreviousBlockPowTarget();
 
     byte[] getBlockHash();

@@ -144,8 +144,8 @@ final class BlockImpl implements Block {
 
     @Override
     public void setLocallyProcessed() {
-        BlockDb.updateBlockLocallyProcessed(this);
-        BlockDb.updateBlockPowTargets(this);
+        TemporaryComputationBlockDb.updateBlockLocallyProcessed(this);
+        TemporaryComputationBlockDb.updateBlockPowTargets(this);
     }
 
     @Override
@@ -326,6 +326,16 @@ final class BlockImpl implements Block {
     }
 
     @Override
+    public byte[] getGeneratorPubkeyComputational() {
+        if (generatorPublicKey == null) {
+            AlternativeChainPubkeys pbk = AlternativeChainPubkeys.getKnownIdentity(generatorId);
+            if(pbk != null)
+                generatorPublicKey = pbk.getPubkey();
+        }
+        return generatorPublicKey;
+    }
+
+    @Override
     public JSONObject getJSONObject() {
         JSONObject json = new JSONObject();
         json.put("version", version);
@@ -343,6 +353,28 @@ final class BlockImpl implements Block {
         json.put("blockSignature", Convert.toHexString(blockSignature));
         JSONArray transactionsData = new JSONArray();
         getTransactions().forEach(transaction -> transactionsData.add(transaction.getJSONObject()));
+        json.put("transactions", transactionsData);
+        return json;
+    }
+
+    @Override
+    public JSONObject getJSONObjectComputational() {
+        JSONObject json = new JSONObject();
+        json.put("version", version);
+        json.put("timestamp", timestamp);
+        json.put("previousBlock", Long.toUnsignedString(previousBlockId));
+        json.put("totalAmountNQT", totalAmountNQT);
+        json.put("totalFeeNQT", totalFeeNQT);
+        json.put("payloadLength", payloadLength);
+        json.put("payloadHash", Convert.toHexString(payloadHash));
+        json.put("generatorPublicKey", Convert.toHexString(getGeneratorPubkeyComputational()));
+        json.put("generationSignature", Convert.toHexString(generationSignature));
+        if (version > 1) {
+            json.put("previousBlockHash", Convert.toHexString(previousBlockHash));
+        }
+        json.put("blockSignature", Convert.toHexString(blockSignature));
+        JSONArray transactionsData = new JSONArray();
+        getTransactions().forEach(transaction -> transactionsData.add(transaction.getJSONObjectComputational()));
         json.put("transactions", transactionsData);
         return json;
     }
@@ -459,6 +491,9 @@ final class BlockImpl implements Block {
     boolean verifyBlockSignature() {
         return checkSignature() && Account.setOrVerify(getGeneratorId(), getGeneratorPublicKey());
     }
+    boolean verifyBlockSignatureComputational() {
+        return checkSignature();
+    }
 
     boolean verifyBlockSignatureDebug() {
         return checkSignature();
@@ -473,6 +508,7 @@ final class BlockImpl implements Block {
         }
         return hasValidSignature;
     }
+
 
     boolean verifyGenerationSignature() throws BlockchainProcessor.BlockOutOfOrderException {
 
@@ -545,7 +581,7 @@ final class BlockImpl implements Block {
             byte[] generationSignatureHash;
 
             digest.update(previousBlock.generationSignature);
-            generationSignatureHash = digest.digest(getGeneratorPublicKey());
+            generationSignatureHash = digest.digest(getGeneratorPubkeyComputational());
             if (!Arrays.equals(generationSignature, generationSignatureHash)) {
                 return false;
             }
@@ -575,8 +611,7 @@ final class BlockImpl implements Block {
     }
 
     void applyComputational() {
-        Account generatorAccount = Account.addOrGetAccount(getGeneratorId());
-        generatorAccount.apply(getGeneratorPublicKey());
+
     }
 
     void setPrevious(BlockImpl block) {

@@ -234,11 +234,16 @@ final class TemporaryComputationBlockDb {
             byte[] blockSignature = rs.getBytes("block_signature");
             byte[] payloadHash = rs.getBytes("payload_hash");
             long id = rs.getLong("id");
-            return new BlockImpl(version, timestamp, previousBlockId, totalAmountNQT, totalFeeNQT, payloadLength, payloadHash,
+            BlockImpl withSig = new BlockImpl(version, timestamp, previousBlockId, totalAmountNQT, totalFeeNQT, payloadLength, payloadHash,
                     generatorId, generationSignature, blockSignature, previousBlockHash,
                     cumulativeDifficulty, baseTarget, powTarget, pow_last_mass, pow_mass, target_last_mass, target_mass, nextBlockId, height, id,
                     loadTransactions ?
                     TemporaryComputationTransactionDb.findBlockTransactions(con, id) : null);
+
+            // load PUBKEY here
+            withSig.getGeneratorPubkeyComputational();
+
+            return withSig;
         } catch (SQLException e) {
             throw new RuntimeException(e.toString(), e);
         }
