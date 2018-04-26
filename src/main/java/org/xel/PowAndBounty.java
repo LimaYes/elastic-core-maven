@@ -103,7 +103,8 @@ public final class PowAndBounty{
 
     public JSONArray getJSONInts() {
         JSONArray arr = new JSONArray();
-        byte[] pbkey = this.publickey;
+        AlternativeChainPubkeys pb = AlternativeChainPubkeys.getKnownIdentity(this.getAccountId());
+        byte[] pbkey = (pb!=null)?pb.getPubkey():null;
         try {
             int[] ints = personalizedIntStream(pbkey, Work.getWork(this.work_id).getBlock_id(), this.multiplier, this.work_id);
             for(int x : ints){
@@ -320,7 +321,6 @@ public final class PowAndBounty{
     private final byte[] pow_hash;
     private final int storage_bucket;
     private final byte[] submitted_storage;
-    private final byte[] publickey;
     private int timestampReceived = 0;
 
     public boolean isWas_paid() {
@@ -355,7 +355,6 @@ public final class PowAndBounty{
         this.submitted_storage = rs.getBytes("submitted_storage");
         this.storage_bucket = rs.getInt("storage_bucket");
         this.timestampReceived = rs.getInt("timestamp");
-        this.publickey = rs.getBytes("publickey");
     }
 
     public byte[] getSubmitted_storage() {
@@ -377,7 +376,6 @@ public final class PowAndBounty{
         this.too_late = false;
         this.storage_bucket = attachment.getStorage_bucket();
         this.timestampReceived = transaction.getTimestamp();
-        this.publickey = attachment.getPublickey();
     }
 
     public long getAccountId() {
@@ -389,7 +387,7 @@ public final class PowAndBounty{
         try (PreparedStatement pstmt = con.prepareStatement( /* removed storage between multiplier and submitted_storage in
         next line */
                 "MERGE INTO pow_and_bounty (id, too_late, work_id, hash, multiplier, storage_bucket, submitted_storage, " +
-                        "account_id, is_pow, verificator_hash, pow_hash, was_paid, publickey, timestamp, "
+                        "account_id, is_pow, verificator_hash, pow_hash, was_paid, timestamp, "
                         + " height, latest) " + "KEY (id, height) " + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?," +
                         " TRUE)")) {
             int i = 0;
@@ -405,7 +403,6 @@ public final class PowAndBounty{
             DbUtils.setBytes(pstmt, ++i, this.verificator_hash);
             DbUtils.setBytes(pstmt, ++i, this.pow_hash);
             pstmt.setBoolean(++i, this.was_paid);
-            DbUtils.setBytes(pstmt, ++i, this.publickey);
             pstmt.setInt(++i, this.timestampReceived);
             pstmt.setInt(++i, Nxt.getTemporaryComputationBlockchain().getHeight());
             pstmt.executeUpdate();

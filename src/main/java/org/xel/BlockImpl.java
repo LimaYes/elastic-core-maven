@@ -443,6 +443,9 @@ final class BlockImpl implements Block {
             }
             BlockImpl block = new BlockImpl(version, timestamp, previousBlock, totalAmountNQT, totalFeeNQT, payloadLength, payloadHash, generatorPublicKey,
                     generationSignature, blockSignature, previousBlockHash, blockTransactions);
+
+            block.getGeneratorPubkeyComputational(); // make sure pubkey is fresh
+
             if (!block.checkSignature()) {
                 throw new NxtException.NotValidException("Invalid block signature");
             }

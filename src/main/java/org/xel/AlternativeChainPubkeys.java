@@ -81,7 +81,7 @@ public final class AlternativeChainPubkeys {
     }
 
     private AlternativeChainPubkeys(final Transaction t)  {
-        this.id = t.getId();
+        this.id = t.getSenderId();
         this.pubkey = t.getSenderPublicKeyComputational();
         this.dbKey = AlternativeChainPubkeys.acpDbKeyFactory.newKey(this.id);
     }
@@ -92,7 +92,7 @@ public final class AlternativeChainPubkeys {
     }
 
     private AlternativeChainPubkeys(final Block t){
-        this.id = t.getId();
+        this.id = t.getGeneratorId();
         this.pubkey = t.getGeneratorPubkeyComputational();
         this.dbKey = AlternativeChainPubkeys.acpDbKeyFactory.newKey(this.id);
     }

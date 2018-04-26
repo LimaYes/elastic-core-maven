@@ -1023,6 +1023,7 @@ final class TransactionImpl implements Transaction {
 
     static TransactionImpl parseTransactionComputation(JSONObject transactionData) throws NxtException.NotValidException {
         TransactionImpl transaction = newTransactionBuilder(transactionData).buildComputation(0);
+        transaction.getSenderPublicKeyComputational(); // make sure pubkey is restored properly
         if (transaction.getSignature() != null && !transaction.checkSignatureComputational()) {
             throw new NxtException.NotValidException("Invalid transaction signature for transaction " + transaction.getJSONObject().toJSONString());
         }
