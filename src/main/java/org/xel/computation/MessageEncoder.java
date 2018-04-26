@@ -278,17 +278,23 @@ public class MessageEncoder {
         }
     }
 
+
     static {
-        Nxt.getTemporaryComputationBlockchainProcessor().addListener(block -> {
-            GetLastBlockId.lastBlockId = block.getId();
-            paymentProcessor(block);
-        }, TemporaryComputationBlockchainProcessorImpl.Event.AFTER_BLOCK_APPLY);
+        if(Nxt.getBooleanProperty("nxt.enableComputationEngine")) {
+            Nxt.getTemporaryComputationBlockchainProcessor().addListener(block -> {
+                GetLastBlockId.lastBlockId = block.getId();
+                paymentProcessor(block);
+            }, TemporaryComputationBlockchainProcessorImpl.Event.AFTER_BLOCK_APPLY);
+        }
     }
     static {
-        Nxt.getTemporaryComputationBlockchainProcessor().addListener(block -> {
-            GetLastBlockId.lastBlockIdComp = block.getId();
-            processBlockInternal(block);
-        }, TemporaryComputationBlockchainProcessorImpl.Event.AFTER_BLOCK_APPLY_COMPUTATION);
+            if(Nxt.getBooleanProperty("nxt.enableComputationEngine")) {
+
+                Nxt.getTemporaryComputationBlockchainProcessor().addListener(block -> {
+                    GetLastBlockId.lastBlockIdComp = block.getId();
+                    processBlockInternal(block);
+                }, TemporaryComputationBlockchainProcessorImpl.Event.AFTER_BLOCK_APPLY_COMPUTATION);
+            }
     }
 
     public static void init(){
