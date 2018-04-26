@@ -133,11 +133,11 @@ public final class GetState extends APIServlet.APIRequestHandler {
 
                 List<Work> itw = Work.getActiveAndRecentlyClosedByAccountId(myid);
                 for (Work w : itw) {
-                    Logger.logDebugMessage(" > open work " + w.getId());
+                    //Logger.logDebugMessage(" > open work " + w.getId());
                     try (DbIterator<PowAndBounty> unpaidit = PowAndBounty.getUnpaidSubmission(w.getId())) {
                         while (unpaidit.hasNext()) {
                             PowAndBounty b = unpaidit.next();
-                            Logger.logDebugMessage("    > unpaid bty " + b.getId() + ", isPOW = " + b.is_pow + ", payout = " + ((b.is_pow) ? w.getXel_per_pow() : w.getXel_per_bounty()));
+                            //Logger.logDebugMessage("    > unpaid bty " + b.getId() + ", isPOW = " + b.is_pow + ", payout = " + ((b.is_pow) ? w.getXel_per_pow() : w.getXel_per_bounty()));
                             Pair<String, Long> oldpair = null;
                             if(earnings.containsKey(b.getAccountId())){
                                 oldpair = earnings.get(b.getAccountId());
