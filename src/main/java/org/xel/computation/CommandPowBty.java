@@ -36,6 +36,7 @@ public class CommandPowBty extends IComputationAttachment {
     private boolean is_proof_of_work;
     private byte[] multiplier;
     private byte[] hash;
+    private byte[] publickey;
     private byte[] submitted_storage;
     private boolean validated = false;
     private boolean isValid = false;
@@ -55,6 +56,7 @@ public class CommandPowBty extends IComputationAttachment {
         this.submitted_storage = submitted_storage;
         if(this.submitted_storage==null)this.submitted_storage=new byte[0];
         this.current_round = current_round;
+        this.publickey = publickey;
     }
 
     CommandPowBty(ByteBuffer buffer) {
@@ -90,7 +92,7 @@ public class CommandPowBty extends IComputationAttachment {
             buffer.get(hash);
 
 
-           this.storage_bucket = buffer.getInt();
+            this.storage_bucket = buffer.getInt();
 
             // And finally, read the submitted_storage
             readsize = buffer.getShort();
@@ -102,7 +104,14 @@ public class CommandPowBty extends IComputationAttachment {
             buffer.get(submitted_storage);
             current_round = buffer.getInt();
 
-
+            // First read in the multiplicator
+            readsize = buffer.getShort();
+            if (readsize >64 || readsize < 32) {
+                throw new NxtException.NotValidException("Wrong Parameters, your pbk was " + readsize + " but " +
+                        "should be smaller");
+            }
+            publickey = new byte[readsize];
+            buffer.get(publickey);
 
             //System.out.println("POWBTY - About to decode " + this.storage_bucket + ", round " + current_round);
         } catch (Exception e) {
@@ -114,6 +123,7 @@ public class CommandPowBty extends IComputationAttachment {
             this.hash = new byte[0];
             this.storage_bucket = 0;
             this.current_round = 0;
+            this.publickey = new byte[0];
         }
     }
 
@@ -133,7 +143,7 @@ public class CommandPowBty extends IComputationAttachment {
 
     @Override
     int getMySize() {
-        return 8 + 1 + 2 + 2 + 2 + this.multiplier.length + this.submitted_storage.length  + this.hash.length  + 4 /*storage bucket in t */ + 4 /* current round */;
+        return 8 + 1 + 2 + 2 + 2 + this.multiplier.length + this.submitted_storage.length  + this.hash.length  + 4 /*storage bucket in t */ + 4 /* current round */ + 4 + publickey.length;
     }
 
     public int getCurrent_round() {
@@ -163,10 +173,14 @@ public class CommandPowBty extends IComputationAttachment {
         buffer.putShort((short)this.submitted_storage.length);
         buffer.put(this.submitted_storage);
         buffer.putInt(this.current_round);
-
+        buffer.putShort((short)this.publickey.length);
+        buffer.put(this.publickey);
 
     }
 
+    public byte[] getPublickey() {
+        return publickey;
+    }
 
     public byte[] getMultiplier() {
         return multiplier;
@@ -335,15 +349,13 @@ public class CommandPowBty extends IComputationAttachment {
 
         }else {
 
-            AlternativeChainPubkeys p = AlternativeChainPubkeys.getKnownIdentity(transaction.getSenderId());
-
             // Validate code-level
-            if (this.is_proof_of_work && !validatePow((p!=null)?p.getPubkey():null, w.getBlock_id(),
+            if (this.is_proof_of_work && !validatePow(this.publickey, w.getBlock_id(),
                     work_id, tgt)) {
                 Logger.logDebugMessage("Work " + String.valueOf(w.getId()) + " verification failed: proof of work checks in code execution failed.");
                 return false;
             }
-            if (!this.is_proof_of_work && !validateBty((p!=null)?p.getPubkey():null, w.getBlock_id(),
+            if (!this.is_proof_of_work && !validateBty(this.publickey, w.getBlock_id(),
                     work_id, tgt)) {
                 Logger.logDebugMessage("Work " + String.valueOf(w.getId()) + " verification failed: bounty checks in code execution failed.");
                 return false;
