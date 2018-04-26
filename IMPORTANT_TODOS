@@ -52,4 +52,10 @@ or find another solution
 
 
 DIRTY HACK
+Constants
     public static final int MAX_ARBITRARY_MESSAGE_LENGTH = 150*1024;
+
+    An in Appendix
+if (messageLength > Constants.MAX_ARBITRARY_MESSAGE_LENGTH) {
+                throw new NxtException.NotValidException("Invalid arbitrary message length: " + messageLength);
+            }
