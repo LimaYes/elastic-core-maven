@@ -52,5 +52,5 @@ public class ComputationConstants {
     public static final BigInteger MAXIMAL_WORK_TARGET = new BigInteger("0000FFFFFFFFFFFFFFFFFFFFFFFFFFFF", 16); // TODO: Readjust that
     public static final BigInteger TESTVM_WORK_TARGET = new BigInteger("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", 16);
 
-    public static final int ONLY_VERIFY_WORK_YOUNGER_THAN_SECONDS = 500;
+    public static final int ONLY_VERIFY_WORK_YOUNGER_THAN_SECONDS = 500 * 30;
 }
