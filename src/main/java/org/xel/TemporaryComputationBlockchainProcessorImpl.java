@@ -918,7 +918,7 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
 
     @Override
     public void processPeerBlock(JSONObject request) throws NxtException {
-        BlockImpl block = BlockImpl.parseBlock(request);
+        BlockImpl block = BlockImpl.parseBlockComputation(request);
         BlockImpl lastBlock = blockchain.getLastBlock();
         if (block.getPreviousBlockId() == lastBlock.getId()) {
             pushBlock(block);
@@ -1527,7 +1527,7 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
                                     validate(currentBlock, blockchain.getLastBlock(), curTime);
                                     byte[] blockBytes = currentBlock.bytes();
                                     JSONObject blockJSON = (JSONObject) JSONValue.parse(currentBlock.getJSONObject().toJSONString());
-                                    if (!Arrays.equals(blockBytes, BlockImpl.parseBlock(blockJSON).bytes())) {
+                                    if (!Arrays.equals(blockBytes, BlockImpl.parseBlockComputation(blockJSON).bytes())) {
                                         throw new NxtException.NotValidException("Temp_Comp_Block JSON cannot be parsed back to the same block");
                                     }
                                     validateTransactions(currentBlock, blockchain.getLastBlock(), curTime, duplicates);
