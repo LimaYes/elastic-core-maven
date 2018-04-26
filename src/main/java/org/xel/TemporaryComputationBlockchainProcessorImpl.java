@@ -1101,6 +1101,9 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
                     + previousLastBlock.getTimestamp(), block);
         }
         if (block.getVersion() != 1 && !Arrays.equals(Crypto.sha256().digest(previousLastBlock.bytes()), block.getPreviousBlockHash())) {
+            //Logger.logDebugMessage("FAIL: block = " + block.getId() + ", prived wrong prev-blockHash = " + Convert.toHexString(block.getPreviousBlockHash()) + ", should be " + Convert.toHexString(Crypto.sha256().digest(previousLastBlock.bytes())));
+            //Logger.logDebugMessage(block.getJSONObjectComputational().toJSONString());
+            //Logger.logDebugMessage(previousLastBlock.getJSONObjectComputational().toJSONString());
             throw new BlockNotAcceptedException("Previous block hash doesn't match", block);
         }
         if (block.getId() == 0L || TemporaryComputationBlockDb.hasBlock(block.getId(), previousLastBlock.getHeight())) {
@@ -1118,6 +1121,9 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
         if (block.getPayloadLength() > Constants.MAX_PAYLOAD_LENGTH || block.getPayloadLength() < 0) {
             throw new BlockNotAcceptedException("Invalid block payload length " + block.getPayloadLength(), block);
         }
+
+        //Logger.logDebugMessage("Just added compublock ID = " + block.getId() + ", with blockHash = " + Convert.toHexString(Crypto.sha256().digest(block.bytes())));
+        //Logger.logDebugMessage(block.getJSONObjectComputational().toJSONString());
     }
 
     private void validateTransactions(BlockImpl block, BlockImpl previousLastBlock, int curTime, Map<TransactionType, Map<String, Integer>> duplicates) throws BlockNotAcceptedException {
@@ -1346,6 +1352,7 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
 
 
         BlockImpl previousBlock = blockchain.getLastBlock();
+        previousBlock.getGeneratorPubkeyComputational(); // make sure its there
 
         TemporaryComputationTransactionProcessorImpl.getInstance().processWaitingTransactions();
         SortedSet<UnconfirmedTransaction> sortedTransactions = selectUnconfirmedTransactions(previousBlock, blockTimestamp);
