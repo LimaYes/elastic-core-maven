@@ -44,3 +44,12 @@ Take it out, but make sure to check that only acc with known pubkey can forge
 or find another solution
 
 
+
+
+
+
+
+
+
+DIRTY HACK
+    public static final int MAX_ARBITRARY_MESSAGE_LENGTH = 150*1024;
