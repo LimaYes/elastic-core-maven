@@ -1,0 +1,17 @@
+
+2018-04-27 07:01:28 FINE: Blacklisting 18.197.90.171 because of: org.xel.BlockchainProcessor$BlockNotAcceptedException: Previous block hash doesn't match, block 4396839667263394136 {"totalFeeNQT":0,"previousBlockHash":"d5d64a1a01bcc5b9dd333c5187f79aab85dd2a64e94c0388bfd4e9085fe539d0","payloadLength":0,"previousBlock":"13386312180350768853","totalAmountNQT":0,"generationSignature":"6435278f1b252fb9f0c7d56a05d015bb22db26f849e64eb48d1f0b87b38f8df9","generatorPublicKey":"d47b2caa80370cbb3528d7b3635e0e43721bbd081424dd57ec062db2d6f5802b","payloadHash":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","blockSignature":"eca21b326fbb8bfae1fb37b47e4ca30ef7f0068dbc66b8de1a304789e3942c0835f2e5967cc90dd216d02294db06d62861fcb9bfc163eff7febd3f18d7c6c60a","transactions":[],"version":100,"timestamp":139482076}
+org.xel.BlockchainProcessor$BlockNotAcceptedException: Previous block hash doesn't match, block 4396839667263394136 {"totalFeeNQT":0,"previousBlockHash":"d5d64a1a01bcc5b9dd333c5187f79aab85dd2a64e94c0388bfd4e9085fe539d0","payloadLength":0,"previousBlock":"13386312180350768853","totalAmountNQT":0,"generationSignature":"6435278f1b252fb9f0c7d56a05d015bb22db26f849e64eb48d1f0b87b38f8df9","generatorPublicKey":"d47b2caa80370cbb3528d7b3635e0e43721bbd081424dd57ec062db2d6f5802b","payloadHash":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","blockSignature":"eca21b326fbb8bfae1fb37b47e4ca30ef7f0068dbc66b8de1a304789e3942c0835f2e5967cc90dd216d02294db06d62861fcb9bfc163eff7febd3f18d7c6c60a","transactions":[],"version":100,"timestamp":139482076}
+	at org.xel.TemporaryComputationBlockchainProcessorImpl.validate(TemporaryComputationBlockchainProcessorImpl.java:1107)
+	at org.xel.TemporaryComputationBlockchainProcessorImpl.pushBlock(TemporaryComputationBlockchainProcessorImpl.java:1045)
+	at org.xel.TemporaryComputationBlockchainProcessorImpl.pushBlock(TemporaryComputationBlockchainProcessorImpl.java:1030)
+	at org.xel.TemporaryComputationBlockchainProcessorImpl$1.downloadBlockchain(TemporaryComputationBlockchainProcessorImpl.java:466)
+	at org.xel.TemporaryComputationBlockchainProcessorImpl$1.downloadPeer(TemporaryComputationBlockchainProcessorImpl.java:186)
+	at org.xel.TemporaryComputationBlockchainProcessorImpl$1.run(TemporaryComputationBlockchainProcessorImpl.java:97)
+	at java.util.concurrent.Executors$RunnableAdapter.call$$$capture(Executors.java:511)
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java)
+	at java.util.concurrent.FutureTask.runAndReset(FutureTask.java:308)
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.access$301(ScheduledThreadPoolExecutor.java:180)
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:294)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at java.lang.Thread.run(Thread.java:748)
