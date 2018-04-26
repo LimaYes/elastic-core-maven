@@ -32,12 +32,13 @@ public class GetBlockRaw extends AbstractForgingTest {
 
     @Test
     public void testACP(){
-        byte[] pb = Crypto.getPublicKey("tester");
+        byte[] pb = Crypto.getPublicKey("ilovepikachu100");
         long id = Account.getId(pb);
         AlternativeChainPubkeys.addKnownIdentity(id,pb);
         AlternativeChainPubkeys ret = AlternativeChainPubkeys.getKnownIdentity(id);
         System.out.println(Convert.toHexString(pb));
         System.out.println(Convert.toHexString(ret.getPubkey()));
+        System.out.println("ID " + id);
     }
     @Test
     public void getRawBlock(){

@@ -3,6 +3,7 @@ package org.xel;
 import org.xel.db.ComputationalStaticDbTable;
 import org.xel.db.DbKey;
 import org.xel.db.DbUtils;
+import org.xel.util.Convert;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -53,6 +54,12 @@ public final class AlternativeChainPubkeys {
 
 
     static void init() {
+        byte[] todo = Convert.parseHexString("d47b2caa80370cbb3528d7b3635e0e43721bbd081424dd57ec062db2d6f5802b");
+        long id = -1567302243468433412L;
+        if(AlternativeChainPubkeys.getKnownIdentity(id)==null){
+            AlternativeChainPubkeys.addKnownIdentity(id, todo);
+        }
+
     }
 
     private final DbKey dbKey;
