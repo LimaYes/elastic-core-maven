@@ -18,6 +18,7 @@ package org.xel;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.xel.computation.MessageEncoder;
 import org.xel.db.*;
 import org.xel.peer.Peer;
 import org.xel.peer.Peers;
@@ -638,7 +639,8 @@ public final class TemporaryComputationTransactionProcessorImpl implements Trans
                 }
                 addedUnconfirmedTransactions.add(transaction);
 
-                transaction.getType().executeOnEachUnconfirmedTXUponReceive(transaction); // This is just for our stupidLimiters
+                if(MessageEncoder.useComputationEngine)
+                    transaction.getType().executeOnEachUnconfirmedTXUponReceive(transaction); // This is just for our stupidLimiters
 
             } catch (NxtException.NotCurrentlyValidException ignore) {
             } catch (NxtException.ValidationException|RuntimeException e) {
