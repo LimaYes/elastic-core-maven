@@ -166,6 +166,11 @@ public class MessageEncoder {
         }
     }
     static void processBlockInternal(Block block){
+
+        // Only compute crap that is younger than 500 minutes
+        if(Nxt.getEpochTime() - block.getTimestamp() >= ComputationConstants.ONLY_VERIFY_WORK_YOUNGER_THAN_SECONDS) return;
+
+
         // Check all TX for relevant stuff
 
         int powCounter = 0;
