@@ -549,7 +549,7 @@ public final class Work {
                     for(int idd=0;idd<storage_area.length;idd++){
                         dd.add(storage_area[idd]);
                     }
-                    response.put("storage", dd);
+                    s.put("storage", dd);
                     a.add(s);
                 }
                 response.put("storages", a);
