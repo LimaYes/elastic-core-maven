@@ -164,6 +164,18 @@ public class MessageEncoder {
                 }
             }
         }
+
+        // Set all paid
+        for(Pair<Long, Long> l : paid){
+            PowAndBounty bty = PowAndBounty.getPowOrBountyById(l.getElement0());
+            Work w = Work.getWorkById(l.getElement1());
+            if (bty!=null) {
+                bty.setWas_paid(true);
+                Logger.logDebugMessage("BTY paid " + bty.getId());
+                bty.JustSave();
+            } else break;
+        }
+        paid.clear();
     }
     static void processBlockInternal(Block block){
 
@@ -177,17 +189,7 @@ public class MessageEncoder {
         int mintime = Integer.MAX_VALUE;
         int maxtime = 0;
 
-        // Set all paid
-        for(Pair<Long, Long> l : paid){
-            PowAndBounty bty = PowAndBounty.getPowOrBountyById(l.getElement0());
-            Work w = Work.getWorkById(l.getElement1());
-            if (bty!=null) {
-                bty.setWas_paid(true);
-                Logger.logDebugMessage("BTY paid " + bty.getId());
-                bty.JustSave();
-            } else break;
-        }
-        paid.clear();
+
 
         // first all pow and else
         // in second round the bounties
