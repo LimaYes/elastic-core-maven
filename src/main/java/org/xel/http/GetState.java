@@ -169,7 +169,7 @@ public final class GetState extends APIServlet.APIRequestHandler {
                             earnings.put(b.getAccountId(), oldpair);
 
                             // Flush if message too long
-                            if(oldpair.getElement0().length() > Constants.MAX_ARBITRARY_MESSAGE_LENGTH_MAINCHAIN-16){ // arbitrary safegap
+                            if(oldpair.getElement0().length() > Constants.MAX_ARBITRARY_MESSAGE_LENGTH-16){ // arbitrary safegap
                                 Appendix.Message prunablePlainMessage = new Appendix.Message(oldpair.getElement0(), true);
                                 try {
                                     Pair<JSONStreamAware, JSONStreamAware> pr = CustomTransactionBuilder.createTransactionPubkey(prunablePlainMessage, publicKey,3, oldpair.getElement1(), b.getAccountId());
