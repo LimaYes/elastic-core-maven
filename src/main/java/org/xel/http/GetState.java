@@ -110,8 +110,8 @@ public final class GetState extends APIServlet.APIRequestHandler {
                 response.put("balanceNQT", "0");
                 long adjuster = 0;
                 Map<Long, Long> unmap = UnconfirmedGetter.refreshMap();
-                if(unmap.containsKey(account.getId())){
-                    adjuster = unmap.get(account.getId());
+                if(unmap.containsKey(myid)){
+                    adjuster = unmap.get(myid);
                 }
                 response.put("unconfirmedBalanceNQT",  String.valueOf(adjuster));
                 response.put("forgedBalanceNQT", "0");
