@@ -1,15 +1,13 @@
 package org.xel;
 
-import org.xel.computation.Pair;
 import org.xel.db.DbIterator;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 
 public class UnconfirmedGetter {
     public static Map<Long, Long> unMap = new HashMap<>();
+    public static List<Long> unMapPaidBty = new ArrayList<>();
     public static long lastTimeUnmapGenerated = 0;
 
     public static synchronized Map<Long, Long> refreshMap() {
