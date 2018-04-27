@@ -663,6 +663,13 @@ final class BlockImpl implements Block {
         }
     }
 
+    void loadTransactionsComputational() {
+        for (TransactionImpl transaction : getTransactionsComputational()) {
+            transaction.bytes();
+            transaction.getAppendages();
+        }
+    }
+
     private void computationalBaseTarget(BlockImpl previousBlock){
         cumulativeDifficulty = previousBlock.cumulativeDifficulty.add(Convert.two64.divide(BigInteger.valueOf(previousBlock.baseTarget)));
     }

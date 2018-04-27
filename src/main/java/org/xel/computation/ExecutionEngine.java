@@ -186,6 +186,7 @@ public class ExecutionEngine {
             throw new IOException("EPL code exited with error code.");
         }
 
+        //Logger.logDebugMessage(fullOutp);
 
         if(dda) {
             System.out.println("Result is POW: " + r.isPow);

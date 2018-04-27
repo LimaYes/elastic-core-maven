@@ -1101,9 +1101,9 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
                     + previousLastBlock.getTimestamp(), block);
         }
         if (block.getVersion() != 1 && !Arrays.equals(Crypto.sha256().digest(previousLastBlock.bytes()), block.getPreviousBlockHash())) {
-            //Logger.logDebugMessage("FAIL: block = " + block.getId() + ", prived wrong prev-blockHash = " + Convert.toHexString(block.getPreviousBlockHash()) + ", should be " + Convert.toHexString(Crypto.sha256().digest(previousLastBlock.bytes())));
-            //Logger.logDebugMessage(block.getJSONObjectComputational().toJSONString());
-            //Logger.logDebugMessage(previousLastBlock.getJSONObjectComputational().toJSONString());
+            Logger.logDebugMessage("FAIL: block = " + block.getId() + ", prived wrong prev-blockHash = " + Convert.toHexString(block.getPreviousBlockHash()) + ", should be " + Convert.toHexString(Crypto.sha256().digest(previousLastBlock.bytes())));
+            Logger.logDebugMessage(block.getJSONObjectComputational().toJSONString());
+            Logger.logDebugMessage(previousLastBlock.getJSONObjectComputational().toJSONString());
             throw new BlockNotAcceptedException("Previous block hash doesn't match", block);
         }
         if (block.getId() == 0L || TemporaryComputationBlockDb.hasBlock(block.getId(), previousLastBlock.getHeight())) {
@@ -1202,10 +1202,8 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
                 TemporaryComputationTransactionProcessorImpl.getInstance().notifyListeners(block.getTransactionsComputational(), TransactionProcessor.Event.ADDED_CONFIRMED_TRANSACTIONS_COMPUTATION);
             }
 
-            AccountLedger.commitEntries();
         } finally {
             isProcessingBlock = false;
-            AccountLedger.clearEntries();
         }
     }
 
@@ -1237,7 +1235,7 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
             List<BlockImpl> poppedOffBlocks = new ArrayList<>();
             try {
                 BlockImpl block = blockchain.getLastBlock();
-                block.loadTransactions();
+                block.loadTransactionsComputational();
                 Logger.logDebugMessage("Rollback (computational) from block " + block.getStringId() + " at height " + block.getHeight()
                         + " to " + commonBlock.getStringId() + " at " + commonBlock.getHeight());
                 while (block.getId() != commonBlock.getId() && block.getId() != Genesis.GENESIS_BLOCK_ID_COMPUTATIONCHAIN) {
@@ -1269,7 +1267,7 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
             throw new RuntimeException("Cannot pop off genesis block (computational)");
         }
         BlockImpl previousBlock = TemporaryComputationBlockDb.deleteBlocksFrom(block.getId());
-        previousBlock.loadTransactions();
+        previousBlock.loadTransactionsComputational();
         blockchain.setLastBlock(previousBlock);
         blockListeners.notify(block, Event.BLOCK_POPPED_COMPUTATION);
         return previousBlock;
@@ -1516,7 +1514,7 @@ public final class TemporaryComputationBlockchainProcessorImpl implements Blockc
                             try {
                                 dbId = rs.getLong("db_id");
                                 currentBlock = TemporaryComputationBlockDb.loadBlock(con, rs, true);
-                                currentBlock.loadTransactions();
+                                currentBlock.loadTransactionsComputational();
                                 if (currentBlock.getId() != currentBlockId || currentBlock.getHeight() > blockchain.getHeight() + 1) {
                                     throw new NxtException.NotValidException("Database blocks_comp in the wrong order!");
                                 }
