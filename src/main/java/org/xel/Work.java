@@ -530,18 +530,26 @@ public final class Work {
         final JSONObject response = toJsonWithSource(work,with_source);
 
 
-        if (storage_slot>=0 && storage_slot < work.bounty_limit_per_iteration) {
+        if (storage_slot==-100 || (storage_slot>=0 && storage_slot < work.bounty_limit_per_iteration )) {
             if(storage_slot!=-100) {
                 int[] storage_area = work.getStorage(storage_slot);
                 response.put("storage_id", storage_slot);
-                response.put("storage", Convert.toHexString(Convert.int2byte(storage_area)));
+                JSONArray dd = new JSONArray();
+                for(int i=0;i<storage_area.length;i++){
+                    dd.add(storage_area[i]);
+                }
+                response.put("storage", dd);
             }else{
                 JSONArray a = new JSONArray();
                 for(int i=0;i<work.bounty_limit_per_iteration;++i){
                     JSONObject s = new JSONObject();
                     int[] storage_area = work.getStorage(i);
                     s.put("storage_id", i);
-                    s.put("storage", storage_area);
+                    JSONArray dd = new JSONArray();
+                    for(int idd=0;idd<storage_area.length;idd++){
+                        dd.add(storage_area[idd]);
+                    }
+                    response.put("storage", dd);
                     a.add(s);
                 }
                 response.put("storages", a);
