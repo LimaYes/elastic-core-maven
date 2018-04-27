@@ -260,7 +260,7 @@ public class CommandPowBty extends IComputationAttachment {
         if (this.work_id == 0) return false;
         Work w = Work.getWork(this.work_id);
         if (w == null) {
-            Logger.logDebugMessage("Work " + String.valueOf(w.getId()) + " verification failed: no such work.");
+            Logger.logDebugMessage("Work verification failed: no such work.");
             return false;
         }
         if (w.isClosed() == true) {
