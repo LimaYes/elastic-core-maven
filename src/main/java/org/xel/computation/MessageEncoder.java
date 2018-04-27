@@ -110,10 +110,11 @@ public class MessageEncoder {
     }
 
 
-    static List<Pair<Long,Long>> paid=new ArrayList<Pair<Long,Long>>();
 
-    static void paymentProcessor(Block block){
-        for(Transaction t : block.getTransactions()) {
+
+    public static List<Pair<Long,Long>> extractPaymentsFromTX(Transaction t){
+        List<Pair<Long,Long>> paid=new ArrayList<Pair<Long,Long>>();
+        if(t!=null) {
             Appendix.Message m2 = t.getMessage();
 
             if (m2 != null) {
@@ -138,7 +139,7 @@ public class MessageEncoder {
                                                 Work w = Work.getWorkById(bty.getWork_id());
                                                 if ((bty.is_pow && totalAttached >= w.getXel_per_pow()) || (!bty.is_pow && totalAttached >= w.getXel_per_bounty())) {
                                                     paid.add(new Pair<>(bty.getId(),bty.getWork_id()));
-                                                } else break;
+                                                } else {};
 
                                             }
                                         }
@@ -153,7 +154,7 @@ public class MessageEncoder {
                                         Work w = Work.getWorkById(bty.getWork_id());
                                         if ((bty.is_pow && t.getAmountNQT() >= w.getXel_per_pow()) || (!bty.is_pow && t.getAmountNQT() >= w.getXel_per_bounty())) {
                                             paid.add(new Pair<>(bty.getId(),bty.getWork_id()));
-                                        } else break;
+                                        } else {};
                                     }
                                 }
                             } catch (Exception e) {
@@ -164,9 +165,20 @@ public class MessageEncoder {
                 }
             }
         }
+        return paid;
+    }
+
+
+    static void paymentProcessor(Block block){
+
+        Logger.logDebugMessage("Beginning to handle payouts!");
+        List<Pair<Long,Long>> allPaid = new ArrayList<>();
+        for(Transaction t : block.getTransactions()) {
+            allPaid.addAll(MessageEncoder.extractPaymentsFromTX(t));
+        }
 
         // Set all paid
-        for(Pair<Long, Long> l : paid){
+        for(Pair<Long, Long> l : allPaid){
             PowAndBounty bty = PowAndBounty.getPowOrBountyById(l.getElement0());
             Work w = Work.getWorkById(l.getElement1());
             if (bty!=null) {
@@ -175,7 +187,8 @@ public class MessageEncoder {
                 bty.JustSave();
             } else break;
         }
-        paid.clear();
+
+        allPaid.clear(); // garbage collect
     }
     static void processBlockInternal(Block block){
 
@@ -289,7 +302,7 @@ public class MessageEncoder {
 
     public static void init(){
         if(Nxt.getBooleanProperty("nxt.enableComputationEngine")) {
-            Nxt.getTemporaryComputationBlockchainProcessor().addListener(block -> {
+            Nxt.getBlockchainProcessor().addListener(block -> {
                 GetLastBlockId.lastBlockId = block.getId();
                 paymentProcessor(block);
             }, BlockchainProcessorImpl.Event.AFTER_BLOCK_APPLY);

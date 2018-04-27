@@ -143,6 +143,14 @@ public final class GetState extends APIServlet.APIRequestHandler {
                     try (DbIterator<PowAndBounty> unpaidit = PowAndBounty.getUnpaidSubmission(w.getId())) {
                         while (unpaidit.hasNext()) {
                             PowAndBounty b = unpaidit.next();
+
+                            // is it really unpaid?
+                            UnconfirmedGetter.refreshMap();
+                            if(UnconfirmedGetter.getUnMapPaidBty().contains(b.getId())){
+                                Logger.logDebugMessage("Skipping unpaid BTY (" + b.getId() + " because it is in the Unconf cache");
+                                continue;
+                            }
+
                             //Logger.logDebugMessage("    > unpaid bty " + b.getId() + ", isPOW = " + b.is_pow + ", payout = " + ((b.is_pow) ? w.getXel_per_pow() : w.getXel_per_bounty()));
                             Pair<String, Long> oldpair = null;
                             if(earnings.containsKey(b.getAccountId())){

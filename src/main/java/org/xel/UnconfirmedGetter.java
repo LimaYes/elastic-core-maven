@@ -1,5 +1,7 @@
 package org.xel;
 
+import org.xel.computation.MessageEncoder;
+import org.xel.computation.Pair;
 import org.xel.db.DbIterator;
 
 import java.util.*;
@@ -15,6 +17,7 @@ public class UnconfirmedGetter {
         long curTime = (new Date()).getTime();
         if((curTime - lastTimeUnmapGenerated) / 1000 < 5) return unMap;
         unMap.clear();
+        unMapPaidBty.clear();
         lastTimeUnmapGenerated = curTime;
         try (DbIterator<? extends Transaction> unconfirmedTransactions = Nxt.getTransactionProcessor().getAllUnconfirmedTransactions()) {
             while (unconfirmedTransactions.hasNext()) {
@@ -32,9 +35,19 @@ public class UnconfirmedGetter {
                 }
                 bal += t.getAmountNQT();
                 unMap.put(t.getRecipientId(), bal);
+
+                // Check for BTY
+                List<Pair<Long,Long>> containsPm = MessageEncoder.extractPaymentsFromTX(t);
+                for(Pair<Long, Long> p : containsPm){
+                    unMapPaidBty.add(p.getElement0());
+                }
             }
         }
         return unMap;
+    }
+
+    public static List<Long> getUnMapPaidBty() {
+        return unMapPaidBty;
     }
 }
 
