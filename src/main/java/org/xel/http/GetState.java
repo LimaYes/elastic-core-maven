@@ -85,6 +85,10 @@ public final class GetState extends APIServlet.APIRequestHandler {
         response.put("peerPort", Peers.getDefaultPeerPort());
         response.put("isOffline", Constants.isOffline);
         response.put("needsAdminPassword", !API.disableAdminPassword);
+
+        response.put("lastBlock", GetLastBlockId.getLastBlock());
+        response.put("lastBlockComputation", GetLastBlockId.getLastBlockComputational());
+
         if (includeTasks) {
             response.put("totalOpen", Work.getActiveCount());
             response.put("totalClosed", Work.getCount()-Work.getActiveCount());
