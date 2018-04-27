@@ -104,13 +104,15 @@ public final class GetState extends APIServlet.APIRequestHandler {
             Account account = Account.getAccount(myid);
             if (account == null) {
                 response.put("balanceNQT", "0");
-                response.put("unconfirmedBalanceNQT", "0");
+                long adjuster = 0;
+                Map<Long, Long> unmap = UnconfirmedGetter.refreshMap();
+                if(unmap.containsKey(account.getId())){
+                    adjuster = unmap.get(account.getId());
+                }
+                response.put("unconfirmedBalanceNQT",  String.valueOf(adjuster));
                 response.put("forgedBalanceNQT", "0");
 
             } else {
-
-
-
                 response.put("balanceNQT", String.valueOf(account.getBalanceNQT()));
                 long adjuster = 0;
                 Map<Long, Long> unmap = UnconfirmedGetter.refreshMap();
@@ -123,14 +125,14 @@ public final class GetState extends APIServlet.APIRequestHandler {
             }
 
 
+
+            /* Here, we begin to decide which payments need to be done */
+            // The UnconfirmedGetter from above is up to date ... we can use that to determine which BTYs have been paid for
             JSONArray awork = new JSONArray();
             AlternativeChainPubkeys pp = AlternativeChainPubkeys.getKnownIdentity(myid);
             byte[] publicKey = (pp!=null)?pp.getPubkey():null;
-
             if(publicKey!=null) {
-
                 Map<Long,Pair<String, Long>> earnings = new HashMap<>();
-
                 List<Work> itw = Work.getActiveAndRecentlyClosedByAccountId(myid);
                 for (Work w : itw) {
                     //Logger.logDebugMessage(" > open work " + w.getId());
@@ -172,6 +174,8 @@ public final class GetState extends APIServlet.APIRequestHandler {
                         }
                     }
                 }
+                /* Here, we end to decide which payments need to be done */
+
 
                 // Build all remaining TX
                 for(Long k : earnings.keySet()){
